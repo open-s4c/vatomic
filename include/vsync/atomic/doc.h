@@ -59,6 +59,16 @@
  * For a set of advanced atomic operations optimized for politely waiting
  * (spinning), include @ref await.h.
  *
+ * For readability and ease of use, include @ref dispatch.h. It introduces
+ * several macro dispatchers prefixed with vatomic_. These dispatchers map to
+ * the call to the respective vatomic8_, vatomic16_, vatomic32_ or vatomi64_
+ * functions depending on the type/size of the arguments. For example,
+ * vatomic_read(a) is the same as vatomic32_read(a) if the type of `a` is
+ * vatomic32_t.
+ *
+ * More advanced stamped and marked atomic pointers are available in
+ * @ref atomicptr_stamped.h and @ref atomicptr_markable.h.
+ *
  * ### Implementation variants
  *
  * Optimized atomic implementations are available for ARMv7 (32 and 64 bits) and
