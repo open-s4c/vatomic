@@ -106,6 +106,6 @@
                      ##__VA_ARGS__);                                           \
     })
 #define V_DISPATCH_INT_RET(P, F, mo, a, ...)                                   \
-    (V_MAP_T(P))V_DISPATCH_INT(P, F, mo, a, ##__VA_ARGS__)
+    (V_MAP_T(P)) V_DISPATCH_INT(P, F, mo, a, ##__VA_ARGS__)
 
 #endif /* VATOMIC_INTERNAL_DISPATCH_H */

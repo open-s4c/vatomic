@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ * Copyright (C) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
 
@@ -28,8 +28,10 @@
 #else
     #include <stdint.h>
     #include <stdbool.h>
-    #include <inttypes.h>
     #include <stddef.h>
+    #if !defined(__APPLE__)
+        #include <inttypes.h>
+    #endif
 typedef uint8_t vuint8_t;
 typedef uint16_t vuint16_t;
 typedef uint32_t vuint32_t;
@@ -80,6 +82,12 @@ typedef bool vbool_t;
     #define VUINTPTR_MAX UINTPTR_MAX
 #else
     #define VUINTPTR_MAX V_UNSIGNED_INT_MAX(vuintptr_t)
+#endif
+
+#if defined(SIZE_MAX)
+    #define VSIZE_MAX SIZE_MAX
+#else
+    #define VSIZE_MAX V_UNSIGNED_INT_MAX(vsize_t)
 #endif
 
 /* Width */
