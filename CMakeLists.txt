@@ -64,4 +64,4 @@ include(cmake/v_add_test.cmake)
 
 enable_testing()
 add_subdirectory(test)
-# add_subdirectory(verify)
+add_subdirectory(verify)

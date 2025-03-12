@@ -1,6 +1,5 @@
-name: vatomic tests
+name: vatomic tests and verification
 on: [push]
-
 env:
   REGISTRY: ghcr.io
 
@@ -94,7 +93,9 @@ jobs:
       matrix:
         container:
           - name: "qemu-ci"
-            path: ".github/Dockerfile"
+            path: ".github/Dockerfile.qemu"
+          - name: "boogie-ci"
+            path: ".github/Dockerfile.boogie"
 
     steps:
       - name: Checkout repository
@@ -125,7 +126,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.1.0
         with:
-          context: .github
+          context: .github/docker-context
           push: true
           file: ${{ matrix.container.path }}
           cache-from: type=gha,scope=${{ matrix.container }}
@@ -205,3 +206,24 @@ jobs:
         run: cmake --build build
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+
+  boogie-verification:
+    needs: [ prepare-docker ]
+    strategy:
+      matrix:
+        target: [ lse, llsc, lxe, no_polite_await ]
+    runs-on: ubuntu-latest
+    container: ghcr.io/open-s4c/vatomic/boogie-ci:sha-${{ github.sha }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure
+        run: cmake -S. -Bbuild -DLIBVSYNC_ATOMICS_VERIFICATION=ON
+      - name: Build
+        run: cmake --build build --target build_boogie_${{ matrix.target }}
+      - name: Verify
+        run: ctest -R ${{ matrix.target }} --test-dir build/verify
+

@@ -17,6 +17,8 @@ else
         -name '*.c' -o \
         -name '*.c.in' -o \
         -name '*.h.in' -o \
+        -name '*.hs' -o \
+        -name '*.bpl' -o \
         -name '*.cmake.in' -o \
         -name 'CMake*.txt' -o \
         -name '*.cmake' | grep -v "build")
@@ -34,9 +36,17 @@ if ! sed --version > /dev/null 2>&1; then
     fi
 fi
 
+COPYRIGHT_TEXT_HASKELL="\
+-- Copyright (C) Huawei Technologies Co., Ltd. <RANGE>. All rights reserved.\n\
+-- SPDX-License-Identifier: MIT\n\n"
 COPYRIGHT_TEXT_CMAKE="\
 \# Copyright (C) Huawei Technologies Co., Ltd. <RANGE>. All rights reserved.\n\
-\# SPDX-License-Identifier: MIT\n"
+\# SPDX-License-Identifier: MIT\n\n"
+COPYRIGHT_TEXT_BOOGIE="\
+/*\n\
+ * Copyright (C) Huawei Technologies Co., Ltd. <RANGE>. All rights reserved.\n\
+ * SPDX-License-Identifier: MIT\n\
+ */\n"
 COPYRIGHT_TEXT_C="\
 /*\n\
  * Copyright (C) Huawei Technologies Co., Ltd. <RANGE>. All rights reserved.\n\
@@ -50,6 +60,10 @@ for f in ${FILES}; do
     ext="${fname##*.}"
     if [ "$ext" = "txt" ] || echo $fname | grep cmake > /dev/null; then
         COPYRIGHT_TEXT="$COPYRIGHT_TEXT_CMAKE"
+    elif [ "$ext" = "hs" ]; then
+        COPYRIGHT_TEXT="$COPYRIGHT_TEXT_HASKELL"
+    elif [ "$ext" = "bpl" ]; then
+        COPYRIGHT_TEXT="$COPYRIGHT_TEXT_BOOGIE"
     else
         COPYRIGHT_TEXT="$COPYRIGHT_TEXT_C"
     fi

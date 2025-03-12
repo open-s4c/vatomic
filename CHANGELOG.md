@@ -5,6 +5,10 @@ This project partially comply with [Semantic Versioning][].
 
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [pre-2.3.1]
+
+- Added verification of AArch64 atomic implementation
+
 ## [2.3.0]
 
 - **Forked** from libvsync v4.1.0 as standalone project
