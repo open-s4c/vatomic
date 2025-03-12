@@ -1,5 +1,6 @@
 # Copyright (C) Huawei Technologies Co., Ltd. 2024-2025. All rights reserved.
 # SPDX-License-Identifier: MIT
+
 # grep templates for each .in .h will be generated
 file(GLOB TARGETS *.in)
 
