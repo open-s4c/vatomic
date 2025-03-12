@@ -65,3 +65,13 @@ include(cmake/v_add_test.cmake)
 enable_testing()
 add_subdirectory(test)
 # add_subdirectory(verify)
+#add_subdirectory(boogie)
+
+find_program(GHC ghc DOC "Haskell compiler")
+find_program(BPL boogie DOC "Boogie installation")
+
+if(GHC)
+    if(BPL)
+        add_subdirectory(boogie-new)
+    endif()
+endif()

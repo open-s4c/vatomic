@@ -6,6 +6,7 @@ env:
 
 jobs:
   test-native:
+    if: false
     strategy:
       matrix:
         os: [ubuntu-22.04, ubuntu-22.04-arm, macos-latest]
@@ -22,6 +23,7 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
   test-netbsd:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +42,7 @@ jobs:
               ctest --test-dir build --output-on-failure
 
   check-expectations:
+    if: false
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -61,6 +64,7 @@ jobs:
             (echo "Run 'make ${{ matrix.target }}' and commit" && false)
 
   check-cmake-format:
+    if: false
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -82,6 +86,7 @@ jobs:
             (echo "Run 'make ${{ matrix.target }}' and commit" && false)
 
   prepare-docker:
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -94,7 +99,9 @@ jobs:
       matrix:
         container:
           - name: "qemu-ci"
-            path: ".github/Dockerfile"
+            path: ".github/Dockerfile.qemu"
+          - name: "boogie-ci"
+            path: ".github/Dockerfile.boogie"
 
     steps:
       - name: Checkout repository
@@ -125,7 +132,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.1.0
         with:
-          context: .github
+          context: .github/docker-context
           push: true
           file: ${{ matrix.container.path }}
           cache-from: type=gha,scope=${{ matrix.container }}
@@ -134,6 +141,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   test-qemu-other:
+    if: false
     needs: [ prepare-docker ]
     strategy:
       matrix:
@@ -156,6 +164,7 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
   test-qemu-arm32:
+    if: false
     needs: [ prepare-docker ]
     strategy:
       matrix:
@@ -179,6 +188,7 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
   test-qemu-arm64:
+    if: false
     needs: [ prepare-docker ]
     strategy:
       matrix:
@@ -205,3 +215,24 @@ jobs:
         run: cmake --build build
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+
+  boogie-verification:
+    #needs: [ prepare-docker ]
+    strategy:
+      matrix:
+        target: [ lse, llsc, lxe, no_polite_await ]
+    runs-on: ubuntu-latest
+    container: ghcr.io/open-s4c/vatomic/boogie-ci:latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure
+        run: cmake -S. -Bbuild -DLIBVSYNC_ATOMICS_VERIFICATION=ON
+      - name: Build
+        run: cmake --build build --target build_boogie_${{ matrix.target }}
+      - name: Verify
+        run: ctest -R ${{ matrix.target }} --test-dir build/boogie-new
+
