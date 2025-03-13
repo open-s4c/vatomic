@@ -139,7 +139,7 @@ jobs:
     strategy:
       matrix:
         optimization_level: [ "O1", "O2", "O3" ]
-        toolchain: [ "x86_64" ] # "riscv"
+        toolchain: [ "x86_64", "riscv" ]
     runs-on: ubuntu-latest
     container: ghcr.io/open-s4c/vatomic/qemu-ci:sha-${{ github.sha }}
     steps:

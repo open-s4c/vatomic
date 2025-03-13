@@ -8,6 +8,7 @@ This project partially comply with [Semantic Versioning][].
 ## [pre-2.3.1]
 
 - Added verification of AArch64 atomic implementation
+- Enabled RISC-V tests (linking with libatomic)
 
 ## [2.3.0]
 
