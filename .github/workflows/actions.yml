@@ -4,6 +4,25 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  test-install:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-22.04-arm, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure vatomic
+        run: cmake -S. -Bbuild -DCMAKE_INSTALL_PREFIX=/tmp/target
+      - name: Install library
+        run: cmake --install build
+
+      - name: Configure test project
+        run: cmake -Stest/project -Bbuild2 -DCMAKE_PREFIX_PATH=/tmp/target
+      - name: Build test project
+        run: cmake --build build2
+
   test-native:
     strategy:
       matrix:
@@ -14,7 +33,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Configure Testing
-        run: cmake -S. -Bbuild ${{ matrix.config }}
+        run: cmake -S. -Bbuild
       - name: Build Tests
         run: cmake --build build
       - name: Run Tests
@@ -26,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Configure and Build
+      - name: Configure, Build, Install
         id: test
         uses: vmactions/netbsd-vm@v1
         with:
@@ -34,9 +53,14 @@ jobs:
           usesh: true
           prepare: /usr/sbin/pkg_add curl cmake
           run: |
+              rm -rf /tmp/target
               cmake -S. -Bbuild
-              cmake --build build
+              cmake --build build -DCMAKE_INSTALL_PREFIX=/tmp/target
               ctest --test-dir build --output-on-failure
+              cmake --install build
+              cmake -Stest/project -Bbuild2 -DCMAKE_PREFIX_PATH=/tmp/target
+              cmake --build build2
+
 
   check-expectations:
     runs-on: ubuntu-22.04
