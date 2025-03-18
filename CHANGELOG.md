@@ -5,10 +5,11 @@ This project partially comply with [Semantic Versioning][].
 
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## [pre-2.3.1]
+## [2.3.1]
 
 - Added verification of AArch64 atomic implementation
 - Enabled RISC-V tests (linking with libatomic)
+- Fixed installation of CMake find_package scripts
 
 ## [2.3.0]
 

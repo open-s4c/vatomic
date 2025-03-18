@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 project(
     vatomic
     LANGUAGES C
-    VERSION 2.3.0
+    VERSION 2.3.1
     DESCRIPTION "VSync atomics")
 
 include(GNUInstallDirs)
