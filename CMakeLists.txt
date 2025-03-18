@@ -10,7 +10,6 @@ project(
 
 include(GNUInstallDirs)
 include(CheckSymbolExists)
-include(cmake/export.cmake)
 
 # Create vatomic header library
 add_library(vatomic INTERFACE)
@@ -18,7 +17,13 @@ target_include_directories(
     vatomic INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
                       "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 
+# Enable testing and other targes only if this is the top level project
+if(NOT CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    return()
+endif()
+
 # Prepare install targets
+include(cmake/export.cmake)
 install(DIRECTORY include/vsync DESTINATION include)
 install(FILES vmm.cat DESTINATION share/vsync/)
 install(TARGETS vatomic EXPORT ${PROJECT_TARGETS})
@@ -52,12 +57,10 @@ add_dependencies(clang-format-apply sanitize-vatomic)
 # General diff check for pipeline
 add_custom_target(diff-check COMMAND git --no-pager diff --exit-code)
 
-# Enable testing and verification only if this is the top level project
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    include(CTest)
-    include(ProcessorCount)
-    include(cmake/v_add_test.cmake)
-    enable_testing()
-    add_subdirectory(test)
-    add_subdirectory(verify)
-endif()
+# Configure testing
+include(CTest)
+include(ProcessorCount)
+include(cmake/v_add_test.cmake)
+enable_testing()
+add_subdirectory(test)
+add_subdirectory(verify)
