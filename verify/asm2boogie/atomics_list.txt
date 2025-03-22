@@ -1,0 +1,5 @@
+read
+read_acq
+read_rlx
+write
+cmpxchg
