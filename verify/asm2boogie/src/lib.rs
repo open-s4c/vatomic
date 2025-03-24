@@ -1,6 +1,7 @@
 use std::{fs, io::Write, path::Path};
 
 use arm::{ArmFunction, arm_to_boogie_code, get_address_registers, get_used_registers};
+use regex::Regex;
 
 pub mod arm;
 pub mod riscv;
@@ -20,25 +21,41 @@ pub enum UnifiedInstruction {
     Branch(String, String),
 }
 
-fn classify_function(name: &str) -> &str {
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FunctionClass {
+    Read,
+    Write,
+    Await,
+    AwaitRmw,
+    Rmw,
+}
+
+fn classify_function(name: &str) -> FunctionClass {
+    let rmw_re = Regex::new(r"add|sub|set").unwrap();
     if name.contains("read") {
-        "read"
+        FunctionClass::Read
     } else if name.contains("write") {
-        "write"
+        FunctionClass::Write
     } else if name.contains("await") {
-        "await"
+        if rmw_re.is_match(name) {
+            FunctionClass::AwaitRmw
+        } else {
+            FunctionClass::Await
+        }
     } else {
-        "rmw"
+        FunctionClass::Rmw
     }
 }
 
-fn get_templates_for_type(func_type: &str) -> Vec<&str> {
+fn get_templates_for_type(func_type: FunctionClass) -> Vec<&'static str> {
     match func_type {
-        "read" => vec!["read_only.bpl", "read.bpl"],
-        "write" => vec!["write.bpl", "must_store.bpl"],
-        "await" => vec!["read_only.bpl", "read.bpl", "await.bpl"],
-        "rmw" => vec!["read.bpl", "write.bpl", "rmw.bpl"],
-        _ => unreachable!(),
+        FunctionClass::Read => vec!["read_only.bpl", "read.bpl"],
+        FunctionClass::Write => vec!["write.bpl", "must_store.bpl"],
+        FunctionClass::Await => vec!["read_only.bpl", "read.bpl", "await.bpl"],
+        FunctionClass::Rmw => vec!["read.bpl", "write.bpl", "rmw.bpl"],
+        FunctionClass::AwaitRmw => vec!["read.bpl", "write.bpl", "rmw.bpl", "await.bpl"],
     }
 }
 
