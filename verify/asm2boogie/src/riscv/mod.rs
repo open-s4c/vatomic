@@ -1,9 +1,9 @@
 mod parser;
+mod transform;
 
 // pub use genegrate::{arm_to_boogie_code, get_address_registers, get_used_registers};
 pub use parser::parse_riscv_assembly;
-// pub use transform::{extract_riscv_functions, remove_directives, transform_labels};
-
+pub use transform::{extract_riscv_functions, remove_directives, transform_labels};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MemoryOperand {
@@ -91,6 +91,16 @@ pub enum ArithmeticOp {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum ComparisonOp {
+    Eq,  // Equal (for beq)
+    Ne,  // Not equal (for bne)
+    Lt,  // Less than, signed (for blt)
+    Ge,  // Greater than or equal, signed (for bge)
+    Ltu, // Less than, unsigned (for bltu)
+    Geu, // Greater than or equal, unsigned (for bgeu)
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum RiscvInstruction {
     Label(String),
     Directive(Directive),
@@ -143,6 +153,22 @@ pub enum RiscvInstruction {
     },
     Move(Register, Register),
     SignExtendWord(Register, Register),
+    Branch {
+        op: ComparisonOp,
+        rs1: Register,
+        rs2: Register,
+        label: String,
+    },
+    Jump {
+        rd: Register,
+        label: String,
+    },
     Return,
     Unhandled(String),
+}
+
+#[derive(Debug, Clone)]
+pub struct RiscvFunction {
+    pub name: String,
+    pub instructions: Vec<RiscvInstruction>,
 }

@@ -7,7 +7,7 @@ pub mod riscv;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operator {
-    Immediate(String), 
+    Immediate(String),
     Address(String),
     Label(String),
     Register(String),

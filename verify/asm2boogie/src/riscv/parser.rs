@@ -121,9 +121,9 @@ fn parse_fence_mode_operand(input: &str) -> IResult<&str, FenceMode> {
 
 fn parse_operand(input: &str) -> IResult<&str, Operand> {
     alt((
-        map(parse_fence_mode_operand, Operand::FenceMode),
         map(parse_memory_operand, Operand::Memory),
         map(parse_register, Operand::Register),
+        map(parse_fence_mode_operand, Operand::FenceMode),
         map(parse_immediate, Operand::Immediate),
         map(parse_label, Operand::Label),
     ))
@@ -236,6 +236,133 @@ fn is_store_instruction(name: &str) -> Option<Size> {
 fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
     let name_lower = name.to_lowercase();
     match name_lower.as_str() {
+        "beq" | "bne" | "blt" | "bge" | "bltu" | "bgeu" => {
+            let op = match name_lower.as_str() {
+                "beq" => ComparisonOp::Eq,
+                "bne" => ComparisonOp::Ne,
+                "blt" => ComparisonOp::Lt,
+                "bge" => ComparisonOp::Ge,
+                "bltu" => ComparisonOp::Ltu,
+                "bgeu" => ComparisonOp::Geu,
+                _ => unreachable!(),
+            };
+            if operands.len() == 3 {
+                if let (Operand::Register(rs1), Operand::Register(rs2), Operand::Label(label)) = (
+                    operands[0].clone(),
+                    operands[1].clone(),
+                    operands[2].clone(),
+                ) {
+                    RiscvInstruction::Branch {
+                        op,
+                        rs1,
+                        rs2,
+                        label,
+                    }
+                } else {
+                    RiscvInstruction::Unhandled(format!(
+                        "Invalid operands for {}: {:?}",
+                        name, operands
+                    ))
+                }
+            } else {
+                RiscvInstruction::Unhandled(format!(
+                    "{} requires three operands, got {}",
+                    name,
+                    operands.len()
+                ))
+            }
+        }
+        "bnez" => {
+            if operands.len() == 2 {
+                if let (Operand::Register(rs), Operand::Label(label)) =
+                    (operands[0].clone(), operands[1].clone())
+                {
+                    RiscvInstruction::Branch {
+                        op: ComparisonOp::Ne,
+                        rs1: rs,
+                        rs2: Register {
+                            reg_type: RegisterType::Special("zero".to_string()),
+                            number: None,
+                        },
+                        label,
+                    }
+                } else {
+                    RiscvInstruction::Unhandled(format!(
+                        "Invalid operands for bnez: {:?}",
+                        operands
+                    ))
+                }
+            } else {
+                RiscvInstruction::Unhandled(format!(
+                    "bnez requires two operands, got {}",
+                    operands.len()
+                ))
+            }
+        }
+        "beqz" => {
+            if operands.len() == 2 {
+                if let (Operand::Register(rs), Operand::Label(label)) =
+                    (operands[0].clone(), operands[1].clone())
+                {
+                    RiscvInstruction::Branch {
+                        op: ComparisonOp::Eq,
+                        rs1: rs,
+                        rs2: Register {
+                            reg_type: RegisterType::Special("zero".to_string()),
+                            number: None,
+                        },
+                        label,
+                    }
+                } else {
+                    RiscvInstruction::Unhandled(format!(
+                        "Invalid operands for beqz: {:?}",
+                        operands
+                    ))
+                }
+            } else {
+                RiscvInstruction::Unhandled(format!(
+                    "beqz requires two operands, got {}",
+                    operands.len()
+                ))
+            }
+        }
+        "jal" => {
+            println!("lool: {:?}", operands);
+            if operands.len() == 2 {
+                if let (Operand::Register(rd), Operand::Label(label)) =
+                    (operands[0].clone(), operands[1].clone())
+                {
+                    RiscvInstruction::Jump { rd, label }
+                } else {
+                    RiscvInstruction::Unhandled(format!("Invalid operands for jal: {:?}", operands))
+                }
+            } else {
+                RiscvInstruction::Unhandled(format!(
+                    "jal requires two operands, got {}",
+                    operands.len()
+                ))
+            }
+        }
+        "j" => {
+            if operands.len() == 1 {
+                if let Operand::Label(label) = operands[0].clone() {
+                    RiscvInstruction::Jump {
+                        rd: Register {
+                            reg_type: RegisterType::Special("zero".to_string()),
+                            number: None,
+                        },
+                        label,
+                    }
+                } else {
+                    RiscvInstruction::Unhandled(format!("Invalid operand for j: {:?}", operands[0]))
+                }
+            } else {
+                RiscvInstruction::Unhandled(format!(
+                    "j requires one operand, got {}",
+                    operands.len()
+                ))
+            }
+        }
         "fence" => {
             if operands.len() == 2 {
                 if let (Operand::FenceMode(pred), Operand::FenceMode(succ)) =
@@ -504,9 +631,9 @@ fn parse_line(input: &str) -> IResult<&str, Option<RiscvInstruction>> {
 
     let (input, line) = take_till(|c| c == '\n')(input)?;
     let (input, _) = opt(char('\n')).parse(input)?;
-    let line_trimmed = line.trim();
+    let line_without_comment = line.split('#').next().unwrap().trim();
 
-    if line_trimmed.is_empty() {
+    if line_without_comment.is_empty() {
         Ok((input, None))
     } else {
         let result = alt((
@@ -514,7 +641,7 @@ fn parse_line(input: &str) -> IResult<&str, Option<RiscvInstruction>> {
             map(parse_directive, |dir| RiscvInstruction::Directive(dir)),
             parse_instruction,
         ))
-        .parse(line_trimmed);
+        .parse(line_without_comment);
 
         match result {
             Ok((remaining, instr)) if remaining.is_empty() => Ok((input, Some(instr))),
@@ -814,6 +941,98 @@ vatomic64_write:
                     number: Some(1)
                 },
                 imm: 42,
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_branch() {
+        let (_, instr) = parse_instruction("beq a0, a1, my_label").unwrap();
+        assert_eq!(
+            instr,
+            RiscvInstruction::Branch {
+                op: ComparisonOp::Eq,
+                rs1: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(0)
+                },
+                rs2: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(1)
+                },
+                label: "my_label".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_branch_pseudo() {
+        let (_, instr) = parse_instruction("bnez a0, my_label").unwrap();
+        assert_eq!(
+            instr,
+            RiscvInstruction::Branch {
+                op: ComparisonOp::Ne,
+                rs1: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(0)
+                },
+                rs2: Register {
+                    reg_type: RegisterType::Special("zero".to_string()),
+                    number: None,
+                },
+                label: "my_label".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_jump() {
+        let (_, instr) = parse_instruction("jal ra, my_function").unwrap();
+        assert_eq!(
+            instr,
+            RiscvInstruction::Jump {
+                rd: Register {
+                    reg_type: RegisterType::Special("ra".to_string()),
+                    number: None,
+                },
+                label: "my_function".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_pseudo_jump() {
+        let (_, instr) = parse_instruction("j my_label").unwrap();
+        assert_eq!(
+            instr,
+            RiscvInstruction::Jump {
+                rd: Register {
+                    reg_type: RegisterType::Special("zero".to_string()),
+                    number: None,
+                },
+                label: "my_label".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_instruction_with_comment() {
+        let input = "beq a0, a1, my_label # branch if equal\n";
+        let (_, instructions) = parse_riscv_assembly(input).unwrap();
+        assert_eq!(instructions.len(), 1);
+        assert_eq!(
+            instructions[0],
+            RiscvInstruction::Branch {
+                op: ComparisonOp::Eq,
+                rs1: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(0)
+                },
+                rs2: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(1)
+                },
+                label: "my_label".to_string(),
             }
         );
     }

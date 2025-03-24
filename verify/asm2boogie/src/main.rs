@@ -1,7 +1,7 @@
 use asm2boogie::{
     arm::{extract_arm_functions, parse_arm_assembly, remove_directives, transform_labels},
     generate_boogie_file, generate_debug_file,
-    riscv::{ parse_riscv_assembly}
+    riscv::{parse_riscv_assembly, extract_riscv_functions, remove_directives as remove_risc_directives, transform_labels as transform_risc_labels},
 };
 
 use clap::{Parser, ValueEnum};
@@ -16,13 +16,19 @@ enum OutputMode {
 #[derive(ValueEnum, Debug, Clone)]
 enum Arch {
     RiscV,
-    ArmV8
+    ArmV8,
 }
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about = "Generate Verifiable Boogie Code from ASM", long_about = None)]
 struct Args {
-    #[clap(short = 'a', long, value_enum, default_value = "armv8", help = "Target architecture (armv8 or riscv)")]
+    #[clap(
+        short = 'a',
+        long,
+        value_enum,
+        default_value = "armv8",
+        help = "Target architecture (armv8 or riscv)"
+    )]
     arch: Arch,
     #[clap(short = 'i', long, value_name = "FILE", help = "input file")]
     input: String,
@@ -144,6 +150,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             };
             log::info!("Successfullz parsed riscv assembly");
+            let processed_functions = extract_riscv_functions(parsed, Some(&function_names), &["64"])
+                .into_iter()
+                .map(|f| transform_risc_labels(&f))
+                .map(|f| remove_risc_directives(&f))
+                .collect::<Vec<_>>();
+
+            println!("processed risc: {:#?}", &processed_functions);
             unimplemented!();
         }
     };
