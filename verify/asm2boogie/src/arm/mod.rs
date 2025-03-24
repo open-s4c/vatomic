@@ -2,7 +2,7 @@ mod generate;
 mod parser;
 mod transform;
 
-pub use generate::{arm_to_boogie_code, get_address_registers, get_used_registers};
+pub use generate::{arm_to_boogie_code, get_used_registers};
 pub use parser::parse_arm_assembly;
 pub use transform::{extract_arm_functions, remove_directives, transform_labels};
 

@@ -1,0 +1,1 @@
+axiom sc_impl is TrailingFence;

@@ -1,6 +1,8 @@
 use super::*;
 use std::collections::HashSet;
 
+const DUMMY_REG : &str = "dummy";
+
 pub fn arm_to_boogie_code(function: &ArmFunction) -> String {
     let mut code = String::new();
 
@@ -12,6 +14,7 @@ pub fn arm_to_boogie_code(function: &ArmFunction) -> String {
                 code.push_str(&format!("{}:\n", name));
 
                 if backward_branch_targets.contains(name) {
+                    code.push_str("    assert last_store < old(step);\n");
                     code.push_str("    assert step >= old(step);\n");
                     code.push_str("    assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i][e] ==> ! (e is write));\n\n");
                 }
@@ -78,8 +81,8 @@ pub fn arm_to_boogie_code(function: &ArmFunction) -> String {
                     ));
                 } else {
                     code.push_str(&format!(
-                        "    call execute({}({}, {}, {}));\n",
-                        op_name, attrs.release, dest_reg, src_reg
+                        "    call {} := execute({}({}, {}, {}));\n",
+                        DUMMY_REG, op_name, attrs.release, dest_reg, src_reg
                     ));
                 }
             }
@@ -94,8 +97,8 @@ pub fn arm_to_boogie_code(function: &ArmFunction) -> String {
                 let src_reg = operand_to_boogie(src);
 
                 code.push_str(&format!(
-                    "    call {} := execute({}({}, {}, {}, {}));\n",
-                    dest_reg, op_name, attrs.acquire, attrs.release, exp_reg, src_reg
+                    "    call {} := execute({}({}, {}, {}));\n",
+                    dest_reg, op_name, attrs.release, exp_reg, src_reg
                 ));
             }
             ArmInstruction::Cmp(op1, op2) => {
@@ -103,8 +106,8 @@ pub fn arm_to_boogie_code(function: &ArmFunction) -> String {
                 let op2_reg = operand_to_boogie(op2);
 
                 code.push_str(&format!(
-                    "    call execute(cmp({}, {}));\n",
-                    op1_reg, op2_reg
+                    "    call {} := execute(cmp({}, {}));\n",
+                    DUMMY_REG, op1_reg, op2_reg
                 ));
             }
             ArmInstruction::Branch(cond_opt, target) => match target {
@@ -145,6 +148,7 @@ pub fn arm_to_boogie_code(function: &ArmFunction) -> String {
     code
 }
 
+
 pub fn get_used_registers(function: &ArmFunction) -> String {
     let mut registers = HashSet::new();
 
@@ -154,6 +158,7 @@ pub fn get_used_registers(function: &ArmFunction) -> String {
 
     let mut result = registers.into_iter().collect::<Vec<_>>();
     result.sort();
+    result.push(DUMMY_REG.to_string());
     result.join(", ")
 }
 
@@ -269,46 +274,7 @@ fn collect_registers_from_operand(op: &Operand, registers: &mut HashSet<String>)
     }
 }
 
-pub fn get_address_registers(function: &ArmFunction) -> String {
-    let mut address_registers = HashSet::new();
-    for instr in &function.instructions {
-        match instr {
-            ArmInstruction::Memory(_, _, _, src) => {
-                let regs = get_address_registers_from_operand(src);
-                address_registers.extend(regs);
-            }
-            ArmInstruction::MemoryExclusive(_, _, _, _, src) => {
-                let regs = get_address_registers_from_operand(src);
-                address_registers.extend(regs);
-            }
-            _ => {}
-        }
-    }
-    let mut address_list = address_registers.into_iter().collect::<Vec<_>>();
-    address_list.sort();
-    address_list.join(", ")
-}
 
-fn get_address_registers_from_operand(op: &Operand) -> HashSet<String> {
-    let mut registers = HashSet::new();
-    if let Operand::Memory(addr_mode) = op {
-        match addr_mode {
-            AddressingMode::BaseRegister(reg) => {
-                registers.insert(register_to_string(reg));
-            }
-            AddressingMode::BaseRegisterWithOffset(reg, _) => {
-                registers.insert(register_to_string(reg));
-            }
-            AddressingMode::PreIndexed(reg, _) => {
-                registers.insert(register_to_string(reg));
-            }
-            AddressingMode::PostIndexed(reg, _) => {
-                registers.insert(register_to_string(reg));
-            }
-        }
-    }
-    registers
-}
 
 fn register_to_string(reg: &Register) -> String {
     match reg.reg_type {
