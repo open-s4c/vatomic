@@ -1,11 +1,10 @@
 use asm2boogie::{
-    arm::{
-        extract_functions, parse_arm_assembly, remove_directives, transform_labels,
-    },
+    arm::{extract_arm_functions, parse_arm_assembly, remove_directives, transform_labels},
     generate_boogie_file, generate_debug_file,
+    riscv::{ parse_riscv_assembly}
 };
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use std::fs;
 use std::path::Path;
 
@@ -14,9 +13,17 @@ enum OutputMode {
     Directory(String),
 }
 
+#[derive(ValueEnum, Debug, Clone)]
+enum Arch {
+    RiscV,
+    ArmV8
+}
+
 #[derive(Parser, Debug)]
 #[clap(author, version, about = "Generate Verifiable Boogie Code from ASM", long_about = None)]
 struct Args {
+    #[clap(short = 'a', long, value_enum, default_value = "armv8", help = "Target architecture (armv8 or riscv)")]
+    arch: Arch,
     #[clap(short = 'i', long, value_name = "FILE", help = "input file")]
     input: String,
     #[clap(short = 'f', long, value_name = "FILE", help = "function names")]
@@ -89,6 +96,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     log::info!("Input file: {}", args.input);
     log::info!("Functions file: {}", args.functions);
+    log::info!("Arch: {:?}", args.arch);
 
     if let Some(output) = &args.output {
         log::info!("Output file: {}", output);
@@ -108,20 +116,37 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     log::info!("Successfully read input file '{}'", args.input);
 
-    let parsed = match parse_arm_assembly(&input_content) {
-        Ok((_, instructions)) => instructions,
-        Err(e) => {
-            eprintln!("Error parsing assembly: {:?}", e);
-            std::process::exit(1);
+    let processed_functions = match args.arch {
+        Arch::ArmV8 => {
+            let parsed = match parse_arm_assembly(&input_content) {
+                Ok((_, instructions)) => instructions,
+                Err(e) => {
+                    eprintln!("Error parsing arm assembly: {:?}", e);
+                    std::process::exit(1);
+                }
+            };
+            log::info!("Successfully parsed arm assembly");
+
+            let processed_functions = extract_arm_functions(parsed, Some(&function_names), &["64"])
+                .into_iter()
+                .map(|f| transform_labels(&f))
+                .map(|f| remove_directives(&f))
+                .collect::<Vec<_>>();
+
+            processed_functions
+        }
+        Arch::RiscV => {
+            let parsed = match parse_riscv_assembly(&input_content) {
+                Ok((_, instructions)) => instructions,
+                Err(e) => {
+                    eprintln!("Error parsing risc assembly: {:?}", e);
+                    std::process::exit(1);
+                }
+            };
+            log::info!("Successfullz parsed riscv assembly");
+            unimplemented!();
         }
     };
-    log::info!("Successfully parsed assembly");
-
-    let processed_functions = extract_functions(parsed, Some(&function_names), &["64"])
-        .into_iter()
-        .map(|f| transform_labels(&f))
-        .map(|f| remove_directives(&f))
-        .collect::<Vec<_>>();
 
     match output_mode {
         OutputMode::File(file_path) => {

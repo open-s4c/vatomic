@@ -1,6 +1,6 @@
 use super::*;
 
-pub fn extract_functions(
+pub fn extract_arm_functions(
     parsed: Vec<ArmInstruction>,
     names: Option<&[String]>,
     valid_prefix: &[&str],

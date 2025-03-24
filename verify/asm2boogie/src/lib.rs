@@ -5,6 +5,21 @@ use arm::{ArmFunction, arm_to_boogie_code, get_address_registers, get_used_regis
 pub mod arm;
 pub mod riscv;
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum Operator {
+    Immediate(String), 
+    Address(String),
+    Label(String),
+    Register(String),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum UnifiedInstruction {
+    Label(String),
+    Instr(String, Vec<Operator>),
+    Branch(String, String),
+}
+
 fn classify_function(name: &str) -> &str {
     if name.contains("read") {
         "read"
