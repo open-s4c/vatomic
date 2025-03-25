@@ -151,7 +151,7 @@ axiom order_rel_sc == (lambda store, entry, exit: StateIndex, ordering: [StateIn
 const order_fence_acq: OrderRelation;
 axiom order_fence_acq == (lambda fence, entry, exit: StateIndex, ordering: [StateIndex][Ordering] bool, effects: [StateIndex][Effect] bool ::
         (forall i, j: StateIndex ::
-            (i < entry) && (j >= exit) && (exists e: Effect :: effects[i][e] && e is read) && (exists e: Effect :: effects[j][e])
+            (i < entry) && (j >= exit) && (exists e: Effect :: effects[i][e] && e is read && e->visible) && (exists e: Effect :: effects[j][e])
                 ==> ppo(i, j, ordering, effects))
 );
 
