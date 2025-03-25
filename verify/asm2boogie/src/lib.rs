@@ -125,8 +125,6 @@ pub fn generate_boogie_file(
     output_dir: &str,
     template_dir: &str,
 ) -> Result<(), std::io::Error> {
-
-    println!("attempting: {}",function.name);
     
     let func_type = classify_function(&function.name);
     let templates = get_templates_for_type(func_type);
