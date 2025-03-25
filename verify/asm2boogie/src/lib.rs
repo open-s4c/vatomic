@@ -160,7 +160,7 @@ pub fn generate_boogie_file(
 
         let mut await_cond = ""; 
         if let Some(await_name) = AWAIT_RE.captures(&function.name) {
-            if let Some(op) = AWAIT_OP.get(&await_name[0]) {
+            if let Some(op) = AWAIT_OP.get(&await_name[1]) {
                 await_cond = op;
             }
         }

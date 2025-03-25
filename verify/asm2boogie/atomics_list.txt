@@ -5,3 +5,4 @@ write
 cmpxchg
 fence
 fence_acq
+await_eq_add
