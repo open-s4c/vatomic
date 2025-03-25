@@ -189,6 +189,10 @@ axiom max_op == (lambda x, y, _: int :: if x < y then y else x);
 
 axiom ret_old == (lambda x, _1, _2 : int :: x);
 
+const bit8, bit16 : [RMWOp] RMWOp;
+axiom bit8 == (lambda op : RMWOp :: (lambda x, y1, y2 : int :: op[x, bit_and(y1,255), bit_and(y2, 255)]));
+axiom bit16 == (lambda op : RMWOp :: (lambda x, y1, y2 : int :: op[x, bit_and(y1,65535), bit_and(y2, 65535)]));
+
 type AwaitOp = [int, int] bool;
 
 const eq, neq, lt, le, gt, ge: AwaitOp;

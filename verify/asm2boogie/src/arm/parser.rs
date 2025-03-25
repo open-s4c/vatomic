@@ -668,13 +668,14 @@ fn parse_comparison_instruction(
     instr_name: &str,
     operands: Vec<Operand>,
 ) -> IResult<&str, ArmInstruction> {
-    if instr_name.to_lowercase() != "cmp" || operands.len() != 2 {
+    if instr_name.to_lowercase() != "cmp" {
         return Err(nom::Err::Error(nom::error::Error::new(
             "",
             nom::error::ErrorKind::Tag,
         )));
     }
 
+    // @NOTE: we ignore sign extension here and always assume uxtb
     Ok((
         "",
         ArmInstruction::Cmp(operands[0].clone(), operands[1].clone()),

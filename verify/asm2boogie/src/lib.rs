@@ -90,7 +90,7 @@ lazy_static! {
     static ref RMW_RE : Regex = Regex::new(r"add|sub|set|cmpxchg|min|max|xchg").unwrap(); 
     static ref ORDERING_RE : Regex = Regex::new(r"(_rlx|_acq|_rel|)$").unwrap(); 
     static ref AWAIT_RE : Regex = Regex::new(r"await_([^_]+)").unwrap();
-    static ref WIDTH_RE : Regex = Regex::new(r"8|16|32|sz|ptr|64|").unwrap();
+    static ref WIDTH_RE : Regex = Regex::new(r"8|16|32|sz|ptr|64").unwrap();
 }
 
 fn classify_function(name: &str) -> FunctionClass {
@@ -124,7 +124,7 @@ fn get_templates_for_type(func_type: FunctionClass) -> Vec<&'static str> {
 }
 
 
-fn get_assumptions(func_type: &str, load_order : &'static str , store_order : &'static str, rmw_op : &'static str, ret_op : &'static str, cond : &'static str) -> String {
+fn get_assumptions(func_type: &str, load_order : & str , store_order : & str, rmw_op : & str, ret_op : & str, cond : & str) -> String {
     match func_type {
         "fence.bpl" => std::format!("    assume (fence_order == {});\n", load_order),
         "read.bpl" => std::format!("    assume (load_order == {});\n    assume (ret == {});\n", load_order, ret_op),
@@ -177,9 +177,10 @@ pub fn generate_boogie_file(
 
     let arm_state = "local_monitor, monitor_exclusive, flags, event_register";
     
-    let atomic_type = ATOMIC_TYPE[&WIDTH_RE.captures(&function.name).unwrap()[0]];
+    let atomic_type = WIDTH_RE.captures(&function.name).map(|c| ATOMIC_TYPE[&c[0]]).unwrap_or(AtomicType::VFENCE);
     let type_width = type_map(atomic_type); 
 
+    println!("function {} type {:?} width {:?}", function.name, atomic_type, &type_width);
     let address = "x0";
     let output = match type_width { Width::Thin => "w0", _ => "x0" };
     let input1 = match type_width { Width::Thin => "w1", _ => "x1" };
@@ -193,22 +194,22 @@ pub fn generate_boogie_file(
         let template_content = fs::read_to_string(&template_path)?;
 
 
-        let mut rmw_op = ""; 
-        let mut read_ret = "ret_old"; 
+        let mut rmw_op = "".to_string(); 
+        let mut read_ret = "ret_old".to_string(); 
         if let Some(rmw_name) = RMW_RE.captures(&function.name) {
             if let Some(op) = RMW_OP.get(&rmw_name[0]) {
-                rmw_op = op;
+                rmw_op = op.to_string();
 
                 if function.name.contains("get") {
-                    read_ret = op;
+                    read_ret = op.to_string();
                 }
             }
         }
 
-        let mut await_cond = ""; 
+        let mut await_cond = "".to_string(); 
         if let Some(await_name) = AWAIT_RE.captures(&function.name) {
             if let Some(op) = AWAIT_OP.get(&await_name[1]) {
-                await_cond = op;
+                await_cond = op.to_string();
             }
         }
 
@@ -219,7 +220,22 @@ pub fn generate_boogie_file(
             ORDERING[&ordering[0]]
         };
 
-        let boogie_code_with_assume = format!("    assume (last_store < step);\n{}\n{}", get_assumptions(template, load_order, store_order, rmw_op, read_ret, await_cond), boogie_code);
+        
+        match atomic_type {
+            AtomicType::V8 => {
+                await_cond = format!("bit8[{}]", await_cond);
+                read_ret = format!("bit8[{}]", read_ret);
+                rmw_op = format!("bit8[{}]", rmw_op);
+            }, 
+            AtomicType::V16 => {
+                await_cond = format!("bit16[{}]", await_cond);
+                read_ret = format!("bit16[{}]", read_ret);
+                rmw_op = format!("bit16[{}]", rmw_op);
+            },
+            _ => {},
+        }
+
+        let boogie_code_with_assume = format!("    assume (last_store < step);\n{}\n{}", get_assumptions(template, load_order, store_order, &rmw_op, &read_ret, &await_cond), boogie_code);
     
         let content = template_content
         .replace("    #implementation", &boogie_code_with_assume)
