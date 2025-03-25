@@ -75,7 +75,7 @@ procedure execute(instr: Instruction) returns (r : int);
         effects == old(effects[
             step := (
                 ConstArray(false)
-                    [read(instr->addr, r) :=
+                    [read(instr->addr, r, true) :=
                         instr is ld
                         || instr is lr
                     ]

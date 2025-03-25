@@ -11,7 +11,7 @@ procedure read(ret : RMWOp, load_order: OrderRelation)
     ensures {:msg "load order"}
         load_order[last_load, old(step), step, ordering, effects];
     ensures {:msg "correct output"} (
-            exists v : int :: effects[last_load][read(old(a0),v)] &&
+            exists v : int :: effects[last_load][read(old(a0),v,true)] &&
                 a0 == ret[v, old(a1), old(a2)]
         );
 {
@@ -39,7 +39,7 @@ procedure rmw (op: RMWOp)
     ensures {:msg "if no write happened, the value from memory is already the result of operation"} (
         var address, input1, input2 := old(a0), old(a1), old(a2);
         no_writes(old(step), step, last_store) ==>
-            (exists a,v : int :: effects[last_load][read(a,v)] && v == op[v, input1, input2])
+            (exists a,v : int, vis : bool :: effects[last_load][read(a,v,vis)] && v == op[v, input1, input2])
     );
     
     ensures {:msg "atomicity"}
@@ -49,7 +49,7 @@ procedure rmw (op: RMWOp)
     ensures {:msg "store produces write to correct address with correct value"}
         !no_writes(old(step), step, last_store) ==> (
             var address, input1, input2 := old(a0), old(a1), old(a2);
-            (exists a,v : int :: effects[last_load][read(a,v)]
+            (exists a,v : int, vis : bool :: effects[last_load][read(a,v,vis)]
                 && effects[last_store][write(address, op[v, input1, input2])])
         );
 {

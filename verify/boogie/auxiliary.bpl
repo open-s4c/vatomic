@@ -33,7 +33,8 @@ type StateIndex = int;
 
 
 datatype Effect {
-    read(addr: int, value: int),
+    // read(a,v,vis) == read at a the value v. vis means whether this read is visible to barriers
+    read(addr: int, value: int, visible: bool),
     write(addr: int, value: int)
 }
 var last_load, last_store: StateIndex;

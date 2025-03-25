@@ -2,6 +2,8 @@ mod generate;
 mod parser;
 mod transform;
 
+use std::fmt::Display;
+
 pub use generate::{arm_to_boogie_code, get_used_registers};
 pub use parser::parse_arm_assembly;
 pub use transform::{extract_arm_functions, remove_directives, transform_labels};
@@ -45,6 +47,7 @@ pub enum Operand {
     Label(String),
     ShiftedRegister(Register, String, i64),
     RegisterList(Vec<Register>),
+    FenceMode(FenceType),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -116,10 +119,23 @@ pub struct MemoryAttrs {
     pub release: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MoveOp {
     Mov,
     Mvn,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum FenceType {
+    SY,
+    LD,
+}
+
+impl Display for FenceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self { Self::SY => "SY()", Self::LD => "LD()" })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -135,6 +151,8 @@ pub enum ArmInstruction {
     MemoryExclusive(MemoryOp, MemoryAttrs, Operand, Operand, Operand),
     Cmp(Operand, Operand),
     Csel(Operand, Operand, Operand, ConditionCode),
+
+    Dmb(FenceType),
 
     Branch(Option<ConditionCode>, Operand),
     BranchLink(Operand),

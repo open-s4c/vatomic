@@ -10,7 +10,7 @@ procedure rmw (op: RMWOp)
     ensures {:msg "if no write happened, the value from memory is already the result of operation"} (
         var address, input1, input2 := old(#address), old(#input1), old(#input2);
         no_writes(old(step), step, last_store) ==>
-            (exists a,v : int :: effects[last_load][read(a,v)] && v == op[v, input1, input2])
+            (exists a,v : int, vis : bool :: effects[last_load][read(a,v,vis)] && v == op[v, input1, input2])
         );
     ensures {:msg "atomicity"}
         !no_writes(old(step), step, last_store) ==> (
@@ -19,7 +19,7 @@ procedure rmw (op: RMWOp)
     ensures {:msg "store produces write to correct address with correct value"}
         !no_writes(old(step), step, last_store) ==> (
             var address, input1, input2 := old(#address), old(#input1), old(#input2);
-            (exists a,v : int :: effects[last_load][read(a,v)]
+            (exists a,v : int, vis : bool :: effects[last_load][read(a,v,vis)]
                 && effects[last_store][write(address, op[v, input1, input2])])
         );
 {

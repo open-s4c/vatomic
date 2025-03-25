@@ -136,6 +136,12 @@ pub fn arm_to_boogie_code(function: &ArmFunction) -> String {
                     ));
                 }
             }
+            ArmInstruction::Dmb(mode) => {
+                code.push_str(&format!(
+                    "    call {} := execute(dmb({}));\n",
+                    DUMMY_REG, mode
+                ));
+            }
             ArmInstruction::Return(_) => {
                 code.push_str("    return;\n");
             }

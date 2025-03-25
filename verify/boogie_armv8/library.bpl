@@ -9,7 +9,8 @@ datatype Flags {
 datatype Ordering {
     AcquirePC(),
     Acquire(),
-    Release()
+    Release(),
+    Fence(mode : FenceType)
 }
 
 datatype Monitor {
@@ -22,6 +23,10 @@ var flags: Flags;
 var monitor_exclusive: bool;
 var event_register: bool;
 
+datatype FenceType {
+    SY(),
+    LD()
+}
 
 datatype Instruction {
     ld(acq: bool, addr: int),
@@ -39,6 +44,7 @@ datatype Instruction {
     wfe(),
     sevl(),
 
+    dmb(mode : FenceType),
     //LSE instructions
 
     mvn(src: int), // complements the bits in result
@@ -81,8 +87,8 @@ procedure verify_execute(instr : Instruction) returns (r : int)
 
 
     ensures {:msg "load return is correct"} (
-            forall a, v: int :: 
-                effects[old(step)][read(a,v)] && returning_load(instr)  ==> 
+            forall a, v: int, vis : bool :: 
+                effects[old(step)][read(a,v,vis)] && returning_load(instr)  ==> 
                     r == v
     );
 
@@ -107,6 +113,14 @@ procedure verify_execute(instr : Instruction) returns (r : int)
             atomic[i, j] ==> i <= j && j < step);
 {
     call r := execute(instr);
+}
+
+function visible(instr : Instruction) : bool {
+    ! (instr is stumax
+    || instr is stclr
+    || instr is stset
+    || instr is steor
+    || instr is stadd)
 }
 
 procedure execute(instr: Instruction) returns (r : int);
@@ -195,7 +209,7 @@ procedure execute(instr: Instruction) returns (r : int);
         &&
         (effects == old(effects[step := 
             ConstArray(false)
-                    [read(instr->addr, r) :=
+                    [read(instr->addr, r, visible(instr)) :=
                         instr is ld
                         || instr is ldx
                         || instr is cas
@@ -245,6 +259,7 @@ procedure execute(instr: Instruction) returns (r : int);
                         || instr is ldadd || instr is stadd
                     )
                 ]
+                [Fence(instr->mode) := instr is dmb]
             ]))
         &&
         (   // external write can clear monitor at any moment. has to set event register.
@@ -322,31 +337,10 @@ function ppo(step1, step2: StateIndex, ordering: [StateIndex][Ordering] bool, ef
         ordering[step1][Acquire()] ||
         ordering[step1][AcquirePC()] ||
         ordering[step2][Release()] ||
-        (ordering[step1][Release()] && ordering[step2][Acquire()])
-
-        /*******************
-         * * * WARNING * * *
-           
-                @@@
-               @@@@@
-                @@@
-                 @
-             @@@@ @@@@
-            @@@@   @@@@
-             @@     @@
-         
-         LD fences can not be 
-              formalized
-        just with read effects.
-         they would require an
-              additional
-              Ordering()
-         on loads that excludes
-              stadd etc.    
-
-        *********************/
-
-
+        (ordering[step1][Release()] && ordering[step2][Acquire()]) ||
+        (exists f : int :: step1 < f && f < step2 && ordering[f][Fence(SY())]) ||
+        (exists f, a, v : int :: step1 < f && f < step2 && ordering[f][Fence(LD())]
+            && effects[step1][read(a,v,true)])
     )
 }
 
