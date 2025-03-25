@@ -6,3 +6,10 @@ cmpxchg
 fence
 fence_acq
 await_eq_add
+await_gt_sub
+inc
+dec
+dec_get
+inc_get
+get_dec
+get_inc

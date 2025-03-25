@@ -24,6 +24,11 @@ pub enum UnifiedInstruction {
 }
 
 
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub enum RmwType {
+    Return,
+    NoReturn,
+}
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum FunctionClass {
@@ -31,7 +36,7 @@ pub enum FunctionClass {
     Write,
     Await,
     AwaitRmw,
-    Rmw,
+    Rmw(RmwType),
     Fence,
 }
 
@@ -68,6 +73,8 @@ static RMW_OP: phf::Map<&'static str, &'static str> = phf_map! {
     "add" => "add_op",
     "sub" => "sub_op",
     "set" => "set_op",
+    "dec" => "dec_op",
+    "inc" => "inc_op",
     "min" => "min_op",
     "max" => "max_op",
 };
@@ -87,7 +94,8 @@ static ATOMIC_TYPE: phf::Map<&'static str, AtomicType> = phf_map! {
 
 
 lazy_static! {
-    static ref RMW_RE : Regex = Regex::new(r"add|sub|set|cmpxchg|min|max|xchg").unwrap(); 
+    // @TODO: generate automatically from the keys
+    static ref RMW_RE : Regex = Regex::new(r"(?<get_>get_)?(?<type>add|sub|set|cmpxchg|min|max|xchg|dec|inc)(?<_get>_get)?").unwrap(); 
     static ref ORDERING_RE : Regex = Regex::new(r"(_rlx|_acq|_rel|)$").unwrap(); 
     static ref AWAIT_RE : Regex = Regex::new(r"await_([^_]+)").unwrap();
     static ref WIDTH_RE : Regex = Regex::new(r"8|16|32|sz|ptr|64").unwrap();
@@ -107,7 +115,8 @@ fn classify_function(name: &str) -> FunctionClass {
     } else if name.contains("fence") {
         FunctionClass::Fence
     } else {
-        FunctionClass::Rmw
+        let ret = if name.contains("get") { RmwType::Return } else { RmwType::NoReturn };
+        FunctionClass::Rmw(ret)
     }
 }
 
@@ -117,7 +126,8 @@ fn get_templates_for_type(func_type: FunctionClass) -> Vec<&'static str> {
         FunctionClass::Read => vec!["read_only.bpl", "read.bpl"],
         FunctionClass::Write => vec!["write.bpl", "must_store.bpl"],
         FunctionClass::Await => vec!["read_only.bpl", "read.bpl", "await.bpl"],
-        FunctionClass::Rmw => vec!["read.bpl", "write.bpl", "rmw.bpl"],
+        FunctionClass::Rmw(RmwType::NoReturn) => vec!["write.bpl", "rmw.bpl"],
+        FunctionClass::Rmw(RmwType::Return) => vec!["read.bpl", "write.bpl", "rmw.bpl"],
         FunctionClass::AwaitRmw => vec!["read.bpl", "write.bpl", "rmw.bpl", "await.bpl"],
         FunctionClass::Fence => vec!["fence.bpl"],
     }
@@ -189,51 +199,53 @@ pub fn generate_boogie_file(
     let target_path = Path::new(output_dir).join(&function.name);
     fs::create_dir_all(&target_path)?;
 
+    
+    let mut rmw_op = "".to_string(); 
+    let mut read_ret = "ret_old".to_string();
+    if let Some(rmw_name) = RMW_RE.captures(&function.name) {
+        if let Some(op) = RMW_OP.get(rmw_name.name("type").unwrap().as_str()) {
+            rmw_op = op.to_string();
+
+            if rmw_name.name("get_").is_some() {
+                read_ret = op.to_string();
+            }
+        }
+    }
+
+    let mut await_cond = "".to_string(); 
+    if let Some(await_name) = AWAIT_RE.captures(&function.name) {
+        if let Some(op) = AWAIT_OP.get(&await_name[1]) {
+            await_cond = op.to_string();
+        }
+    }
+
+    let ordering = ORDERING_RE.captures(&function.name).unwrap();
+    let (load_order, store_order) = if func_type == FunctionClass::Fence {
+        (FENCE_ORDERING[&ordering[0]], "")  
+    } else {
+        ORDERING[&ordering[0]]
+    };
+
+    
+    match atomic_type {
+        AtomicType::V8 => {
+            await_cond = format!("bit8[{}]", await_cond);
+            read_ret = format!("bit8[{}]", read_ret);
+            rmw_op = format!("bit8[{}]", rmw_op);
+        }, 
+        AtomicType::V16 => {
+            await_cond = format!("bit16[{}]", await_cond);
+            read_ret = format!("bit16[{}]", read_ret);
+            rmw_op = format!("bit16[{}]", rmw_op);
+        },
+        _ => {},
+    }
+
     for template in templates {
         let template_path = Path::new(template_dir).join(template);
         let template_content = fs::read_to_string(&template_path)?;
 
 
-        let mut rmw_op = "".to_string(); 
-        let mut read_ret = "ret_old".to_string(); 
-        if let Some(rmw_name) = RMW_RE.captures(&function.name) {
-            if let Some(op) = RMW_OP.get(&rmw_name[0]) {
-                rmw_op = op.to_string();
-
-                if function.name.contains("get") {
-                    read_ret = op.to_string();
-                }
-            }
-        }
-
-        let mut await_cond = "".to_string(); 
-        if let Some(await_name) = AWAIT_RE.captures(&function.name) {
-            if let Some(op) = AWAIT_OP.get(&await_name[1]) {
-                await_cond = op.to_string();
-            }
-        }
-
-        let ordering = ORDERING_RE.captures(&function.name).unwrap();
-        let (load_order, store_order) = if func_type == FunctionClass::Fence {
-            (FENCE_ORDERING[&ordering[0]], "")  
-        } else {
-            ORDERING[&ordering[0]]
-        };
-
-        
-        match atomic_type {
-            AtomicType::V8 => {
-                await_cond = format!("bit8[{}]", await_cond);
-                read_ret = format!("bit8[{}]", read_ret);
-                rmw_op = format!("bit8[{}]", rmw_op);
-            }, 
-            AtomicType::V16 => {
-                await_cond = format!("bit16[{}]", await_cond);
-                read_ret = format!("bit16[{}]", read_ret);
-                rmw_op = format!("bit16[{}]", rmw_op);
-            },
-            _ => {},
-        }
 
         let boogie_code_with_assume = format!("    assume (last_store < step);\n{}\n{}", get_assumptions(template, load_order, store_order, &rmw_op, &read_ret, &await_cond), boogie_code);
     

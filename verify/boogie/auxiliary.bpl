@@ -178,7 +178,7 @@ function no_writes(from, to, write: StateIndex): bool {
 
 type RMWOp = [int, int, int] int;
 
-const cmpset, add_op, sub_op, set_op, min_op, max_op, ret_old: RMWOp;
+const cmpset, add_op, sub_op, set_op, min_op, max_op, dec_op, inc_op, ret_old: RMWOp;
 
 axiom cmpset == (lambda x, y1, y2 : int :: if x == y1 then y2 else x);
 axiom add_op == (lambda x, y, _: int :: x + y);
@@ -186,6 +186,8 @@ axiom sub_op == (lambda x, y, _: int :: x - y);
 axiom set_op == (lambda x, y, _: int :: y);
 axiom min_op == (lambda x, y, _: int :: if x < y then x else y);
 axiom max_op == (lambda x, y, _: int :: if x < y then y else x);
+axiom dec_op == (lambda x, _1, _2: int :: x-1);
+axiom inc_op == (lambda x, _1, _2: int :: x+1);
 
 axiom ret_old == (lambda x, _1, _2 : int :: x);
 
