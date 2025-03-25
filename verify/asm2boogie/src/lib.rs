@@ -72,11 +72,25 @@ static RMW_OP: phf::Map<&'static str, &'static str> = phf_map! {
     "max" => "max_op",
 };
 
+
+
+static ATOMIC_TYPE: phf::Map<&'static str, AtomicType> = phf_map! {
+    "64" => AtomicType::V64,
+    "sz" => AtomicType::VSZ,
+    "ptr" => AtomicType::VPTR,
+    "32" => AtomicType::V32,
+    "16" => AtomicType::V16,
+    "8" => AtomicType::V8,
+    "" => AtomicType::VFENCE,
+};
+
+
+
 lazy_static! {
     static ref RMW_RE : Regex = Regex::new(r"add|sub|set|cmpxchg|min|max|xchg").unwrap(); 
     static ref ORDERING_RE : Regex = Regex::new(r"(_rlx|_acq|_rel|)$").unwrap(); 
     static ref AWAIT_RE : Regex = Regex::new(r"await_([^_]+)").unwrap();
-    static ref WIDTH_RE : Regex = Regex::new(r"ptr|64|sz|8|32").unwrap();
+    static ref WIDTH_RE : Regex = Regex::new(r"8|16|32|sz|ptr|64|").unwrap();
 }
 
 fn classify_function(name: &str) -> FunctionClass {
@@ -128,20 +142,31 @@ pub enum Width {
     Wide,
 }
 
-
-pub fn wide_arch_widths(type_name : &str) -> Width {
-    match type_name { "32" | "8" => Width::Thin, _ => Width::Wide }
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum AtomicType {
+    V64,
+    VSZ,
+    VPTR,
+    V32,
+    V16,
+    V8,
+    VFENCE,
 }
 
-pub fn thin_arch_widths(type_name : &str) -> Width {
-    match type_name { "32" | "8" | "sz" | "ptr" => Width::Thin, _ => Width::Wide }
+
+pub fn wide_arch_widths(type_name : AtomicType) -> Width {
+    match type_name { AtomicType::V32 | AtomicType::V8 => Width::Thin, _ => Width::Wide }
+}
+
+pub fn thin_arch_widths(type_name : AtomicType) -> Width {
+    match type_name { AtomicType::V32 | AtomicType::V8 | AtomicType::VSZ | AtomicType::VPTR => Width::Thin, _ => Width::Wide }
 }
 
 pub fn generate_boogie_file(
     function: &ArmFunction,
     output_dir: &str,
     template_dir: &str,
-    type_map: fn(&str) -> Width,
+    type_map: fn(AtomicType) -> Width,
 ) -> Result<(), std::io::Error> {
     
     let func_type = classify_function(&function.name);
@@ -152,7 +177,8 @@ pub fn generate_boogie_file(
 
     let arm_state = "local_monitor, monitor_exclusive, flags, event_register";
     
-    let type_width = WIDTH_RE.captures(&function.name).map(|fn_type| type_map(&fn_type[0])).unwrap_or(Width::Wide);
+    let atomic_type = ATOMIC_TYPE[&WIDTH_RE.captures(&function.name).unwrap()[0]];
+    let type_width = type_map(atomic_type); 
 
     let address = "x0";
     let output = match type_width { Width::Thin => "w0", _ => "x0" };

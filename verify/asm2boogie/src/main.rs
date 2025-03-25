@@ -138,7 +138,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
             log::info!("Successfully parsed arm assembly");
 
-            let processed_functions = extract_arm_functions(parsed, Some(&function_names), &["ptr", "32", "64", ""])
+            let processed_functions = extract_arm_functions(parsed, Some(&function_names), &["ptr", "32", "64", "sz", "8", ""])
                 .into_iter()
                 .map(|f| transform_labels(&f))
                 .map(|f| remove_directives(&f))
