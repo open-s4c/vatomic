@@ -32,15 +32,15 @@ pub enum FunctionClass {
     Await,
     AwaitRmw,
     Rmw,
+    Fence,
 }
-
 
 
 static ORDERING: phf::Map<&'static str, (&'static str,&'static str)> = phf_map! {
     "" => ("order_acq_sc","order_rel_sc"),
-    "_rlx" => ("order_acq","order_rlx"),
-    "_acq" => ("order_rlx","order_rel"),
-    "_rel" => ("order_rlx","order_rlx"),
+    "_acq" => ("order_acq","order_rlx"),
+    "_rel" => ("order_rlx","order_rel"),
+    "_rlx" => ("order_rlx","order_rlx"),
 };
 
 
@@ -80,9 +80,11 @@ fn classify_function(name: &str) -> FunctionClass {
         } else {
             FunctionClass::Await
         }
+    } else if name.contains("fence") {
+        FunctionClass::Fence
     } else {
         FunctionClass::Rmw
-    } // @TODO: fences!
+    }
 }
 
 
