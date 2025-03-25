@@ -163,8 +163,9 @@ pub fn get_used_registers(function: &ArmFunction) -> String {
     }
 
     let mut result = registers.into_iter().collect::<Vec<_>>();
-    result.sort();
     result.push(DUMMY_REG.to_string());
+    result.sort();
+    result.dedup();
     result.join(", ")
 }
 

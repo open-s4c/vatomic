@@ -75,7 +75,8 @@ static RMW_OP: phf::Map<&'static str, &'static str> = phf_map! {
 lazy_static! {
     static ref RMW_RE : Regex = Regex::new(r"add|sub|set|cmpxchg|min|max|xchg").unwrap(); 
     static ref ORDERING_RE : Regex = Regex::new(r"(_rlx|_acq|_rel|)$").unwrap(); 
-    static ref AWAIT_RE : Regex = Regex::new(r"await_([^_]+)").unwrap(); 
+    static ref AWAIT_RE : Regex = Regex::new(r"await_([^_]+)").unwrap();
+    static ref WIDTH_RE : Regex = Regex::new(r"ptr|64|sz|8|32").unwrap();
 }
 
 fn classify_function(name: &str) -> FunctionClass {
@@ -120,10 +121,27 @@ fn get_assumptions(func_type: &str, load_order : &'static str , store_order : &'
     }
 }
 
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Width {
+    Thin,
+    Wide,
+}
+
+
+pub fn wide_arch_widths(type_name : &str) -> Width {
+    match type_name { "32" | "8" => Width::Thin, _ => Width::Wide }
+}
+
+pub fn thin_arch_widths(type_name : &str) -> Width {
+    match type_name { "32" | "8" | "sz" | "ptr" => Width::Thin, _ => Width::Wide }
+}
+
 pub fn generate_boogie_file(
     function: &ArmFunction,
     output_dir: &str,
     template_dir: &str,
+    type_map: fn(&str) -> Width,
 ) -> Result<(), std::io::Error> {
     
     let func_type = classify_function(&function.name);
@@ -133,10 +151,13 @@ pub fn generate_boogie_file(
     let registers = get_used_registers(function);
 
     let arm_state = "local_monitor, monitor_exclusive, flags, event_register";
+    
+    let type_width = WIDTH_RE.captures(&function.name).map(|fn_type| type_map(&fn_type[0])).unwrap_or(Width::Wide);
+
     let address = "x0";
-    let output = "x0";
-    let input1 = "x1";
-    let input2 = "x2";
+    let output = match type_width { Width::Thin => "w0", _ => "x0" };
+    let input1 = match type_width { Width::Thin => "w1", _ => "x1" };
+    let input2 = match type_width { Width::Thin => "w2", _ => "x2" };
 
     let target_path = Path::new(output_dir).join(&function.name);
     fs::create_dir_all(&target_path)?;
