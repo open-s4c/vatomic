@@ -98,13 +98,7 @@ fn parse_memory_operand(input: &str) -> IResult<&str, MemoryOperand> {
 
 fn parse_label(input: &str) -> IResult<&str, String> {
     map(
-        recognize((
-            alt((
-                take_while1(|c: char| c.is_alphabetic() || c == '_' || c == '.'),
-                tag("."),
-            )),
-            take_while(|c: char| c.is_alphanumeric() || c == '_' || c == '.' || c == '$'),
-        )),
+        take_while1(|c: char| c.is_alphanumeric() || c == '_' || c == '.' || c == '$' || c == 'f' || c == 'b'),
         |s: &str| s.to_string(),
     )
     .parse(input)
@@ -124,8 +118,8 @@ fn parse_operand(input: &str) -> IResult<&str, Operand> {
         map(parse_memory_operand, Operand::Memory),
         map(parse_register, Operand::Register),
         map(parse_fence_mode_operand, Operand::FenceMode),
-        map(parse_immediate, Operand::Immediate),
         map(parse_label, Operand::Label),
+        map(parse_immediate, Operand::Immediate),
     ))
     .parse(input)
 }
