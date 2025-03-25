@@ -25,7 +25,7 @@ pub enum UnifiedInstruction {
 
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum FunctionClass {
     Read,
     Write,
@@ -35,6 +35,15 @@ pub enum FunctionClass {
     Fence,
 }
 
+
+
+
+static FENCE_ORDERING: phf::Map<&'static str, &'static str> = phf_map! {
+    "" => "order_fence_sc",
+    "_acq" => "order_fence_acq",
+    "_rel" => "order_fence_rel",
+    "_rlx" => "order_rlx",
+};
 
 static ORDERING: phf::Map<&'static str, (&'static str,&'static str)> = phf_map! {
     "" => ("order_acq_sc","order_rel_sc"),
@@ -57,7 +66,7 @@ static AWAIT_OP: phf::Map<&'static str, &'static str> = phf_map! {
 static RMW_OP: phf::Map<&'static str, &'static str> = phf_map! {
     "cmpxchg" => "cmpset",
     "add" => "add_op",
-// @TODO    "sub" => "",
+    "sub" => "sub_op",
     "set" => "set_op",
     "min" => "min_op",
     "max" => "max_op",
@@ -95,16 +104,18 @@ fn get_templates_for_type(func_type: FunctionClass) -> Vec<&'static str> {
         FunctionClass::Await => vec!["read_only.bpl", "read.bpl", "await.bpl"],
         FunctionClass::Rmw => vec!["read.bpl", "write.bpl", "rmw.bpl"],
         FunctionClass::AwaitRmw => vec!["read.bpl", "write.bpl", "rmw.bpl", "await.bpl"],
+        FunctionClass::Fence => vec!["fence.bpl"],
     }
 }
 
 
 fn get_assumptions(func_type: &str, load_order : &'static str , store_order : &'static str, rmw_op : &'static str, ret_op : &'static str, cond : &'static str) -> String {
     match func_type {
-        "read.bpl" => std::format!("    assume (last_store < step);\n    assume (load_order == {});\n    assume (ret == {});\n", load_order, ret_op),
-        "write.bpl" => std::format!("    assume (last_store < step);\n    assume (store_order == {});\n", store_order),
-        "await.bpl" => std::format!("    assume (last_store < step);\n    assume (cond == {});\n", cond),
-        "rmw.bpl" => std::format!("    assume (last_store < step);\n    assume (op == {});\n", rmw_op),
+        "fence.bpl" => std::format!("    assume (fence_order == {});\n", load_order),
+        "read.bpl" => std::format!("    assume (load_order == {});\n    assume (ret == {});\n", load_order, ret_op),
+        "write.bpl" => std::format!("    assume (store_order == {});\n", store_order),
+        "await.bpl" => std::format!("    assume (cond == {});\n", cond),
+        "rmw.bpl" => std::format!("    assume (op == {});\n", rmw_op),
         _ => "".to_string(),
     }
 }
@@ -154,9 +165,13 @@ pub fn generate_boogie_file(
         }
 
         let ordering = ORDERING_RE.captures(&function.name).unwrap();
-        let (load_order, store_order) = ORDERING.get(&ordering[0]).unwrap();
+        let (load_order, store_order) = if func_type == FunctionClass::Fence {
+            (FENCE_ORDERING[&ordering[0]], "")  
+        } else {
+            ORDERING[&ordering[0]]
+        };
 
-        let boogie_code_with_assume = format!("{} {}", get_assumptions(template, load_order, store_order, rmw_op, read_ret, await_cond), boogie_code);
+        let boogie_code_with_assume = format!("    assume (last_store < step);\n{}\n{}", get_assumptions(template, load_order, store_order, rmw_op, read_ret, await_cond), boogie_code);
     
         let content = template_content
         .replace("    #implementation", &boogie_code_with_assume)
