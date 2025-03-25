@@ -2,7 +2,10 @@ read
 read_acq
 read_rlx
 write
+write_rel
+write_rlx
 cmpxchg
+xchg
 fence
 fence_acq
 await_eq_add

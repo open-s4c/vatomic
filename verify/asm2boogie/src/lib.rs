@@ -94,6 +94,7 @@ static ATOMIC_TYPE: phf::Map<&'static str, AtomicType> = phf_map! {
 
 
 lazy_static! {
+    static ref RETURNING_RMW : Regex = Regex::new(r"get|cmpxchg|xchg").unwrap(); 
     // @TODO: generate automatically from the keys
     static ref RMW_RE : Regex = Regex::new(r"(?<get_>get_)?(?<type>add|sub|set|cmpxchg|min|max|xchg|dec|inc)(?<_get>_get)?").unwrap(); 
     static ref ORDERING_RE : Regex = Regex::new(r"(_rlx|_acq|_rel|)$").unwrap(); 
@@ -115,7 +116,7 @@ fn classify_function(name: &str) -> FunctionClass {
     } else if name.contains("fence") {
         FunctionClass::Fence
     } else {
-        let ret = if name.contains("get") { RmwType::Return } else { RmwType::NoReturn };
+        let ret = if RETURNING_RMW.captures(name).is_some() { RmwType::Return } else { RmwType::NoReturn };
         FunctionClass::Rmw(ret)
     }
 }
