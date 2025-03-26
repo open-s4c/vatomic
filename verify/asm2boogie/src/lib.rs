@@ -25,7 +25,7 @@ pub enum UnifiedInstruction {
 
 
 #[derive(Debug, Clone, PartialEq, Copy)]
-pub enum RmwType {
+pub enum ReturnType {
     Return,
     NoReturn,
 }
@@ -34,9 +34,9 @@ pub enum RmwType {
 pub enum FunctionClass {
     Read,
     Write,
-    Await,
+    Await(ReturnType),
     AwaitRmw,
-    Rmw(RmwType),
+    Rmw(ReturnType),
     Fence,
 }
 
@@ -111,13 +111,13 @@ fn classify_function(name: &str) -> FunctionClass {
     } else if name.contains("await") {
         if RMW_RE.is_match(name) {
             FunctionClass::AwaitRmw
-        } else {
-            FunctionClass::Await
+        } else  {
+            FunctionClass::Await(if name.contains("eq") { ReturnType::NoReturn } else { ReturnType::Return })
         }
     } else if name.contains("fence") {
         FunctionClass::Fence
     } else {
-        let ret = if RETURNING_RMW.captures(name).is_some() { RmwType::Return } else { RmwType::NoReturn };
+        let ret = if RETURNING_RMW.captures(name).is_some() { ReturnType::Return } else { ReturnType::NoReturn };
         FunctionClass::Rmw(ret)
     }
 }
@@ -127,9 +127,10 @@ fn get_templates_for_type(func_type: FunctionClass) -> Vec<&'static str> {
     match func_type {
         FunctionClass::Read => vec!["read_only.bpl", "read.bpl"],
         FunctionClass::Write => vec!["write.bpl", "must_store.bpl"],
-        FunctionClass::Await => vec!["read_only.bpl", "read.bpl", "await.bpl"],
-        FunctionClass::Rmw(RmwType::NoReturn) => vec!["write.bpl", "rmw.bpl"],
-        FunctionClass::Rmw(RmwType::Return) => vec!["read.bpl", "write.bpl", "rmw.bpl"],
+        FunctionClass::Await(ReturnType::NoReturn) => vec!["await.bpl"],
+        FunctionClass::Await(ReturnType::Return) => vec!["read_only.bpl", "read.bpl", "await.bpl"],
+        FunctionClass::Rmw(ReturnType::NoReturn) => vec!["write.bpl", "rmw.bpl"],
+        FunctionClass::Rmw(ReturnType::Return) => vec!["read.bpl", "write.bpl", "rmw.bpl"],
         FunctionClass::AwaitRmw => vec!["read.bpl", "write.bpl", "rmw.bpl", "await.bpl"],
         FunctionClass::Fence => vec!["fence.bpl"],
     }
@@ -262,7 +263,7 @@ pub fn generate_boogie_file(
 
     }
 
-    println!("generated verification templates for function {}", function.name);
+    println!("generated verification templates for function {} ({:?})", function.name, atomic_type);
     Ok(())
 }
 
