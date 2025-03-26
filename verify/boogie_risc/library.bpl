@@ -133,16 +133,16 @@ function bnez(r: int): bool {
 }
 
 
-function ppo(step1, step2: StateIndex, ordering: [StateIndex][Ordering] bool, effects: [StateIndex][Effect] bool): bool {
+function ppo(step1, step2: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect): bool {
     step1 < step2 && (
         // Barrier-ordered-before
-        ordering[step1][Acquire()] ||
-        ordering[step1][AcquirePC()] ||
-        ordering[step2][Release()] ||
-        (ordering[step1][Release()] && ordering[step2][Acquire()]) ||
+        ordering[step1] == Acquire() ||
+        ordering[step1] == AcquirePC() ||
+        ordering[step2] == Release() ||
+        (ordering[step1] == Release() && ordering[step2] == Acquire()) ||
 
         (exists fenceId: StateIndex, fence: Ordering, e1, e2: Effect :: 
-            fence is Fence && ordering[fenceId][fence] && effects[step1][e1] && effects[step2][e2] &&
+            fence is Fence && ordering[fenceId] == fence && effects[step1] == e1 && effects[step2] == e2 &&
             (step1 < fenceId && fenceId < step2) &&
             ((fence->ra && e1 is read) ||
              (fence->wa && e1 is write)
@@ -154,6 +154,6 @@ function ppo(step1, step2: StateIndex, ordering: [StateIndex][Ordering] bool, ef
     )
 }
 
-function is_sc(order: [Ordering] bool): bool {
-    order[Acquire()] || order[Release()]
+function is_sc(order: Ordering): bool {
+    order is Acquire || order is Release
 }

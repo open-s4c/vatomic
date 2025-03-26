@@ -6,7 +6,7 @@ procedure must_store()
         old(step) <= last_store && last_store < step
     );
     ensures {:msg "produces write effect"}
-        effects[last_store][write(old(#address), old(#input1))];
+        effects[last_store] == write(old(#address), old(#input1));
 {
     #implementation
 }

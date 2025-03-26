@@ -7,7 +7,7 @@ procedure write(store_order: OrderRelation)
     modifies step, effects, ordering, atomic, last_load, last_store, #state, #registers;
     ensures {:msg "no other writes"}
         (forall i : StateIndex ::
-            old(step) <= i && i < step && (exists e : Effect :: effects[i][e] && (e is write))
+            old(step) <= i && i < step && (exists e : Effect :: effects[i] == e && (e is write))
                 ==> i == last_store);
     ensures {:msg "store ordering"}
         !no_writes(old(step), step, last_store)

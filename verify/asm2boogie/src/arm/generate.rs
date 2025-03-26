@@ -16,7 +16,7 @@ pub fn arm_to_boogie_code(function: &ArmFunction) -> String {
                 if backward_branch_targets.contains(name) {
                     code.push_str("    assert last_store < old(step);\n");
                     code.push_str("    assert step >= old(step);\n");
-                    code.push_str("    assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i][e] ==> ! (e is write));\n\n");
+                    code.push_str("    assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i] == e ==> ! (e is write));\n\n");
                 }
             }
             ArmInstruction::Arithmetic(op, dest, src1, src2_opt) => {

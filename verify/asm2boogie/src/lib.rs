@@ -72,6 +72,7 @@ static RMW_OP: phf::Map<&'static str, &'static str> = phf_map! {
     "cmpxchg" => "cmpset",
     "add" => "add_op",
     "sub" => "sub_op",
+    "xchg" => "set_op",
     "set" => "set_op",
     "dec" => "dec_op",
     "inc" => "inc_op",
@@ -179,7 +180,6 @@ pub fn generate_boogie_file(
     template_dir: &str,
     type_map: fn(AtomicType) -> Width,
 ) -> Result<(), std::io::Error> {
-    
     let func_type = classify_function(&function.name);
     let templates = get_templates_for_type(func_type);
 
@@ -191,7 +191,6 @@ pub fn generate_boogie_file(
     let atomic_type = WIDTH_RE.captures(&function.name).map(|c| ATOMIC_TYPE[&c[0]]).unwrap_or(AtomicType::VFENCE);
     let type_width = type_map(atomic_type); 
 
-    println!("function {} type {:?} width {:?}", function.name, atomic_type, &type_width);
     let address = "x0";
     let output = match type_width { Width::Thin => "w0", _ => "x0" };
     let input1 = match type_width { Width::Thin => "w1", _ => "x1" };
@@ -263,6 +262,7 @@ pub fn generate_boogie_file(
 
     }
 
+    println!("generated verification templates for function {}", function.name);
     Ok(())
 }
 

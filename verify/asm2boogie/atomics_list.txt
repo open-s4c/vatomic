@@ -5,9 +5,17 @@ write
 write_rel
 write_rlx
 cmpxchg
+cmpxchg_acq
+cmpxchg_rel
+cmpxchg_rlx
 xchg
+xchg_acq
+xchg_rel
+xchg_rel
 fence
 fence_acq
+fence_rel
+fence_rlx
 await_eq_add
 await_gt_sub
 inc

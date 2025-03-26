@@ -10,7 +10,8 @@ datatype Ordering {
     AcquirePC(),
     Acquire(),
     Release(),
-    Fence(mode : FenceType)
+    Fence(mode : FenceType),
+    NoOrd()
 }
 
 datatype Monitor {
@@ -34,6 +35,7 @@ datatype Instruction {
     st(rel: bool, src, addr: int),
     stx(rel: bool, src, addr: int),
 
+    csel(src1, src2: int, cond: bool),
     mov(src: int),
     cmp(opnd1, opnd2: int),
     add(first, second: int),
@@ -80,7 +82,7 @@ function returning_load(instr : Instruction) : bool {
 
 /* Prove meta properties about execute, that are used in the proof */
 procedure verify_execute(instr : Instruction) returns (r : int)
-    modifies flags, effects, ordering, step, monitor_exclusive, event_register;
+    modifies flags, step, monitor_exclusive, event_register;
 
     requires (instr is stx ==> local_monitor is exclusive && local_monitor->addr == instr->addr);
     requires instr is wfe ==> event_register || monitor_exclusive;
@@ -88,18 +90,18 @@ procedure verify_execute(instr : Instruction) returns (r : int)
 
     ensures {:msg "load return is correct"} (
             forall a, v: int, vis : bool :: 
-                effects[old(step)][read(a,v,vis)] && returning_load(instr)  ==> 
+                effects[old(step)] == read(a,v,vis) && returning_load(instr)  ==> 
                     r == v
     );
 
     requires last_load < step;
     requires last_store < step;
     ensures {:msg "last_load tracked correctly"} (
-            (exists e: Effect :: effects[old(step)][e] && e is read) ==
+            (effects[old(step)] is read) ==
                 (old(step) == last_load)
     );
     ensures ( // can define no_writes through last_store 
-            (exists e: Effect :: effects[old(step)][e] && e is write) ==
+            (effects[old(step)] is write) ==
                 (old(step) == last_store)
     );
     ensures last_load < step;
@@ -111,6 +113,8 @@ procedure verify_execute(instr : Instruction) returns (r : int)
         );
     ensures (forall i, j : int ::
             atomic[i, j] ==> i <= j && j < step);
+
+    ensures step == old(step) + 1;
 {
     call r := execute(instr);
 }
@@ -124,7 +128,7 @@ function visible(instr : Instruction) : bool {
 }
 
 procedure execute(instr: Instruction) returns (r : int);
-    modifies flags, effects, ordering, step, monitor_exclusive, event_register;
+    modifies flags, step, monitor_exclusive, event_register;
     ensures step == old(step + 1);
     ensures {:msg "state"} (
         var stx_success, cas_success :=
@@ -140,6 +144,7 @@ procedure execute(instr: Instruction) returns (r : int);
             else if instr is eor  then bit_xor(instr->first, instr->second)
             else if instr is mvn  then bit_not(instr->src)
             else if instr is neg  then 0 - instr->src
+            else if instr is csel then if instr->cond then instr->src1 else instr->src2
             else r)
         &&
         (last_load == if instr is ld
@@ -207,60 +212,61 @@ procedure execute(instr: Instruction) returns (r : int);
                     old(flags)
                 )
         &&
-        (effects == old(effects[step := 
-            ConstArray(false)
-                    [read(instr->addr, r, visible(instr)) :=
-                        instr is ld
-                        || instr is ldx
-                        || instr is cas
-                        || instr is swp
-                        || instr is ldclr || instr is stclr
-                        || instr is ldset || instr is stset
-                        || instr is ldeor || instr is steor
-                        || instr is ldumax || instr is stumax
-                        || instr is ldadd || instr is stadd
-                    ]
-                    [write(instr->addr, instr->src) :=
-                        instr is st
-                        || (instr is stx && stx_success)
-                        || (instr is cas && cas_success)
-                        || instr is swp
-                    ]
-                    [ write(instr->addr, and[instr->src, r]) := instr is ldclr || instr is stclr ]
-                    [ write(instr->addr, or[instr->src, r]) := instr is ldset || instr is stset ]
-                    [ write(instr->addr, xor[instr->src, r]) := instr is ldeor || instr is steor ]
-                    [ write(instr->addr, max[instr->src, r]) := instr is ldumax || instr is stumax ]
-                    [ write(instr->addr, instr->src + r) := instr is ldadd || instr is stadd ]                    
-            ]))
+        (effects[step] == if instr is ld
+                            || instr is ldx
+                            || instr is cas
+                            || instr is swp
+                            || instr is ldclr || instr is stclr
+                            || instr is ldset || instr is stset
+                            || instr is ldeor || instr is steor
+                            || instr is ldumax || instr is stumax
+                            || instr is ldadd || instr is stadd
+                        then read(instr->addr, r, visible(instr)) 
+                        else if instr is st
+                            || (instr is stx && stx_success)
+                            || (instr is cas && cas_success)
+                            || instr is swp 
+                        then write(instr->addr, instr->src)
+                        else if instr is ldclr || instr is stclr
+                        then write(instr->addr, and[instr->src, r])
+                        else if instr is ldset || instr is stset
+                        then write(instr->addr, or[instr->src, r])
+                        else if instr is ldeor || instr is steor
+                        then write(instr->addr, xor[instr->src, r]) 
+                        else if instr is ldumax || instr is stumax
+                        then write(instr->addr, max[instr->src, r])
+                        else if instr is ldadd || instr is stadd
+                        then write(instr->addr, instr->src + r)
+                        else no_effect() 
+            )
         &&
-        (ordering == old(ordering[step :=
-            ConstArray(false)
-                [Acquire() := instr->acq 
-                    && (instr is ld 
-                        || instr is ldx
-                        || instr is cas
-                        || instr is swp
-                        || instr is ldclr
-                        || instr is ldset
-                        || instr is ldeor
-                        || instr is ldumax
-                        || instr is ldadd
-                    )
-                ]
-                [Release() := instr->rel
-                    && (instr is st
-                        || (instr is stx && stx_success)
-                        || (instr is cas && cas_success) 
-                        || instr is swp
-                        || instr is ldclr || instr is stclr
-                        || instr is ldset || instr is stset
-                        || instr is ldeor || instr is steor
-                        || instr is ldumax || instr is stumax
-                        || instr is ldadd || instr is stadd
-                    )
-                ]
-                [Fence(instr->mode) := instr is dmb]
-            ]))
+        (ordering[step] == if instr->acq 
+                        && (instr is ld 
+                            || instr is ldx
+                            || instr is cas
+                            || instr is swp
+                            || instr is ldclr
+                            || instr is ldset
+                            || instr is ldeor
+                            || instr is ldumax
+                            || instr is ldadd
+                        )
+                    then Acquire()
+                    else if instr->rel
+                        && (instr is st
+                            || (instr is stx && stx_success)
+                            || (instr is cas && cas_success) 
+                            || instr is swp
+                            || instr is ldclr || instr is stclr
+                            || instr is ldset || instr is stset
+                            || instr is ldeor || instr is steor
+                            || instr is ldumax || instr is stumax
+                            || instr is ldadd || instr is stadd
+                        )
+                    then Release()
+                    else if instr is dmb
+                    then Fence(instr->mode)
+                    else NoOrd())
         &&
         (   // external write can clear monitor at any moment. has to set event register.
             (monitor_exclusive == false && event_register == old(monitor_exclusive || event_register))
@@ -331,20 +337,20 @@ function branch(cond: ConditionCode, flags: Flags): bool {(
 )}
 
 
-function ppo(step1, step2: StateIndex, ordering: [StateIndex][Ordering] bool, effects: [StateIndex][Effect] bool): bool {
+function ppo(step1, step2: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect): bool {
     step1 < step2 && (
         // Barrier-ordered-before
-        ordering[step1][Acquire()] ||
-        ordering[step1][AcquirePC()] ||
-        ordering[step2][Release()] ||
-        (ordering[step1][Release()] && ordering[step2][Acquire()]) ||
-        (exists f : int :: step1 < f && f < step2 && ordering[f][Fence(SY())]) ||
-        (exists f, a, v : int :: step1 < f && f < step2 && ordering[f][Fence(LD())]
-            && effects[step1][read(a,v,true)])
+        ordering[step1] is Acquire ||
+        ordering[step1] is AcquirePC ||
+        ordering[step2] is Release ||
+        (ordering[step1] is Release && ordering[step2] is Acquire) ||
+        (exists f : int :: step1 < f && f < step2 && ordering[f] == Fence(SY())) ||
+        (exists f, a, v : int :: step1 < f && f < step2 && ordering[f] == Fence(LD())
+            && effects[step1] == read(a,v,true))
     )
 }
 
 
-function is_sc(order: [Ordering] bool): bool {
-    order[Acquire()] || order[Release()]
+function is_sc(order: Ordering): bool {
+    order is Acquire || order is Release
 }
