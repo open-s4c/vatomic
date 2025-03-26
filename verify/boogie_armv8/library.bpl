@@ -212,7 +212,7 @@ procedure execute(instr: Instruction) returns (r : int);
                     old(flags)
                 )
         &&
-        (effects[step] == if instr is ld
+        (effects[old(step)] == if instr is ld
                             || instr is ldx
                             || instr is cas
                             || instr is swp
@@ -240,7 +240,7 @@ procedure execute(instr: Instruction) returns (r : int);
                         else no_effect() 
             )
         &&
-        (ordering[step] == if instr->acq 
+        (ordering[old(step)] == if instr->acq 
                         && (instr is ld 
                             || instr is ldx
                             || instr is cas

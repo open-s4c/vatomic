@@ -20,7 +20,7 @@ procedure rmw (op: RMWOp)
         !no_writes(old(step), step, last_store) ==> (
             var address, input1, input2 := old(#address), old(#input1), old(#input2);
             (exists a,v : int, vis : bool :: effects[last_load] == read(a,v,vis)
-                && effects[last_store] == write(address, op[v, input1, input2)])
+                && effects[last_store] == write(address, op[v, input1, input2]))
         );
 {
     #implementation
