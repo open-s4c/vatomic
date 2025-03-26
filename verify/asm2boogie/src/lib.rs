@@ -1,4 +1,4 @@
-use std::{fs, io::Write, path::Path};
+use std::{collections::{HashMap, HashSet}, fs, io::Write, path::Path};
 use phf::phf_map;
 
 use arm::{ArmFunction, arm_to_boogie_code, get_used_registers};
@@ -21,6 +21,7 @@ pub enum UnifiedInstruction {
     Label(String),
     Instr(String, Vec<Operator>),
     Branch(String, String),
+    Jump(String),
 }
 
 
@@ -207,7 +208,8 @@ pub fn generate_boogie_file(
         if let Some(op) = RMW_OP.get(rmw_name.name("type").unwrap().as_str()) {
             rmw_op = op.to_string();
 
-            if rmw_name.name("get_").is_some() {
+            if rmw_name.name("_get").is_some() {
+
                 read_ret = op.to_string();
             }
         }
@@ -280,4 +282,53 @@ pub fn generate_debug_file(code: &[ArmFunction], path: &str) -> Result<(), std::
         writeln!(file, "{:#?}", content)?;
     }
     Ok(())
+}
+
+
+use petgraph::{graphmap, Directed};
+pub fn loop_headers(code: &[UnifiedInstruction]) -> HashSet<usize> {
+    let mut graph = graphmap::GraphMap::<_, _, Directed>::with_capacity(code.len() + 1, 2*code.len() + 1);
+    let label_idx : HashMap<_,_> = code.iter().enumerate().filter_map(|(i,instr)| 
+        match instr {
+            UnifiedInstruction::Label(name) => Some((name, i)),
+            _ => None,
+        }
+    ).collect();
+
+
+    for (i, instr) in code.iter().enumerate() {
+        match &instr {
+            UnifiedInstruction::Jump(target) => {
+                graph.add_edge(i,  label_idx[target], ());
+            },
+            UnifiedInstruction::Branch(_, target) => {
+                graph.add_edge(i,  label_idx[target], ());
+                graph.add_edge(i, i+1, ());
+            },
+            _ => {
+                graph.add_edge(i, i+1, ());
+            }
+        }
+    }
+
+    let scc = petgraph::algo::tarjan_scc(&graph);
+
+    let mut loop_entries = HashSet::new();
+
+    for component in scc {
+        let set : HashSet<_> = component.iter().copied().collect();
+        for i in set.iter().copied() {
+            let mut in_loop = false;
+            let mut entry = false; 
+            for n in graph.neighbors_directed(i, petgraph::Direction::Incoming) {
+                if set.contains(&n) { in_loop = true; }
+                else { entry = true; }
+            }
+            if in_loop && entry {
+                loop_entries.insert(i);
+            }
+        }
+    }
+
+    loop_entries
 }

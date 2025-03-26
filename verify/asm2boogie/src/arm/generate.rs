@@ -1,12 +1,37 @@
+use crate::{loop_headers, UnifiedInstruction};
+
 use super::*;
-use std::collections::HashSet;
+use std::{collections::HashSet, fmt::format};
 
 const DUMMY_REG : &str = "dummy";
+
+
+fn basic_translate(function: &ArmFunction) -> Vec<UnifiedInstruction> {
+    function.instructions.iter().map(|instr|
+        match instr {
+            | ArmInstruction::ConditionalBranch(_, _, target) 
+            | ArmInstruction::Branch(_, target) 
+            | ArmInstruction::TestBitBranch(_, _, _, target)
+                => UnifiedInstruction::Branch("".to_string(), operand_to_boogie(target)),
+
+            | ArmInstruction::Label(name)
+                => UnifiedInstruction::Label(name.clone()),
+
+            | _ => UnifiedInstruction::Instr("".to_string(), vec![]),
+        }
+    ).collect()
+}
 
 pub fn arm_to_boogie_code(function: &ArmFunction) -> String {
     let mut code = String::new();
 
-    let backward_branch_targets = backward_branch_targets(function);
+    let unified_code = basic_translate(function);
+    let loop_header_idx = loop_headers(&unified_code);
+    let backward_branch_targets : HashSet<_> = loop_header_idx.iter().copied().map(|i|
+        match &unified_code[i] {
+            UnifiedInstruction::Label(name) => name.clone(),
+            _ => unreachable!()
+        }).collect();
 
     for instr in &function.instructions {
         match instr {
@@ -145,6 +170,10 @@ pub fn arm_to_boogie_code(function: &ArmFunction) -> String {
             ArmInstruction::Return(_) => {
                 code.push_str("    return;\n");
             }
+            ArmInstruction::Csel(dest, op1, op2, ce) => {
+                code.push_str(&format!("    call {} := execute(csel({}, {}, branch({}, flags)));\n",
+                    operand_to_boogie(dest), operand_to_boogie(op1), operand_to_boogie(op2), condition_to_boogie(ce)));
+            }
             _ => {
                 code.push_str(&format!("    // Unhandled instruction: {:?}\n", instr));
             }
@@ -175,42 +204,6 @@ pub fn get_used_registers(function: &ArmFunction) -> String {
     result.join(", ")
 }
 
-fn backward_branch_targets(function: &ArmFunction) -> HashSet<String> {
-    let mut labels = HashSet::new();
-    let mut targets = HashSet::new();
-
-    for instr in &function.instructions {
-        if let ArmInstruction::Label(name) = instr {
-            labels.insert(name.clone());
-        }
-    }
-
-    let mut current_labels = Vec::new();
-    for instr in &function.instructions {
-        match instr {
-            ArmInstruction::Label(name) => {
-                current_labels.push(name.clone());
-            }
-            ArmInstruction::Branch(_, target) => {
-                if let Operand::Label(label_name) = target {
-                    if current_labels.contains(&label_name) {
-                        targets.insert(label_name.clone());
-                    }
-                }
-            }
-            ArmInstruction::ConditionalBranch(_, _, target) => {
-                if let Operand::Label(label_name) = target {
-                    if current_labels.contains(&label_name) {
-                        targets.insert(label_name.clone());
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-
-    targets
-}
 
 fn collect_registers_from_instruction(instr: &ArmInstruction, registers: &mut HashSet<String>) {
     match instr {
@@ -251,6 +244,11 @@ fn collect_registers_from_instruction(instr: &ArmInstruction, registers: &mut Ha
         }
         ArmInstruction::Return(Some(op)) => {
             collect_registers_from_operand(op, registers);
+        }
+        ArmInstruction::Csel(dest, op1, op2, _ce) => {
+            collect_registers_from_operand(dest, registers);
+            collect_registers_from_operand(op1, registers);
+            collect_registers_from_operand(op2, registers);
         }
         _ => {}
     }
@@ -321,7 +319,7 @@ fn operand_to_boogie(operand: &Operand) -> String {
             }
             _ => "unknown_memory_address".to_string(),
         },
-        Operand::Label(label) => format!("\"{}\"", label),
+        Operand::Label(label) => label.clone(),
         _ => "unknown_operand".to_string(),
     }
 }

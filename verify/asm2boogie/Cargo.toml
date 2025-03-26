@@ -11,3 +11,5 @@ log = "0.4.26"
 regex = "1.11.1"
 lazy_static = "1.5.0"
 phf = { version = "0.11.3", features = ["macros"] }
+petgraph = "0.7.1"
+nohash = "0.2.0"
