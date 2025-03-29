@@ -46,7 +46,10 @@ pub fn boogie_to_string(instructions: &[BoogieInstruction]) -> String {
                 let cond_name = condition_to_string(cond);
                 let op1_name = operand_to_string(op1);
                 let op2_name = operand_to_string(op2);
-                code.push_str(&format!("    if ({}, {}, {}) {{ goto {}; }}\n", cond_name, op1_name, op2_name, target));
+                code.push_str(&format!(
+                    "    if (branch({}, {}, {})) {{ goto {}; }}\n",
+                    cond_name, op1_name, op2_name, target
+                ));
             }
             BoogieInstruction::Jump(target) => {
                 code.push_str(&format!("    goto {};\n", target));

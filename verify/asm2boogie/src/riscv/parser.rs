@@ -268,6 +268,25 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                 ))
             }
         }
+        "li" => {
+            if operands.len() == 2 {
+                if let (Operand::Register(rd), Operand::Immediate(value)) =
+                    (operands[0].clone(), operands[1].clone())
+                {
+                    RiscvInstruction::LoadImmidate {
+                        register: rd,
+                        value,
+                    }
+                } else {
+                    RiscvInstruction::Unhandled(format!("Invalid operands for li: {:?}", operands))
+                }
+            } else {
+                RiscvInstruction::Unhandled(format!(
+                    "li requires two operands, got {}",
+                    operands.len()
+                ))
+            }
+        }
         "bnez" => {
             if operands.len() == 2 {
                 if let (Operand::Register(rs), Operand::Label(label)) =

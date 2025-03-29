@@ -134,6 +134,10 @@ pub enum RiscvInstruction {
         rs2: Register,
         addr: MemoryOperand,
     },
+    LoadImmidate {
+        register: Register,
+        value: i64,
+    },
     Atomic {
         op: AtomicOp,
         size: Size,
@@ -264,6 +268,12 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
             let src_reg = operand_to_boogie(&Operand::Memory(src.clone()));
 
             BoogieInstruction::Instr("ld".to_string(), dst_reg, vec![src_reg])
+        }
+        RiscvInstruction::LoadImmidate { register, value } => {
+            let dst = register_to_string(register);
+            let value = operand_to_boogie(&Operand::Immediate(*value));
+
+            BoogieInstruction::Instr("li".to_string(), dst, vec![value])
         }
         RiscvInstruction::LoadReserved {
             semantics,
@@ -413,7 +423,11 @@ fn operand_to_boogie(operand: &Operand) -> super::Operand {
         Operand::Register(reg) => super::Operand::Register(register_to_string(&reg)),
         Operand::Immediate(val) => super::Operand::Value(val),
         Operand::Memory(op) => {
-            super::Operand::AdressOffset(register_to_string(&op.base), op.offset)
+            if op.offset == 0 {
+                super::Operand::Address(register_to_string(&op.base))
+            } else {
+                super::Operand::AdressOffset(register_to_string(&op.base), op.offset)
+            }
         }
         _ => unimplemented!(),
     }

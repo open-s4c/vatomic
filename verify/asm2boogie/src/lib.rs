@@ -384,7 +384,8 @@ pub fn loop_headers(code: &[BoogieInstruction]) -> HashSet<usize> {
             BoogieInstruction::Jump(target) => {
                 graph.add_edge(i, label_idx[target], ());
             }
-            BoogieInstruction::ArmBranch(_, _, target) | BoogieInstruction::RiscvBranch(_, _ , _, target) => {
+            BoogieInstruction::ArmBranch(_, _, target)
+            | BoogieInstruction::RiscvBranch(_, _, _, target) => {
                 graph.add_edge(i, label_idx[target], ());
                 graph.add_edge(i, i + 1, ());
             }
