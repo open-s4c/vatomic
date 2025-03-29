@@ -5,6 +5,16 @@ datatype Ordering {
     Fence(ra, wa, rb, wb: bool)
 }
 
+datatype AtomicType {
+    AtomicAdd(),
+    AtomicAnd(),
+    AtomicMax(),
+    AtomicMin(),
+    AtomicOr(),
+    AtomicXor(),
+    AtomicSwap()
+}
+
 datatype Monitor {
     exclusive(addr: int),
     open()
@@ -18,7 +28,8 @@ datatype Instruction {
     sd(src, addr: int),
     lr(acq, rel: bool, addr: int),
     sc(acq, rel: bool, src, addr: int),
-    mov(src: int),
+    mv(src: int),
+    atomic(atom: AtomicType, acq, rel: bool, src, addr: int),
 
     add(first, second: int),
     sub(first, second: int),
@@ -39,7 +50,7 @@ procedure execute(instr: Instruction) returns (r : int);
                     old(local_monitor is exclusive
                         && (local_monitor->addr == instr->addr)
                         && monitor_exclusive);
-        (r == if instr is mov then instr->src
+        (r == if instr is mv then instr->src
             else if instr is sc then b2i(!sc_success)
             else if instr is add then instr->first + instr->second
             else if instr is sub then instr->first - instr->second
@@ -123,6 +134,24 @@ procedure execute(instr: Instruction) returns (r : int);
         ])
     );
 
+datatype ConditionCode {
+    EQ(), 
+    NE(), 
+    LO(),
+    LS(),
+    HI(),
+    HS()
+}
+
+function branch(cond: ConditionCode, a, b: int): bool {(
+    if cond is EQ then a == b
+    else if cond is NE then a != b
+    else if cond is HS then a >= b
+    else if cond is LO then a < b
+    else if cond is HI then a > b
+    else if cond is LS then a <= b
+    else false // Should never be reached
+)}
 
 function bne(r1: int, r2:int): bool {
     r1 != r2

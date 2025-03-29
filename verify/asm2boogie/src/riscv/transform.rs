@@ -12,7 +12,12 @@ pub fn extract_riscv_functions(
 
     for instr in parsed {
         match &instr {
-            RiscvInstruction::Label(name) if name.chars().next().map_or(false, |c| c.is_alphabetic() || c == '_') => {
+            RiscvInstruction::Label(name)
+                if name
+                    .chars()
+                    .next()
+                    .map_or(false, |c| c.is_alphabetic() || c == '_') =>
+            {
                 if let Some((prev_name, prev_instrs)) = current_function {
                     functions.push(RiscvFunction {
                         name: prev_name,
@@ -121,12 +126,17 @@ pub fn transform_labels(function: &RiscvFunction) -> RiscvFunction {
     for (i, instruction) in function.instructions.iter().enumerate() {
         match instruction {
             RiscvInstruction::Label(_name) => {
-                 if used_positions.contains(&i) {
+                if used_positions.contains(&i) {
                     let new_name = position_to_new_label[&i].clone();
                     new_instructions.push(RiscvInstruction::Label(new_name));
                 }
             }
-            RiscvInstruction::Branch { op, rs1, rs2, label } => {
+            RiscvInstruction::Branch {
+                op,
+                rs1,
+                rs2,
+                label,
+            } => {
                 if label.ends_with('f') || label.ends_with('b') {
                     if let Some(j) = find_label_position(label, i, &label_indices) {
                         if let Some(new_label) = position_to_new_label.get(&j) {
@@ -202,6 +212,6 @@ fn find_label_position(
             .get(base)
             .and_then(|indices| indices.iter().rev().find(|&&j| j < i).copied())
     } else {
-        None 
+        None
     }
 }

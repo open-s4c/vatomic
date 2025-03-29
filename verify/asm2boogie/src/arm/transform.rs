@@ -85,7 +85,7 @@ pub fn transform_labels(function: &ArmFunction) -> ArmFunction {
 
     let mut label_map = std::collections::HashMap::new();
     for (i, label) in used_labels.iter().enumerate() {
-        label_map.insert(label.clone(), format!("l{}", i + 1));
+        label_map.insert(label.clone(), format!("L{}", i + 1));
     }
 
     let mut new_instructions = Vec::new();

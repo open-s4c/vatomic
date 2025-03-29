@@ -1,12 +1,12 @@
-mod generate;
 mod parser;
 mod transform;
 
 use std::fmt::Display;
 
-pub use generate::{arm_to_boogie_code, get_used_registers};
 pub use parser::parse_arm_assembly;
 pub use transform::{extract_arm_functions, remove_directives, transform_labels};
+
+use crate::{BoogieFunction, BoogieInstruction, DUMMY_REG, Operand as BoogieOperand, ToBoogie};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RegisterType {
@@ -125,7 +125,6 @@ pub enum MoveOp {
     Mvn,
 }
 
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum FenceType {
     SY,
@@ -134,7 +133,14 @@ pub enum FenceType {
 
 impl Display for FenceType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self { Self::SY => "SY()", Self::LD => "LD()" })
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::SY => "SY()",
+                Self::LD => "LD()",
+            }
+        )
     }
 }
 
@@ -173,4 +179,244 @@ pub enum ArmInstruction {
 pub struct ArmFunction {
     pub name: String,
     pub instructions: Vec<ArmInstruction>,
+}
+
+impl ArmFunction {
+    pub fn parse_and_transform<'a>(
+        content: &'a str,
+        names: Option<&[String]>,
+        valid_prefix: &[&str],
+    ) -> Result<Vec<ArmFunction>, nom::Err<nom::error::Error<&'a str>>> {
+        let (_, parsed) = parse_arm_assembly(content)?;
+        log::info!("Successfully parsed arm assembly");
+
+        let processed_functions = extract_arm_functions(parsed, names, valid_prefix)
+            .into_iter()
+            .map(|f| transform_labels(&f))
+            .map(|f| remove_directives(&f))
+            .collect::<Vec<_>>();
+
+        Ok(processed_functions)
+    }
+}
+
+pub fn riscv_to_boogie(function: ArmFunction) -> BoogieFunction {
+    let instructions = function
+        .instructions
+        .iter()
+        .map(|instr| arm_instruction_to_boogie(instr))
+        .collect();
+
+    BoogieFunction {
+        name: function.name.clone(),
+        instructions,
+    }
+}
+
+impl ToBoogie for ArmFunction {
+    fn to_boogie(self) -> BoogieFunction {
+        riscv_to_boogie(self)
+    }
+}
+pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
+    match instr {
+        ArmInstruction::Label(name) => BoogieInstruction::Label(name.clone()),
+        ArmInstruction::Branch(cond_opt, target) => match target {
+            Operand::Label(label_name) => {
+                if let Some(cond) = cond_opt {
+                    if let Some(cond) = condition_to_boogie(cond) {
+                        BoogieInstruction::ArmBranch(
+                            cond,
+                            super::Operand::Named("flags".to_string()),
+                            label_name.to_string(),
+                        )
+                    } else {
+                        BoogieInstruction::Unhandled(format!(
+                            "// Unhandled Branch Type: {:?}, {:?}",
+                            cond_opt, target
+                        ))
+                    }
+                } else {
+                    BoogieInstruction::Jump(label_name.to_string())
+                }
+            }
+            _ => BoogieInstruction::Unhandled(format!(
+                "// Unhandled Branch Type: {:?}, {:?}",
+                cond_opt, target
+            )),
+        },
+        ArmInstruction::ConditionalBranch(is_zero, test, target) => {
+            if let Operand::Label(label_name) = target {
+                let test_reg = operand_to_boogie(test);
+                let condition = if *is_zero {
+                    super::Condition::BZ
+                } else {
+                    super::Condition::BNZ
+                };
+
+                BoogieInstruction::ArmBranch(condition, test_reg, label_name.to_string())
+            } else {
+                BoogieInstruction::Unhandled(format!(
+                    "// Unhandled Branch Type: {:?}, {:?}, {:?}",
+                    is_zero, test, target
+                ))
+            }
+        }
+        ArmInstruction::Dmb(mode) => BoogieInstruction::Instr(
+            "dmb".to_string(),
+            DUMMY_REG.to_string(),
+            vec![super::Operand::Named(mode.to_string())],
+        ),
+        ArmInstruction::Return(_) => BoogieInstruction::Return,
+        ArmInstruction::Arithmetic(op, dest, src1, src2_opt) => {
+            let op_name = match op {
+                ArithmeticOp::Add => "add",
+                ArithmeticOp::Sub => "sub",
+                ArithmeticOp::Mul => "mul",
+                ArithmeticOp::And => "andd",
+                ArithmeticOp::Orr => "orr",
+                ArithmeticOp::Eor => "eor",
+            };
+            let dest_reg = register_to_boogie(dest);
+            let src1 = operand_to_boogie(src1);
+
+            let ops = if let Some(src2) = src2_opt {
+                let src2 = operand_to_boogie(src2);
+                vec![src1, src2]
+            } else {
+                vec![src1]
+            };
+            BoogieInstruction::Instr(op_name.to_string(), dest_reg, ops)
+        }
+        ArmInstruction::Move(op, dest, src) => {
+            let op_name = match op {
+                MoveOp::Mov => "mov",
+                MoveOp::Mvn => "mvn",
+            };
+
+            let dest_reg = register_to_boogie(dest);
+            let src_reg = operand_to_boogie(src);
+            BoogieInstruction::Instr(op_name.to_string(), dest_reg, vec![src_reg])
+        }
+        ArmInstruction::Memory(op, attrs, dest, src) => {
+            let (op_name, has_output) = match op {
+                MemoryOp::Load => {
+                    if attrs.exclusive {
+                        ("ldx", true)
+                    } else {
+                        ("ld", true)
+                    }
+                }
+                MemoryOp::Store => ("st", false),
+            };
+
+            let dest_reg = register_to_boogie(dest);
+            let src_reg = operand_to_boogie(src);
+
+            if has_output {
+                BoogieInstruction::Instr(
+                    op_name.to_string(),
+                    dest_reg,
+                    vec![BoogieOperand::Bool(attrs.acquire), src_reg],
+                )
+            } else {
+                BoogieInstruction::Instr(
+                    op_name.to_string(),
+                    DUMMY_REG.to_string(),
+                    vec![BoogieOperand::Bool(attrs.acquire), src_reg],
+                )
+            }
+        }
+        ArmInstruction::MemoryExclusive(op, attrs, dest, exp, src) => {
+            let op_name = match op {
+                MemoryOp::Store => "stx",
+                _ => unimplemented!(),
+            };
+
+            let dest_reg = register_to_boogie(dest);
+            let exp_reg = operand_to_boogie(exp);
+            let src_reg = operand_to_boogie(src);
+
+            BoogieInstruction::Instr(
+                op_name.to_string(),
+                dest_reg,
+                vec![BoogieOperand::Bool(attrs.release), exp_reg, src_reg],
+            )
+        }
+        ArmInstruction::Cmp(op1, op2) => {
+            let op1_reg = operand_to_boogie(op1);
+            let op2_reg = operand_to_boogie(op2);
+
+            BoogieInstruction::Instr(
+                "cmp".to_string(),
+                DUMMY_REG.to_string(),
+                vec![op1_reg, op2_reg],
+            )
+        }
+        ArmInstruction::Csel(dest, op1, op2, ce) => {
+            let dest_reg = register_to_boogie(dest);
+            let op1_reg = operand_to_boogie(op1);
+            let op2_reg = operand_to_boogie(op2);
+            let cond = condition_to_boogie(ce);
+            if let Some(cond) = cond {
+                BoogieInstruction::Instr(
+                    "csel".to_string(),
+                    dest_reg,
+                    vec![op1_reg, op2_reg, super::Operand::Cond(cond)],
+                )
+            } else {
+                BoogieInstruction::Unhandled(format!("  // Invlaid Csel condition {:?}", ce))
+            }
+        }
+        _ => BoogieInstruction::Unhandled(format!("{:?}", instr)),
+    }
+}
+
+fn register_to_string(reg: &Register) -> String {
+    match reg.reg_type {
+        RegisterType::X => format!("x{}", reg.number),
+        RegisterType::W => format!("w{}", reg.number),
+        RegisterType::V => format!("v{}", reg.number),
+        RegisterType::Q => format!("q{}", reg.number),
+        RegisterType::D => format!("d{}", reg.number),
+        RegisterType::S => format!("s{}", reg.number),
+        RegisterType::H => format!("h{}", reg.number),
+        RegisterType::B => format!("b{}", reg.number),
+        RegisterType::SP => "sp".to_string(),
+    }
+}
+
+fn register_to_boogie(operand: &Operand) -> String {
+    match operand {
+        Operand::Register(reg) => register_to_string(reg),
+        _ => "unknown_register".to_string(),
+    }
+}
+
+fn operand_to_boogie(operand: &Operand) -> super::Operand {
+    match operand.clone() {
+        Operand::Register(_) => super::Operand::Register(register_to_boogie(&operand)),
+        Operand::ImmediateValue(val) => super::Operand::Value(val),
+        Operand::Memory(addr_mode) => match addr_mode {
+            AddressingMode::BaseRegister(reg) => super::Operand::Address(register_to_string(&reg)),
+            AddressingMode::BaseRegisterWithOffset(reg, offset) => {
+                super::Operand::AdressOffset(register_to_string(&reg), offset)
+            }
+            _ => super::Operand::Named(format!("/* invalid operand {:?} /*", operand)),
+        },
+        _ => unimplemented!(),
+    }
+}
+
+fn condition_to_boogie(cond: &ConditionCode) -> Option<super::Condition> {
+    let cond = match cond {
+        ConditionCode::EQ => super::Condition::EQ,
+        ConditionCode::NE => super::Condition::NE,
+        ConditionCode::CS => super::Condition::HS,
+        ConditionCode::CC => super::Condition::LO,
+        ConditionCode::HI => super::Condition::HI,
+        ConditionCode::LS => super::Condition::LS,
+        _ => return None,
+    };
+    Some(cond)
 }

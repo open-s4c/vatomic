@@ -116,14 +116,13 @@ fn parse_condition_code(input: &str) -> Option<ConditionCode> {
     }
 }
 
-
 fn parse_fence_mode(input: &str) -> IResult<&str, FenceType> {
     alt((
-        value(FenceType::SY, tag("sy")), 
+        value(FenceType::SY, tag("sy")),
         value(FenceType::LD, tag("ld")),
-    )).parse(input)
+    ))
+    .parse(input)
 }
-
 
 fn parse_shifted_register(input: &str) -> IResult<&str, Operand> {
     map(
@@ -293,8 +292,6 @@ fn parse_memory_size_from_suffix(suffix: &str) -> MemorySize {
     }
 }
 
-
-
 fn parse_fence_instruction(
     instr_name: &str,
     operands: Vec<Operand>,
@@ -306,14 +303,16 @@ fn parse_fence_instruction(
         )));
     }
 
-    let mode = operands.iter().find_map(|op| match op {
-        Operand::FenceMode(mode) => Some(*mode),
-        _ => None,
-    }).unwrap_or(FenceType::SY);
+    let mode = operands
+        .iter()
+        .find_map(|op| match op {
+            Operand::FenceMode(mode) => Some(*mode),
+            _ => None,
+        })
+        .unwrap_or(FenceType::SY);
 
     Ok(("", ArmInstruction::Dmb(mode)))
 }
-
 
 fn parse_arithmetic_instruction(
     instr_name: &str,

@@ -1,21 +1,15 @@
 use asm2boogie::{
-    riscv::{parse_riscv_assembly, extract_riscv_functions, remove_directives as remove_risc_directives, transform_labels as transform_risc_labels},
-    arm::{extract_arm_functions, parse_arm_assembly, remove_directives, transform_labels}, generate_boogie_file, generate_debug_file, wide_arch_widths
+    Arch, ToBoogie, arm::ArmFunction, generate_boogie_file, generate_debug_file,
+    riscv::RiscvFunction, wide_arch_widths,
 };
 
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use std::fs;
 use std::path::Path;
 
 enum OutputMode {
     File(String),
     Directory(String),
-}
-
-#[derive(ValueEnum, Debug, Clone)]
-enum Arch {
-    RiscV,
-    ArmV8,
 }
 
 #[derive(Parser, Debug)]
@@ -72,7 +66,6 @@ fn ensure_directory_exists(path: &str) -> Result<(), std::io::Error> {
     Ok(())
 }
 
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let args = Args::parse();
@@ -123,62 +116,59 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("Successfully read input file '{}'", args.input);
 
     let width_map = match args.arch {
-        Arch::ArmV8 => wide_arch_widths,  
+        Arch::ArmV8 => wide_arch_widths,
         Arch::RiscV => wide_arch_widths,
     };
 
-    let processed_functions = match args.arch {
-        Arch::ArmV8 => {
-            let parsed = match parse_arm_assembly(&input_content) {
-                Ok((_, instructions)) => instructions,
-                Err(e) => {
-                    eprintln!("Error parsing arm assembly: {:?}", e);
-                    std::process::exit(1);
-                }
-            };
-            log::info!("Successfully parsed arm assembly");
+    let valid_prefix: &[&str] = match args.arch {
+        Arch::ArmV8 => &["ptr", "32", "64", "sz", "8", ""],
+        Arch::RiscV => &["64"],
+    };
 
-            let processed_functions = extract_arm_functions(parsed, Some(&function_names), &["ptr", "32", "64", "sz", "8", ""])
-                .into_iter()
-                .map(|f| transform_labels(&f))
-                .map(|f| remove_directives(&f))
-                .collect::<Vec<_>>();
-
-            processed_functions
+    let boogie_functions = match args.arch {
+        Arch::ArmV8 => match ArmFunction::parse_and_transform(
+            &input_content,
+            Some(&function_names),
+            valid_prefix,
+        ) {
+            Ok(functions) => functions,
+            Err(e) => {
+                log::error!("Error parsing arm assembly: {:?}", e);
+                std::process::exit(1);
+            }
         }
-        Arch::RiscV => {
-            let parsed = match parse_riscv_assembly(&input_content) {
-                Ok((_, instructions)) => instructions,
-                Err(e) => {
-                    eprintln!("Error parsing risc assembly: {:?}", e);
-                    std::process::exit(1);
-                }
-            };
-            log::info!("Successfullz parsed riscv assembly");
-            let processed_functions = extract_riscv_functions(parsed, Some(&function_names), &["64"])
-                .into_iter()
-                .map(|f| transform_risc_labels(&f))
-                .map(|f| remove_risc_directives(&f))
-                .collect::<Vec<_>>();
-
-            println!("processed risc: {:#?}", &processed_functions);
-            unimplemented!();
+        .into_iter()
+        .map(ToBoogie::to_boogie)
+        .collect::<Vec<_>>(),
+        Arch::RiscV => match RiscvFunction::parse_and_transform(
+            &input_content,
+            Some(&function_names),
+            valid_prefix,
+        ) {
+            Ok(functions) => functions,
+            Err(e) => {
+                log::error!("Error parsing riscv assembly: {:?}", e);
+                std::process::exit(1);
+            }
         }
+        .into_iter()
+        .map(ToBoogie::to_boogie)
+        .collect::<Vec<_>>(),
     };
 
     match output_mode {
         OutputMode::File(file_path) => {
             log::info!("Generating output file: {}", file_path);
-            generate_debug_file(&processed_functions, &file_path)?;
+            generate_debug_file(&boogie_functions, &file_path)?;
         }
         OutputMode::Directory(dir_path) => {
             let template_dir = args.templates.as_ref().unwrap();
             log::info!("Generating output files in directory: {}", dir_path);
             ensure_directory_exists(&dir_path)?;
 
-            for function in &processed_functions {
+            for function in &boogie_functions {
                 log::info!("Generating Boogie code for function: {}", function.name);
-                generate_boogie_file(function, &dir_path, template_dir, width_map)?;
+                generate_boogie_file(function, &dir_path, template_dir, args.arch, width_map)?;
             }
         }
     }

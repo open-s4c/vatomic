@@ -1,7 +1,7 @@
 use nom::{
     IResult, Parser,
     branch::alt,
-    bytes::complete::{tag, take_till, take_while, take_while1},
+    bytes::complete::{tag, take_till, take_while1},
     character::complete::{char, digit1, multispace0, space0, space1},
     combinator::{map, map_res, opt, recognize, value},
     multi::{many0, separated_list0},
@@ -98,7 +98,9 @@ fn parse_memory_operand(input: &str) -> IResult<&str, MemoryOperand> {
 
 fn parse_label(input: &str) -> IResult<&str, String> {
     map(
-        take_while1(|c: char| c.is_alphanumeric() || c == '_' || c == '.' || c == '$' || c == 'f' || c == 'b'),
+        take_while1(|c: char| {
+            c.is_alphanumeric() || c == '_' || c == '.' || c == '$' || c == 'f' || c == 'b'
+        }),
         |s: &str| s.to_string(),
     )
     .parse(input)
@@ -272,7 +274,7 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                     (operands[0].clone(), operands[1].clone())
                 {
                     RiscvInstruction::Branch {
-                        op: ComparisonOp::Ne,
+                        op: ComparisonOp::Nez,
                         rs1: rs,
                         rs2: Register {
                             reg_type: RegisterType::Special("zero".to_string()),
