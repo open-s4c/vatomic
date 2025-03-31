@@ -212,8 +212,10 @@ pub fn riscv_to_boogie(function: RiscvFunction) -> BoogieFunction {
     }
 }
 
+use itertools::Itertools;
 impl ToBoogie for RiscvFunction {
     fn to_boogie(self) -> BoogieFunction {
+        println!("generating boogie for {}\n    {:?}", self.name, self.instructions.iter().map(|s| format!("{:?}", s)).join("\n    "));
         riscv_to_boogie(self)
     }
 }
@@ -227,40 +229,23 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
             rs2,
             label,
         } => {
-            if let Some(cond) = condition_to_boogie(op) {
-                let r1 = register_to_string(rs1);
-                let r2 = register_to_string(rs2);
-                log::debug!("op: {:?}", op);
-                if *op == ComparisonOp::Nez {
-                    BoogieInstruction::RiscvBranch(
-                        super::Condition::NE,
-                        super::Operand::Register(r1),
-                        super::Operand::Immediate(0.to_string()),
-                        label.to_string(),
-                    )
-                } else {
-                    BoogieInstruction::RiscvBranch(
-                        cond,
-                        super::Operand::Register(r1),
-                        super::Operand::Register(r2),
-                        label.to_string(),
-                    )
-                }
-            } else {
-                BoogieInstruction::Unhandled(format!("invalid: {:?}", op))
-            }
+            let r1 = register_to_string(rs1);
+            let r2 = register_to_string(rs2);
+            log::debug!("op: {:?}", op);
+            BoogieInstruction::Branch(label.to_string(), 
+                match *op { 
+                    ComparisonOp::Nez => format!("bnez({})", r1.to_string()),
+                    _ => format!("b{}({}, {})", format!("{:?}", op).to_lowercase(), r1.to_string(), r2.to_string()),
+                })
         }
         RiscvInstruction::Fence { pred, succ } => {
             let (pr, pw) = fence_mode_to_boogie(pred);
             let (sr, sw) = fence_mode_to_boogie(succ);
 
-            let (ra, wa) = (super::Operand::Bool(pr), super::Operand::Bool(pw));
-            let (rb, wb) = (super::Operand::Bool(sr), super::Operand::Bool(sw));
-
             BoogieInstruction::Instr(
                 "fence".to_string(),
                 DUMMY_REG.to_string(),
-                vec![ra, wa, rb, wb],
+                vec![pr.to_string(), pw.to_string(), sr.to_string(), sw.to_string()],
             )
         }
         RiscvInstruction::Load { dst, src, .. } => {
@@ -295,7 +280,7 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
             BoogieInstruction::Instr(
                 "lr".to_string(),
                 dst_reg,
-                vec![super::Operand::Bool(aq), super::Operand::Bool(rl), src_reg],
+                vec![aq.to_string(), rl.to_string(), src_reg],
             )
         }
         RiscvInstruction::StoreConditional {
@@ -322,8 +307,8 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
                 "sc".to_string(),
                 dst_reg,
                 vec![
-                    super::Operand::Bool(aq),
-                    super::Operand::Bool(rl),
+                    aq.to_string(),
+                    rl.to_string(),
                     src_reg,
                     addr_op,
                 ],
@@ -382,9 +367,9 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
                 "atomic".to_string(),
                 dst_reg,
                 vec![
-                    super::Operand::Named(atomic_op),
-                    super::Operand::Bool(aq),
-                    super::Operand::Bool(rl),
+                    atomic_op,
+                    aq.to_string(),
+                    rl.to_string(),
                     src_reg,
                     addr_op,
                 ],
@@ -395,18 +380,6 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
     }
 }
 
-fn condition_to_boogie(cond: &ComparisonOp) -> Option<super::Condition> {
-    let cond = match cond {
-        ComparisonOp::Eq => super::Condition::EQ,
-        ComparisonOp::Ne => super::Condition::NE,
-        ComparisonOp::Nez => super::Condition::NEZ,
-        ComparisonOp::Ge => super::Condition::HS,
-        ComparisonOp::Geu => super::Condition::HS,
-        ComparisonOp::Lt => super::Condition::LO,
-        ComparisonOp::Ltu => super::Condition::LO,
-    };
-    Some(cond)
-}
 
 fn register_to_string(reg: &Register) -> String {
     match &reg.reg_type {
@@ -418,15 +391,15 @@ fn register_to_string(reg: &Register) -> String {
     }
 }
 
-fn operand_to_boogie(operand: &Operand) -> super::Operand {
+fn operand_to_boogie(operand: &Operand) -> String {
     match operand.clone() {
-        Operand::Register(reg) => super::Operand::Register(register_to_string(&reg)),
-        Operand::Immediate(val) => super::Operand::Value(val),
+        Operand::Register(reg) => register_to_string(&reg),
+        Operand::Immediate(val) => val.to_string(),
         Operand::Memory(op) => {
             if op.offset == 0 {
-                super::Operand::Address(register_to_string(&op.base))
+                register_to_string(&op.base)
             } else {
-                super::Operand::AdressOffset(register_to_string(&op.base), op.offset)
+                format!("{}+{}", register_to_string(&op.base), op.offset)
             }
         }
         _ => unimplemented!(),

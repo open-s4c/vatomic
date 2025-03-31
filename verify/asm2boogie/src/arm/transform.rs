@@ -69,7 +69,6 @@ pub fn transform_labels(function: &ArmFunction) -> ArmFunction {
             }
             ArmInstruction::Branch(_, Operand::Label(name))
             | ArmInstruction::BranchLink(Operand::Label(name))
-            | ArmInstruction::ConditionalBranch(_, _, Operand::Label(name))
             | ArmInstruction::TestBitBranch(_, _, _, Operand::Label(name)) => {
                 label_refs.push(name.clone());
             }
@@ -111,17 +110,6 @@ pub fn transform_labels(function: &ArmFunction) -> ArmFunction {
                 if let Some(new_name) = label_map.get(name) {
                     new_instructions
                         .push(ArmInstruction::BranchLink(Operand::Label(new_name.clone())));
-                } else {
-                    new_instructions.push(instruction.clone());
-                }
-            }
-            ArmInstruction::ConditionalBranch(cond, op, Operand::Label(name)) => {
-                if let Some(new_name) = label_map.get(name) {
-                    new_instructions.push(ArmInstruction::ConditionalBranch(
-                        *cond,
-                        op.clone(),
-                        Operand::Label(new_name.clone()),
-                    ));
                 } else {
                     new_instructions.push(instruction.clone());
                 }

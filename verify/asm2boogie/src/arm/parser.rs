@@ -581,7 +581,7 @@ fn parse_branch_instruction(
             }
             return Ok((
                 "",
-                ArmInstruction::ConditionalBranch(false, operands[0].clone(), operands[1].clone()),
+                ArmInstruction::Branch(Some(Condition::Zero(operands[0].clone())), operands[1].clone())
             ));
         }
 
@@ -594,7 +594,7 @@ fn parse_branch_instruction(
             }
             return Ok((
                 "",
-                ArmInstruction::ConditionalBranch(true, operands[0].clone(), operands[1].clone()),
+                ArmInstruction::Branch(Some(Condition::NotZero(operands[0].clone())), operands[1].clone())
             ));
         }
 
@@ -653,7 +653,7 @@ fn parse_branch_instruction(
         let condition = parse_condition_code(cond_str);
 
         if let Some(cond) = condition {
-            return Ok(("", ArmInstruction::Branch(Some(cond), operands[0].clone())));
+            return Ok(("", ArmInstruction::Branch(Some(Condition::Code(cond)), operands[0].clone())));
         }
     }
 
@@ -994,7 +994,7 @@ mod tests {
         assert_eq!(
             instr,
             ArmInstruction::Branch(
-                Some(ConditionCode::EQ),
+                Some(Condition::Code(ConditionCode::EQ)),
                 Operand::Label(String::from("label2"))
             )
         );

@@ -134,25 +134,6 @@ procedure execute(instr: Instruction) returns (r : int);
         ])
     );
 
-datatype ConditionCode {
-    EQ(), 
-    NE(), 
-    LO(),
-    LS(),
-    HI(),
-    HS()
-}
-
-function branch(cond: ConditionCode, a, b: int): bool {(
-    if cond is EQ then a == b
-    else if cond is NE then a != b
-    else if cond is HS then a >= b
-    else if cond is LO then a < b
-    else if cond is HI then a > b
-    else if cond is LS then a <= b
-    else false // Should never be reached
-)}
-
 function bne(r1: int, r2:int): bool {
     r1 != r2
 }
@@ -160,7 +141,6 @@ function bne(r1: int, r2:int): bool {
 function bnez(r: int): bool {
     r != 0
 }
-
 
 function ppo(step1, step2: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect): bool {
     step1 < step2 && (

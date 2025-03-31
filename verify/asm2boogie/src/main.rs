@@ -1,15 +1,66 @@
+use asm2boogie::arm::{self, extract_arm_functions, parse_arm_assembly};
+use asm2boogie::riscv::{self, extract_riscv_functions, parse_riscv_assembly};
+use asm2boogie::{BoogieFunction, Width, DUMMY_REG};
 use asm2boogie::{
-    Arch, ToBoogie, arm::ArmFunction, generate_boogie_file, generate_debug_file,
-    riscv::RiscvFunction, wide_arch_widths,
+    Arch, ToBoogie, generate_boogie_file, generate_debug_file,
 };
 
-use clap::Parser;
-use std::fs;
+use clap::{Parser, ValueEnum};
+use std::{fs, iter};
 use std::path::Path;
 
 enum OutputMode {
     File(String),
     Directory(String),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, ValueEnum)]
+enum ArchSpecifier {
+    ArmV8,
+    RiscV,
+}
+
+
+impl Arch for ArchSpecifier {
+    fn name(&self) -> String {
+        format!("{:?}", self)
+    }
+
+    fn registers(&self) -> Vec<String> {
+        match self {
+            ArchSpecifier::ArmV8 => 
+                iter::once(DUMMY_REG.to_string())
+                .chain((0..31).flat_map(|i| [format!("x{}", i), format!("w{}", i)])).collect(),
+            ArchSpecifier::RiscV => 
+                iter::once(DUMMY_REG.to_string())
+                .chain((0..6).map(|i| format!("a{}", i)))
+                .chain((0..11).map(|i| format!("s{}", i)))
+                .chain((0..6).map(|i| format!("t{}", i))).collect(),
+        } 
+    }
+
+    fn width(&self) -> asm2boogie::Width {
+        Width::Wide
+    }
+    
+    fn parse_functions(&self, assembly: &str) -> Result<Vec<BoogieFunction>, Box<dyn std::error::Error>> {
+        /* @TODO intermediate step -- Vec<AsmFunction>. AsmFunction -> BoogieFunction. Here AsmFunction is a generic type of just name + string defining code. */
+        match self {
+            ArchSpecifier::ArmV8 => {
+                let (_, parsed_asm) = parse_arm_assembly(assembly).map_err(|err| err.to_string())?;
+                let functions = extract_arm_functions(parsed_asm, None, &["ptr", "32", "64", "sz", "8", ""])
+                    .into_iter().map(|f| arm::transform_labels(&f));
+                Ok(functions.into_iter().map(ToBoogie::to_boogie).collect())
+            }
+            ArchSpecifier::RiscV => {
+                let (_, parsed_asm) = parse_riscv_assembly(assembly).map_err(|err| err.to_string())?;
+                let functions = extract_riscv_functions(parsed_asm, None, &["ptr", "32", "64", "sz", "8", ""])
+                    .into_iter().map(|f| riscv::transform_labels(&f));
+                Ok(functions.into_iter().map(ToBoogie::to_boogie).collect())
+            }
+        }
+    }
+    
 }
 
 #[derive(Parser, Debug)]
@@ -22,7 +73,7 @@ struct Args {
         default_value = "armv8",
         help = "Target architecture (armv8 or riscv)"
     )]
-    arch: Arch,
+    arch: ArchSpecifier,
     #[clap(short = 'i', long, value_name = "FILE", help = "input file")]
     input: String,
     #[clap(short = 'f', long, value_name = "FILE", help = "function names")]
@@ -115,46 +166,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     log::info!("Successfully read input file '{}'", args.input);
 
-    let width_map = match args.arch {
-        Arch::ArmV8 => wide_arch_widths,
-        Arch::RiscV => wide_arch_widths,
-    };
+    let name_re = regex::Regex::new(function_names.join("|").as_str())?;
 
-    let valid_prefix: &[&str] = match args.arch {
-        Arch::ArmV8 => &["ptr", "32", "64", "sz", "8", ""],
-        Arch::RiscV => &["64"],
-    };
-
-    let boogie_functions = match args.arch {
-        Arch::ArmV8 => match ArmFunction::parse_and_transform(
-            &input_content,
-            Some(&function_names),
-            valid_prefix,
-        ) {
-            Ok(functions) => functions,
-            Err(e) => {
-                log::error!("Error parsing arm assembly: {:?}", e);
-                std::process::exit(1);
-            }
-        }
-        .into_iter()
-        .map(ToBoogie::to_boogie)
-        .collect::<Vec<_>>(),
-        Arch::RiscV => match RiscvFunction::parse_and_transform(
-            &input_content,
-            Some(&function_names),
-            valid_prefix,
-        ) {
-            Ok(functions) => functions,
-            Err(e) => {
-                log::error!("Error parsing riscv assembly: {:?}", e);
-                std::process::exit(1);
-            }
-        }
-        .into_iter()
-        .map(ToBoogie::to_boogie)
-        .collect::<Vec<_>>(),
-    };
+    let boogie_functions : Vec<_> = args.arch.parse_functions(&input_content)?
+        .iter().filter(|func| name_re.is_match(func.name.as_str()))
+        .cloned()
+        .collect();
 
     match output_mode {
         OutputMode::File(file_path) => {
@@ -168,7 +185,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             for function in &boogie_functions {
                 log::info!("Generating Boogie code for function: {}", function.name);
-                generate_boogie_file(function, &dir_path, template_dir, args.arch, width_map)?;
+                generate_boogie_file(function, &dir_path, template_dir, &args.arch)?;
             }
         }
     }

@@ -10,7 +10,7 @@
             datatype Ordering
                 different ordering types, like acquire and release ordering or fences
 
-            function is_sc(orders: [Ordering] bool) : bool
+            function is_sc(orders: Ordering) : bool
                 for RCsc
             
             function ppo(i, j: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect): bool 

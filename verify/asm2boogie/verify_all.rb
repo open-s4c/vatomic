@@ -1,10 +1,11 @@
 require 'optparse'
 
+archs = { "arm-v8" => ["armv8", "atomics.s"], "risc-v" => ["riscv", "atomic_riscv.s"] }
 options = {}
 options[:generate] = true;
 options[:which] = "atomics_list_full.txt"
 options[:where] = "out"
-options[:archs] = ["arm-v8","riscv"]
+options[:archs] = archs.keys
 options[:extract] = true
 
 OptionParser.new do |opts|
@@ -35,8 +36,9 @@ OptionParser.new do |opts|
 end.parse!
 
 
-def verify(out,atomic,template)
-    `boogie ../boogie/auxiliary.bpl ../boogie_armv8/library.bpl  ../boogie/sc-impl/rcsc.bpl #{out}/#{atomic}/#{template}`.strip
+def verify(arch, out,atomic,template)
+  (library, asm_file) = archs[arch]
+  `boogie ../boogie/auxiliary.bpl ../boogie_#{library}/library.bpl  ../boogie/sc-impl/rcsc.bpl #{out}/#{atomic}/#{template}`.strip
 end
 
 
@@ -45,9 +47,12 @@ if options[:generate]
     `ruby gen_atomic_list.rb > #{options[:which]}`
 end
 
+
+
 if options[:extract]
     options[:archs].each { |arch|
-        `cargo run -- --input data/atomic.s --functions #{options[:which]} --templates ../boogie/templates/ --directory #{options[:where]}/#{arch} --arch #{arch}`
+        (library, asm_file) = archs[arch]
+        `cargo run -- --input data/#{asm_file} --functions #{options[:which]} --templates ../boogie/templates/ --directory #{options[:where]}/#{arch} --arch #{arch}`
     }
 end
 

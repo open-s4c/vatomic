@@ -1,4 +1,4 @@
-use generate::{boogie_to_string, get_used_registers};
+use generate::boogie_to_string;
 use phf::phf_map;
 use std::{
     collections::{HashMap, HashSet},
@@ -7,7 +7,6 @@ use std::{
     path::Path,
 };
 
-use clap::ValueEnum;
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -16,48 +15,24 @@ pub mod generate;
 pub mod riscv;
 pub const DUMMY_REG: &str = "dummy";
 
-#[derive(ValueEnum, Debug, Clone, Copy)]
-pub enum Arch {
-    RiscV,
-    ArmV8,
+pub struct AssemblyFunction<'a> {
+    pub name: &'a str,
+    pub code: Vec<&'a str>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Operand {
-    Immediate(String),
-    Address(String),
-    AdressOffset(String, i64),
-    Label(String),
-    Register(String),
-    Bool(bool),
-    Value(i64),
-    Named(String),
-    Cond(Condition),
+pub trait Arch {
+    fn name(&self) -> String;
+    fn registers(&self) -> Vec<String>;
+    fn width(&self) -> Width;
+    fn parse_functions(&self, assembly: &str) -> Result<Vec<BoogieFunction>, Box<dyn std::error::Error>>;    
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Condition {
-    EQ,
-    NE,
-    HS,
-    LO,
-    HI,
-    LS,
-
-    // ARM
-    BZ,
-    BNZ,
-
-    // Risc
-    NEZ,
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum BoogieInstruction {
     Label(String),
-    Instr(String, String, Vec<Operand>),
-    ArmBranch(Condition, Operand, String),
-    RiscvBranch(Condition, Operand, Operand, String),
+    Instr(String, String, Vec<String>),
+    Branch(String, String),
     Jump(String),
     Unhandled(String),
     Return,
@@ -173,6 +148,7 @@ fn get_templates_for_type(func_type: FunctionClass) -> Vec<&'static str> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct BoogieFunction {
     pub name: String,
     pub instructions: Vec<BoogieInstruction>,
@@ -239,15 +215,19 @@ pub fn generate_boogie_file(
     function: &BoogieFunction,
     output_dir: &str,
     template_dir: &str,
-    arch: Arch,
-    type_map: fn(AtomicType) -> Width,
+    arch: &dyn Arch
 ) -> Result<(), std::io::Error> {
+    let type_map = match arch.width() {
+        Width::Thin => thin_arch_widths,
+        Width::Wide => wide_arch_widths,
+    };
+
     let func_type = classify_function(&function.name);
     let templates = get_templates_for_type(func_type);
 
     let boogie_code = boogie_to_string(&function.instructions);
 
-    let registers = get_used_registers(&function.instructions);
+    let registers = arch.registers();
 
     let state = "local_monitor, monitor_exclusive, flags, event_register";
 
@@ -333,7 +313,7 @@ pub fn generate_boogie_file(
 
         let content = template_content
             .replace("    #implementation", &boogie_code_with_assume)
-            .replace("#registers", &registers)
+            .replace("#registers", registers.join(",").as_str())
             .replace("#address", address)
             .replace("#state", state)
             .replace("#output", output)
@@ -355,11 +335,9 @@ pub fn generate_debug_file(boogie: &[BoogieFunction], path: &str) -> Result<(), 
     for function in boogie {
         let boogie_code = boogie_to_string(&function.instructions);
 
-        let registers = get_used_registers(&function.instructions);
-
         let content = format!(
-            "// ---- {} ----\n{}\n{}\n",
-            function.name, registers, boogie_code
+            "// ---- {} ----\n{}\n",
+            function.name, boogie_code
         );
         writeln!(file, "{:#?}", content)?;
     }
@@ -384,8 +362,9 @@ pub fn loop_headers(code: &[BoogieInstruction]) -> HashSet<usize> {
             BoogieInstruction::Jump(target) => {
                 graph.add_edge(i, label_idx[target], ());
             }
-            BoogieInstruction::ArmBranch(_, _, target)
-            | BoogieInstruction::RiscvBranch(_, _, _, target) => {
+            BoogieInstruction::Branch(target, _)
+            => {
+                println!("{}", target);
                 graph.add_edge(i, label_idx[target], ());
                 graph.add_edge(i, i + 1, ());
             }

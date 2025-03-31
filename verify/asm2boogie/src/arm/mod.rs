@@ -6,7 +6,7 @@ use std::fmt::Display;
 pub use parser::parse_arm_assembly;
 pub use transform::{extract_arm_functions, remove_directives, transform_labels};
 
-use crate::{BoogieFunction, BoogieInstruction, DUMMY_REG, Operand as BoogieOperand, ToBoogie};
+use crate::{BoogieFunction, BoogieInstruction, DUMMY_REG, ToBoogie};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RegisterType {
@@ -50,12 +50,17 @@ pub enum Operand {
     FenceMode(FenceType),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ConditionCode {
     EQ, // Equal
-    NE, // Not equal
+    NE, // Not equal    
+
+    HS, // Higher or same
     CS, // Carry set
+
+    LO, // Lower
     CC, // Carry clear
+
     MI, // Minus, negative
     PL, // Plus, positive or zero
     VS, // Overflow
@@ -68,6 +73,14 @@ pub enum ConditionCode {
     LE, // Signed less than or equal
     AL, // Always (default)
     NV, // Never
+}
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Condition {
+    Code(ConditionCode),
+    Zero(Operand),
+    NotZero(Operand),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -160,13 +173,12 @@ pub enum ArmInstruction {
 
     Dmb(FenceType),
 
-    Branch(Option<ConditionCode>, Operand),
+    Branch(Option<Condition>, Operand),
     BranchLink(Operand),
     BranchLinkRegister(Operand),
     BranchRegister(Operand),
     Return(Option<Operand>),
 
-    ConditionalBranch(bool, Operand, Operand),
     TestBitBranch(bool, Operand, Operand, Operand),
 
     Label(String),
@@ -218,24 +230,35 @@ impl ToBoogie for ArmFunction {
         riscv_to_boogie(self)
     }
 }
+
+
+pub fn condition_code_to_boogie(code : ConditionCode) -> String {
+    match code {
+        ConditionCode::CS => condition_code_to_boogie(ConditionCode::HS),
+        ConditionCode::CC => condition_code_to_boogie(ConditionCode::LO),
+        _ => format!("{:?}()", code),
+    }
+} 
+
+
+pub fn condition_to_boogie(cond : &Condition) -> String {
+    match cond {
+        Condition::Code(code) => format!("branch({},flags)", condition_code_to_boogie(*code)),
+        Condition::Zero(reg) => format!("cbz({})", operand_to_boogie(&reg)),
+        Condition::NotZero(reg) => format!("cbnz({})", operand_to_boogie(&reg)),
+    }
+} 
+
 pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
     match instr {
         ArmInstruction::Label(name) => BoogieInstruction::Label(name.clone()),
         ArmInstruction::Branch(cond_opt, target) => match target {
             Operand::Label(label_name) => {
                 if let Some(cond) = cond_opt {
-                    if let Some(cond) = condition_to_boogie(cond) {
-                        BoogieInstruction::ArmBranch(
-                            cond,
-                            super::Operand::Named("flags".to_string()),
-                            label_name.to_string(),
-                        )
-                    } else {
-                        BoogieInstruction::Unhandled(format!(
-                            "// Unhandled Branch Type: {:?}, {:?}",
-                            cond_opt, target
-                        ))
-                    }
+                    BoogieInstruction::Branch(
+                        label_name.to_string(),
+                        condition_to_boogie(cond)
+                    )
                 } else {
                     BoogieInstruction::Jump(label_name.to_string())
                 }
@@ -245,27 +268,10 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
                 cond_opt, target
             )),
         },
-        ArmInstruction::ConditionalBranch(is_zero, test, target) => {
-            if let Operand::Label(label_name) = target {
-                let test_reg = operand_to_boogie(test);
-                let condition = if *is_zero {
-                    super::Condition::BZ
-                } else {
-                    super::Condition::BNZ
-                };
-
-                BoogieInstruction::ArmBranch(condition, test_reg, label_name.to_string())
-            } else {
-                BoogieInstruction::Unhandled(format!(
-                    "// Unhandled Branch Type: {:?}, {:?}, {:?}",
-                    is_zero, test, target
-                ))
-            }
-        }
         ArmInstruction::Dmb(mode) => BoogieInstruction::Instr(
             "dmb".to_string(),
             DUMMY_REG.to_string(),
-            vec![super::Operand::Named(mode.to_string())],
+            vec![mode.to_string()],
         ),
         ArmInstruction::Return(_) => BoogieInstruction::Return,
         ArmInstruction::Arithmetic(op, dest, src1, src2_opt) => {
@@ -277,7 +283,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
                 ArithmeticOp::Orr => "orr",
                 ArithmeticOp::Eor => "eor",
             };
-            let dest_reg = register_to_boogie(dest);
+            let dest_reg = operand_to_boogie(dest);
             let src1 = operand_to_boogie(src1);
 
             let ops = if let Some(src2) = src2_opt {
@@ -294,11 +300,11 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
                 MoveOp::Mvn => "mvn",
             };
 
-            let dest_reg = register_to_boogie(dest);
+            let dest_reg = operand_to_boogie(dest);
             let src_reg = operand_to_boogie(src);
             BoogieInstruction::Instr(op_name.to_string(), dest_reg, vec![src_reg])
         }
-        ArmInstruction::Memory(op, attrs, dest, src) => {
+        ArmInstruction::Memory(op, attrs, reg1, reg2) => {
             let (op_name, has_output) = match op {
                 MemoryOp::Load => {
                     if attrs.exclusive {
@@ -310,20 +316,20 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
                 MemoryOp::Store => ("st", false),
             };
 
-            let dest_reg = register_to_boogie(dest);
-            let src_reg = operand_to_boogie(src);
+            let dest_or_src_reg = operand_to_boogie(reg1);
+            let addr_reg = operand_to_boogie(reg2);
 
             if has_output {
                 BoogieInstruction::Instr(
                     op_name.to_string(),
-                    dest_reg,
-                    vec![BoogieOperand::Bool(attrs.acquire), src_reg],
+                    dest_or_src_reg,
+                    vec![attrs.acquire.to_string(), addr_reg],
                 )
             } else {
                 BoogieInstruction::Instr(
                     op_name.to_string(),
                     DUMMY_REG.to_string(),
-                    vec![BoogieOperand::Bool(attrs.acquire), src_reg],
+                    vec![attrs.acquire.to_string(), dest_or_src_reg, addr_reg],
                 )
             }
         }
@@ -333,14 +339,14 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
                 _ => unimplemented!(),
             };
 
-            let dest_reg = register_to_boogie(dest);
+            let dest_reg = operand_to_boogie(dest);
             let exp_reg = operand_to_boogie(exp);
             let src_reg = operand_to_boogie(src);
 
             BoogieInstruction::Instr(
                 op_name.to_string(),
                 dest_reg,
-                vec![BoogieOperand::Bool(attrs.release), exp_reg, src_reg],
+                vec![attrs.release.to_string(), exp_reg, src_reg],
             )
         }
         ArmInstruction::Cmp(op1, op2) => {
@@ -354,25 +360,21 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             )
         }
         ArmInstruction::Csel(dest, op1, op2, ce) => {
-            let dest_reg = register_to_boogie(dest);
+            let dest_reg = operand_to_boogie(dest);
             let op1_reg = operand_to_boogie(op1);
             let op2_reg = operand_to_boogie(op2);
-            let cond = condition_to_boogie(ce);
-            if let Some(cond) = cond {
-                BoogieInstruction::Instr(
-                    "csel".to_string(),
-                    dest_reg,
-                    vec![op1_reg, op2_reg, super::Operand::Cond(cond)],
-                )
-            } else {
-                BoogieInstruction::Unhandled(format!("  // Invlaid Csel condition {:?}", ce))
-            }
+            let cond = condition_code_to_boogie(*ce);
+            BoogieInstruction::Instr(
+                "csel".to_string(),
+                dest_reg,
+                vec![op1_reg, op2_reg, cond],
+            )
         }
         _ => BoogieInstruction::Unhandled(format!("{:?}", instr)),
     }
 }
 
-fn register_to_string(reg: &Register) -> String {
+fn register_to_boogie(reg: &Register) -> String {
     match reg.reg_type {
         RegisterType::X => format!("x{}", reg.number),
         RegisterType::W => format!("w{}", reg.number),
@@ -386,37 +388,18 @@ fn register_to_string(reg: &Register) -> String {
     }
 }
 
-fn register_to_boogie(operand: &Operand) -> String {
-    match operand {
-        Operand::Register(reg) => register_to_string(reg),
-        _ => "unknown_register".to_string(),
-    }
-}
-
-fn operand_to_boogie(operand: &Operand) -> super::Operand {
+fn operand_to_boogie(operand: &Operand) -> String {
     match operand.clone() {
-        Operand::Register(_) => super::Operand::Register(register_to_boogie(&operand)),
-        Operand::ImmediateValue(val) => super::Operand::Value(val),
+        Operand::Register(r) => register_to_boogie(&r),
+        Operand::ImmediateValue(val) => val.to_string(),
         Operand::Memory(addr_mode) => match addr_mode {
-            AddressingMode::BaseRegister(reg) => super::Operand::Address(register_to_string(&reg)),
+            AddressingMode::BaseRegister(reg) => register_to_boogie(&reg),
             AddressingMode::BaseRegisterWithOffset(reg, offset) => {
-                super::Operand::AdressOffset(register_to_string(&reg), offset)
+                format!("{}+{}", register_to_boogie(&reg), offset)
             }
-            _ => super::Operand::Named(format!("/* invalid operand {:?} /*", operand)),
+            _ => format!("/* unsupported addressing mode {:?} /*", operand),
         },
         _ => unimplemented!(),
     }
 }
 
-fn condition_to_boogie(cond: &ConditionCode) -> Option<super::Condition> {
-    let cond = match cond {
-        ConditionCode::EQ => super::Condition::EQ,
-        ConditionCode::NE => super::Condition::NE,
-        ConditionCode::CS => super::Condition::HS,
-        ConditionCode::CC => super::Condition::LO,
-        ConditionCode::HI => super::Condition::HI,
-        ConditionCode::LS => super::Condition::LS,
-        _ => return None,
-    };
-    Some(cond)
-}
