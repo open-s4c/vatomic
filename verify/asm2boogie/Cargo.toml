@@ -14,3 +14,4 @@ phf = { version = "0.11.3", features = ["macros"] }
 petgraph = "0.7.1"
 nohash = "0.2.0"
 itertools = "0.14.0"
+head-tail-iter = "1.0.1"

@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use nom::{
     IResult, Parser,
     branch::alt,
@@ -668,7 +669,7 @@ fn parse_line(input: &str) -> IResult<&str, Option<RiscvInstruction>> {
 pub fn parse_riscv_assembly(input: &str) -> IResult<&str, Vec<RiscvInstruction>> {
     let (input, _) = multispace0(input)?;
     let (input, options) = many0(parse_line).parse(input)?;
-    let instructions = options.into_iter().flatten().collect();
+    let instructions: Vec<RiscvInstruction> = options.into_iter().flatten().collect();
     Ok((input, instructions))
 }
 

@@ -193,25 +193,6 @@ pub struct ArmFunction {
     pub instructions: Vec<ArmInstruction>,
 }
 
-impl ArmFunction {
-    pub fn parse_and_transform<'a>(
-        content: &'a str,
-        names: Option<&[String]>,
-        valid_prefix: &[&str],
-    ) -> Result<Vec<ArmFunction>, nom::Err<nom::error::Error<&'a str>>> {
-        let (_, parsed) = parse_arm_assembly(content)?;
-        log::info!("Successfully parsed arm assembly");
-
-        let processed_functions = extract_arm_functions(parsed, names, valid_prefix)
-            .into_iter()
-            .map(|f| transform_labels(&f))
-            .map(|f| remove_directives(&f))
-            .collect::<Vec<_>>();
-
-        Ok(processed_functions)
-    }
-}
-
 pub fn riscv_to_boogie(function: ArmFunction) -> BoogieFunction {
     let instructions = function
         .instructions

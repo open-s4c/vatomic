@@ -180,25 +180,6 @@ pub struct RiscvFunction {
     pub instructions: Vec<RiscvInstruction>,
 }
 
-impl RiscvFunction {
-    pub fn parse_and_transform<'a>(
-        content: &'a str,
-        names: Option<&[String]>,
-        valid_prefix: &[&str],
-    ) -> Result<Vec<RiscvFunction>, nom::Err<nom::error::Error<&'a str>>> {
-        let (_, parsed) = parse_riscv_assembly(content)?;
-        log::info!("Successfully parsed arm assembly");
-
-        let processed_functions = extract_riscv_functions(parsed, names, valid_prefix)
-            .into_iter()
-            .map(|f| transform_labels(&f))
-            .map(|f| remove_directives(&f))
-            .collect::<Vec<_>>();
-
-        Ok(processed_functions)
-    }
-}
-
 pub fn riscv_to_boogie(function: RiscvFunction) -> BoogieFunction {
     let instructions = function
         .instructions
@@ -212,10 +193,8 @@ pub fn riscv_to_boogie(function: RiscvFunction) -> BoogieFunction {
     }
 }
 
-use itertools::Itertools;
 impl ToBoogie for RiscvFunction {
     fn to_boogie(self) -> BoogieFunction {
-        println!("generating boogie for {}\n    {:?}", self.name, self.instructions.iter().map(|s| format!("{:?}", s)).join("\n    "));
         riscv_to_boogie(self)
     }
 }
