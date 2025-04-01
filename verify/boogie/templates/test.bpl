@@ -22,7 +22,7 @@ procedure read(ret : RMWOp, load_order: OrderRelation)
     loop: 
         // two loop invariants, used in every loop
         assert step >= old(step); 
-        assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i] == e ==> ! (e is write));
+        assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i] == e ==> ! is_write(e));
 
         call a0 := execute(lr(false, false, x5));
         call x6 := execute(add(a0, a1));
@@ -60,7 +60,7 @@ procedure rmw (op: RMWOp)
     loop: 
         // two loop invariants, used in every loop
         assert step >= old(step); 
-        assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i] == e ==> ! (e is write));
+        assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i] == e ==> ! (is_write(e)));
 
         call a0 := execute(lr(false, false, x5));
         call x6 := execute(add(a0, a1));
@@ -73,7 +73,7 @@ procedure write(store_order: OrderRelation)
     modifies step, effects, ordering, atomic, last_load, last_store, local_monitor, monitor_exclusive, a0, a1, a2, x5, x6;
     ensures {:msg "no other writes"}
         (forall i : StateIndex ::
-            old(step) <= i && i < step && (exists e : Effect :: effects[i] == e && (e is write))
+            old(step) <= i && i < step && (exists e : Effect :: effects[i] == e && (is_write(e)))
                 ==> i == last_store);
     ensures {:msg "store ordering"}
         !no_writes(old(step), step, last_store) ==> (
@@ -88,7 +88,7 @@ procedure write(store_order: OrderRelation)
     loop: 
         // two loop invariants, used in every loop
         assert step >= old(step); 
-        assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i] == e ==> ! (e is write));
+        assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i] == e ==> ! (is_write(e)));
 
         call a0 := execute(lr(false, false, x5));
         call x6 := execute(add(a0, a1));

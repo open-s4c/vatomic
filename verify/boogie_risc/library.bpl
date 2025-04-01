@@ -43,6 +43,29 @@ datatype Instruction {
 }
 
 
+function updated_value(instr: Instruction, read_value : int) : int {
+    if instr->atom is AtomicAdd then instr->src + read_value
+    else if instr->atom is AtomicAnd then and[instr->src, read_value]
+    else if instr->atom is AtomicMax then max[instr->src, read_value]
+    else if instr->atom is AtomicMin then min[instr->src, read_value]
+    else if instr->atom is AtomicOr then or[instr->src, read_value]
+    else if instr->atom is AtomicXor then xor[instr->src, read_value]
+    else if instr->atom is AtomicSwap then instr->src
+    else 0
+}
+
+function rmw(instr: Instruction) : bool {
+    instr is atomic
+}
+
+function reads(instr: Instruction) : bool {
+    rmw(instr) || instr is ld || instr is lr
+}
+
+function writes(instr: Instruction) : bool {
+    rmw(instr) || instr is sd
+}
+
 
 procedure execute(instr: Instruction) returns (r : int);
     modifies step, local_monitor, monitor_exclusive, last_store, last_load;
@@ -63,16 +86,14 @@ procedure execute(instr: Instruction) returns (r : int);
             else r)
         &&
         (last_load ==
-                    if instr is ld
-                     || instr is lr
+                    if reads(instr)
                     then
                         old(step)
                     else
                         old(last_load))
         && 
         (last_store == 
-                    if instr is sd
-                     || (instr is sc && sc_success)
+                    if writes(instr) || (instr is sc && sc_success)
                     then
                         old(step)
                     else
@@ -81,33 +102,29 @@ procedure execute(instr: Instruction) returns (r : int);
         (local_monitor == 
                     if instr is lr then
                         exclusive(instr->addr)
-                    else if instr is sc || instr is sd || instr is ld then
+                    else if writes(instr) || reads(instr) || instr is sc then
                         open()
                     else
                         old(local_monitor))
         &&
-        (effects[old(step)] == if 
-                instr is ld
-                || instr is lr
+        (effects[old(step)] == if rmw(instr) || (instr is sc && sc_success)
+            then update(instr->addr, r, true, updated_value(instr, r))
+            else if reads(instr)
             then read(instr->addr, r, true)
-            else if 
-                instr is sd 
-                || (instr is sc && sc_success)
+            else if writes(instr) 
             then write(instr->addr, instr->src)
             else no_effect())
         &&
-        (ordering[old(step)] == 
+        (ordering[old(step)] ==
             if instr->acq && instr->rel
                 && (instr is lr
-                    || (instr is sc && sc_success))
+                    || (instr is sc && sc_success)
+                    || rmw(instr))
             then AcqRel()
-            else if instr->acq
-                && (instr is ld 
-                    || instr is lr)
+            else if instr->acq && reads(instr)
             then Acquire()
-            else if instr->rel
-                && (instr is sd
-                    || (instr is sc && sc_success))
+            else if (instr->rel && writes(instr))
+                    || (instr is sc && sc_success)
             then Release()
             else if instr is fence
             then Fence(instr->ra, instr->wa, instr->rb, instr->wb) 
@@ -119,14 +136,13 @@ procedure execute(instr: Instruction) returns (r : int);
         || monitor_exclusive == old(
             if instr is lr then
                 true
-            else if (instr is sd || instr is sc) then
+            else if writes(instr) || instr is sc then
                 false
             else
                 monitor_exclusive
         ))
         &&
-        (atomic[last_load, old(step)] == 
-            instr is sc && sc_success)
+        (atomic[last_load, old(step)] == (rmw(instr) || (instr is sc && sc_success)))
     );
 
 function bne(r1: int, r2:int): bool {
@@ -156,11 +172,11 @@ function ppo(step1, step2: StateIndex, ordering: [StateIndex] Ordering, effects:
         (exists fenceId: StateIndex, fence: Ordering, e1, e2: Effect :: 
             fence is Fence && ordering[fenceId] == fence && effects[step1] == e1 && effects[step2] == e2 &&
             (step1 < fenceId && fenceId < step2) &&
-            ((fence->ra && e1 is read) ||
-             (fence->wa && e1 is write)
+            ((fence->ra && is_read(e1)) ||
+             (fence->wa && is_write(e1))
             ) && 
-            ((fence->rb && e2 is read) ||
-             (fence->wb && e2 is write)
+            ((fence->rb && is_read(e2)) ||
+             (fence->wb && is_write(e2))
             )
         )
     )

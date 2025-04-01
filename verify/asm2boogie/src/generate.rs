@@ -23,7 +23,7 @@ pub fn boogie_to_string(instructions: &[BoogieInstruction]) -> String {
                 if backward_branch_targets.contains(name) {
                     code.push_str("    assert last_store < old(step);\n");
                     code.push_str("    assert step >= old(step);\n");
-                    code.push_str("    assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i] == e ==> ! (e is write));\n\n");
+                    code.push_str("    assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i] == e ==> ! (is_write(e)));\n\n");
                 }
             }
             BoogieInstruction::Instr(name, out, ops) => {

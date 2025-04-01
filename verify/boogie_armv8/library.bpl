@@ -97,11 +97,11 @@ procedure verify_execute(instr : Instruction) returns (r : int)
     requires last_load < step;
     requires last_store < step;
     ensures {:msg "last_load tracked correctly"} (
-            (effects[old(step)] is read) ==
+            (is_read(effects[old(step)])) ==
                 (old(step) == last_load)
     );
     ensures ( // can define no_writes through last_store 
-            (effects[old(step)] is write) ==
+            (is_write(effects[old(step)])) ==
                 (old(step) == last_store)
     );
     ensures last_load < step;
@@ -127,7 +127,43 @@ function visible(instr : Instruction) : bool {
     || instr is stadd)
 }
 
+function updated_value(instr: Instruction, read_value : int) : int {
+    if instr is cas || instr is swp
+    then instr->src
+    else if instr is ldclr || instr is stclr
+    then and[instr->src, read_value]
+    else if instr is ldset || instr is stset
+    then or[instr->src, read_value]
+    else if instr is ldeor || instr is steor
+    then xor[instr->src, read_value] 
+    else if instr is ldumax || instr is stumax
+    then max[instr->src, read_value]
+    else if instr is ldadd || instr is stadd
+    then instr->src + read_value
+    else 0
+}
 
+function rmw(instr: Instruction) : bool {
+    instr is swp
+    || instr is ldumax
+    || instr is stumax
+    || instr is ldclr
+    || instr is stclr
+    || instr is ldset
+    || instr is stset
+    || instr is ldeor
+    || instr is steor
+    || instr is ldadd
+    || instr is stadd
+}
+
+function reads(instr: Instruction) : bool {
+    rmw(instr) || instr is ld || instr is ldx || instr is cas
+}
+
+function writes(instr: Instruction) : bool {
+    rmw(instr) || instr is st
+}
 
 procedure execute(instr: Instruction) returns (r : int);
     modifies flags, step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
@@ -137,7 +173,7 @@ procedure execute(instr: Instruction) returns (r : int);
             old(local_monitor == exclusive(instr->addr)
             && monitor_exclusive),
             r == instr->exp;
-        (r == if instr is stx then b2i(stx_success)
+        (r == if instr is stx then b2i(! stx_success)
             else if instr is mov then instr->src
             else if instr is add then instr->first + instr->second
             else if instr is sub then instr->first - instr->second
@@ -149,38 +185,15 @@ procedure execute(instr: Instruction) returns (r : int);
             else if instr is csel then if instr->cond then instr->src1 else instr->src2
             else r)
         &&
-        (last_load == if instr is ld
-                    || instr is ldx
-                    || instr is swp
-                    || instr is cas 
-                    || instr is ldumax
-                    || instr is ldclr
-                    || instr is ldset
-                    || instr is ldeor
-                    || instr is ldadd
-                    || instr is stumax
-                    || instr is stclr
-                    || instr is stset
-                    || instr is steor
-                    || instr is stadd
+        (last_load == if reads(instr)
                     then
                         old(step)
                     else
                         old(last_load))
         &&
-        (last_store == if instr is st
-                    || instr is swp
-                    || instr is ldclr
-                    || instr is ldset
-                    || instr is ldeor
-                    || instr is ldadd
-                    || (instr is cas && cas_success)
-                    || (instr is stx && stx_success)
-                    || (instr is ldumax || instr is stumax)
-                    || instr is stclr
-                    || instr is stset
-                    || instr is steor
-                    || instr is stadd
+        (last_store == if writes(instr) || rmw(instr)
+                        || (instr is cas && cas_success)
+                        || (instr is stx && stx_success)
                     then
                         old(step)
                     else
@@ -188,19 +201,8 @@ procedure execute(instr: Instruction) returns (r : int);
         &&
         (local_monitor == if instr is ldx then exclusive(instr->addr)
                         else if instr is stx 
-                            || instr is st
-                            || instr is swp
-                            || instr is ldset
-                            || instr is ldclr
-                            || instr is ldeor
-                            || instr is ldadd
-                            || instr is stclr
-                            || instr is stset
-                            || instr is steor
-                            || instr is stadd
-                            || (instr is cas && cas_success)
-                            || (instr is ldumax || instr is stumax) 
-                            || instr is ld
+                            || instr is cas
+                            || reads(instr) || writes(instr)
                             || instr is wfe
                         then open()
                         else old(local_monitor))
@@ -214,74 +216,35 @@ procedure execute(instr: Instruction) returns (r : int);
                     old(flags)
                 )
         &&
-        (effects[old(step)] == if instr is ld
-                            || instr is ldx
-                            || instr is cas
-                            || instr is swp
-                            || instr is ldclr || instr is stclr
-                            || instr is ldset || instr is stset
-                            || instr is ldeor || instr is steor
-                            || instr is ldumax || instr is stumax
-                            || instr is ldadd || instr is stadd
-                        then read(instr->addr, r, visible(instr)) 
-                        else if instr is st
-                            || (instr is stx && stx_success)
-                            || (instr is cas && cas_success)
-                            || instr is swp 
+        (effects[old(step)] == 
+                        if rmw(instr)
+                        || (instr is cas && cas_success)
+                        then update(instr->addr, r, visible(instr), updated_value(instr, r))
+                        else if writes(instr) || (instr is stx && stx_success)
                         then write(instr->addr, instr->src)
-                        else if instr is ldclr || instr is stclr
-                        then write(instr->addr, and[instr->src, r])
-                        else if instr is ldset || instr is stset
-                        then write(instr->addr, or[instr->src, r])
-                        else if instr is ldeor || instr is steor
-                        then write(instr->addr, xor[instr->src, r]) 
-                        else if instr is ldumax || instr is stumax
-                        then write(instr->addr, max[instr->src, r])
-                        else if instr is ldadd || instr is stadd
-                        then write(instr->addr, instr->src + r)
+                        else if reads(instr)
+                        then read(instr->addr, r, visible(instr))
                         else no_effect() 
             )
         &&
-        (ordering[old(step)] == if instr->acq 
-                        && (instr is ld 
-                            || instr is ldx
-                            || instr is cas
-                            || instr is swp
-                            || instr is ldclr
-                            || instr is ldset
-                            || instr is ldeor
-                            || instr is ldumax
-                            || instr is ldadd
-                        )
+        (ordering[old(step)] == if instr->acq && reads(instr)
                     then Acquire()
-                    else if instr->rel
-                        && (instr is st
+                    else if instr->rel && (writes(instr)
                             || (instr is stx && stx_success)
-                            || (instr is cas && cas_success) 
-                            || instr is swp
-                            || instr is ldclr || instr is stclr
-                            || instr is ldset || instr is stset
-                            || instr is ldeor || instr is steor
-                            || instr is ldumax || instr is stumax
-                            || instr is ldadd || instr is stadd
-                        )
+                            || (instr is cas && cas_success))
                     then Release()
                     else if instr is dmb
                     then Fence(instr->mode)
                     else NoOrd())
         &&
+        (atomic[last_load, old(step)] == (rmw(instr) || (instr is stx && stx_success) || (instr is cas && cas_success)))
+        &&
         (   // external write can clear monitor at any moment. has to set event register.
             (monitor_exclusive == false && event_register == old(monitor_exclusive || event_register))
             || monitor_exclusive == if instr is ldx then true
-                else if instr is st
+                else if writes(instr)
                     || instr is stx 
                     || (instr is cas && cas_success)
-                    || instr is swp 
-                    || instr is ldclr || instr is stclr
-                    || instr is ldset || instr is stset
-                    || instr is ldeor || instr is steor
-                    || instr is ldumax || instr is stumax
-                    || instr is ldadd || instr is stadd
                 then false
                 else old(monitor_exclusive))
         &&
@@ -306,8 +269,7 @@ procedure execute(instr: Instruction) returns (r : int);
         instr is wfe ==> event_register || monitor_exclusive;
     requires {:msg "stx is paired to ldx"}
         instr is stx ==> local_monitor == exclusive(instr->addr);
-        
-        
+
 
 function cbnz(test: int): bool {
     test != 0

@@ -17,8 +17,16 @@
                 defining whether i --ppo-> j with the ordering and effects
 
 
-            axiom sc_impl is ...;
+        and that assumptions be present in templated code:
+
+            assume sc_impl is ...;
             telling which SC implementation is used (TrailingFence, LeadingFence, RCsc)
+
+        as well as function parameters:
+
+            assume load_order == ...;
+            assume fence_order == ...;
+            ...
 
 ****************************************************************/
 
@@ -34,10 +42,21 @@ type StateIndex = int;
 
 datatype Effect {
     // read(a,v,vis) == read at a the value v. vis means whether this read is visible to barriers
-    read(addr: int, value: int, visible: bool),
-    write(addr: int, value: int),
+    read(addr: int, read_value: int, visible: bool),
+    write(addr: int, write_value: int),
+    update(addr: int, read_value: int, read_visible: bool, write_value: int),
     no_effect()
 }
+
+
+function is_read(effect: Effect) : bool {
+    effect is read || effect is update
+}
+
+function is_write(effect: Effect) : bool {
+    effect is write || effect is update
+}
+
 var last_load, last_store: StateIndex;
 var step: StateIndex;
 var atomic: [StateIndex,StateIndex] bool;
@@ -66,6 +85,13 @@ const max: [int, int] int;
 axiom max == (lambda x, y: int ::
     if x > y then x else y
 );
+
+
+const min: [int, int] int;
+axiom min == (lambda x, y: int ::
+    if x < y then x else y
+);
+
 
 const add: [int, int] int;
 axiom add == (lambda x, y: int :: x + y);
@@ -152,14 +178,14 @@ axiom order_rel_sc == (lambda store, entry, exit: StateIndex, ordering: [StateIn
 const order_fence_acq: OrderRelation;
 axiom order_fence_acq == (lambda fence, entry, exit: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect ::
         (forall i, j: StateIndex ::
-            (i < entry) && (j >= exit) && (exists e: Effect :: effects[i] == e && e is read && e->visible) && (exists e: Effect :: effects[j] == e)
+            (i < entry) && (j >= exit) && (exists e: Effect :: effects[i] == e && is_read(e) && e->visible) && (exists e: Effect :: effects[j] == e)
                 ==> ppo(i, j, ordering, effects))
 );
 
 const order_fence_rel: OrderRelation;
 axiom order_fence_rel == (lambda fence, entry, exit: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect ::
         (forall i, j: StateIndex ::
-            (i < entry) && (j >= exit) && (exists e: Effect :: effects[i] == e) && (exists e: Effect :: effects[j] == e && e is write)
+            (i < entry) && (j >= exit) && (exists e: Effect :: effects[i] == e) && (exists e: Effect :: effects[j] == e && is_write(e))
                 ==> ppo(i, j, ordering, effects))
 );
 const order_fence_sc: OrderRelation;
