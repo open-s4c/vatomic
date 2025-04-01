@@ -1,10 +1,7 @@
 use generate::boogie_to_string;
 use phf::phf_map;
 use std::{
-    collections::{HashMap, HashSet},
-    fs,
-    io::Write,
-    path::Path,
+    collections::{HashMap, HashSet}, fs, hash::BuildHasher, io::Write, path::Path
 };
 
 use lazy_static::lazy_static;
@@ -359,7 +356,87 @@ pub fn generate_debug_file(boogie: &[BoogieFunction], path: &str) -> Result<(), 
     Ok(())
 }
 
-use petgraph::{Directed, graphmap};
+use petgraph::{graphmap::{self, NodeTrait}, prelude::GraphMap, visit::{EdgeRef, GraphBase, IntoEdgeReferences, IntoEdgesDirected, IntoNeighbors, IntoNeighborsDirected, IntoNodeIdentifiers, NodeIndexable}, Directed, EdgeType};
+
+trait RemoveEdge : GraphBase
+{
+    fn remove_edge(&mut self, to_remove: <Self as GraphBase>::EdgeId);
+}
+
+
+impl <N : PartialEq + Copy + NodeTrait, E, Ty : EdgeType, S:BuildHasher> RemoveEdge for GraphMap<N, E, Ty, S> {
+    fn remove_edge(&mut self, to_remove: Self::EdgeId) {
+        self.remove_edge(to_remove.0, to_remove.1);
+    }
+}
+impl <N : PartialEq + Copy + NodeTrait, E, Ty : EdgeType, S:BuildHasher> IdConvertible for GraphMap<N, E, Ty, S> {
+    fn edge_from_ref(ref_value: <&Self as GraphBase>::EdgeId) -> <Self as GraphBase>::EdgeId {
+        ref_value
+    }
+    fn node_from_ref(ref_value: <&Self as GraphBase>::NodeId) -> <Self as GraphBase>::NodeId {
+        ref_value
+    }
+}
+
+
+trait IdConvertible 
+where Self : GraphBase + Sized {
+    fn edge_from_ref(ref_value: <&Self as GraphBase>::EdgeId) -> <Self as GraphBase>::EdgeId;
+    fn node_from_ref(ref_value: <&Self as GraphBase>::NodeId) -> <Self as GraphBase>::NodeId;
+}
+
+fn loop_headers_iter<G : RemoveEdge + IdConvertible>(cfg: &mut G, loop_entries: &mut HashSet<<G as GraphBase>::NodeId>)
+where for <'a> &'a G : IntoNeighborsDirected + IntoEdgesDirected + IntoNodeIdentifiers + IntoNeighbors + NodeIndexable + IntoEdgeReferences,
+ for <'a> <&'a G as GraphBase>::NodeId: Eq + std::hash::Hash + Copy,
+ <G as GraphBase>::NodeId: Eq + std::hash::Hash + Copy,
+ {
+    let scc = petgraph::algo::tarjan_scc(&*cfg);
+
+
+    for component in scc {
+        let set: HashSet<_> = component.iter().copied().collect();
+        for i in set.iter().copied() {
+            let mut in_loop = false;
+            let mut entry = false;
+            for edge in cfg.edges_directed(i, petgraph::Direction::Incoming) {
+                if set.contains(&edge.source()) {
+                    in_loop = true;
+                } else {
+                    entry = true;
+                }
+            }
+            if in_loop && entry {
+                loop_entries.insert(G::node_from_ref(i));
+            }
+        }
+    }
+ }
+
+
+fn loop_headers_rec<G : RemoveEdge + IdConvertible>(cfg: &mut G, loop_entries: &mut HashSet<<G as GraphBase>::NodeId>)
+where for <'a> &'a G : IntoNeighborsDirected + IntoEdgesDirected + IntoNodeIdentifiers + IntoNeighbors + NodeIndexable + IntoEdgeReferences,
+ for <'a> <&'a G as GraphBase>::NodeId: Eq + std::hash::Hash + Copy,
+ <G as GraphBase>::NodeId: Eq + std::hash::Hash + Copy,
+ {
+    loop {
+        loop_headers_iter(cfg, loop_entries);
+    
+        let edges = cfg.edge_references()
+            .filter(|e| loop_entries.contains(&G::node_from_ref(e.target())))
+            .map(|e| G::edge_from_ref(e.id()))
+            .collect::<Vec<_>>();
+        
+        if edges.is_empty() {
+            break;
+        }
+
+        for e in edges {
+            cfg.remove_edge(e);
+        }
+    }
+
+}
+
 pub fn loop_headers(code: &[BoogieInstruction]) -> HashSet<usize> {
     let mut graph =
         graphmap::GraphMap::<_, _, Directed>::with_capacity(code.len() + 1, 2 * code.len() + 1);
@@ -389,27 +466,8 @@ pub fn loop_headers(code: &[BoogieInstruction]) -> HashSet<usize> {
         }
     }
 
-    let scc = petgraph::algo::tarjan_scc(&graph);
-
+    
     let mut loop_entries = HashSet::new();
-
-    for component in scc {
-        let set: HashSet<_> = component.iter().copied().collect();
-        for i in set.iter().copied() {
-            let mut in_loop = false;
-            let mut entry = false;
-            for n in graph.neighbors_directed(i, petgraph::Direction::Incoming) {
-                if set.contains(&n) {
-                    in_loop = true;
-                } else {
-                    entry = true;
-                }
-            }
-            if in_loop && entry {
-                loop_entries.insert(i);
-            }
-        }
-    }
-
+    loop_headers_rec(&mut graph, &mut loop_entries);
     loop_entries
 }
