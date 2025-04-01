@@ -6,7 +6,7 @@ var #registers: int;
 */
 
 procedure read(ret : RMWOp, load_order: OrderRelation)
-    modifies step, effects, ordering, atomic, local_monitor, monitor_exclusive, flags, event_register, last_load, last_store, #registers;
+    modifies step, last_load, last_store, #state, #registers;
     ensures {:msg "load happens within function bounds"}
         old(step) <= last_load && last_load < step;
     ensures {:msg "load order"}

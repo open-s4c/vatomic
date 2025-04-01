@@ -5,7 +5,7 @@ var #registers: int;
 */
 
 procedure rmw (op: RMWOp)
-    modifies step, effects, ordering, atomic, last_load, last_store, #state, #registers;
+    modifies step, last_load, last_store, #state, #registers;
     
     ensures {:msg "if no write happened, the value from memory is already the result of operation"} (
         var address, input1, input2 := old(#address), old(#input1), old(#input2);

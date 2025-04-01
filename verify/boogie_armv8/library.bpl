@@ -82,7 +82,7 @@ function returning_load(instr : Instruction) : bool {
 
 /* Prove meta properties about execute, that are used in the proof */
 procedure verify_execute(instr : Instruction) returns (r : int)
-    modifies flags, step, monitor_exclusive, event_register;
+    modifies flags, step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
 
     requires (instr is stx ==> local_monitor is exclusive && local_monitor->addr == instr->addr);
     requires instr is wfe ==> event_register || monitor_exclusive;
@@ -127,13 +127,15 @@ function visible(instr : Instruction) : bool {
     || instr is stadd)
 }
 
+
+
 procedure execute(instr: Instruction) returns (r : int);
-    modifies flags, step, monitor_exclusive, event_register;
+    modifies flags, step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
     ensures step == old(step + 1);
     ensures {:msg "state"} (
         var stx_success, cas_success :=
-            local_monitor == exclusive(instr->addr)
-            && monitor_exclusive,
+            old(local_monitor == exclusive(instr->addr)
+            && monitor_exclusive),
             r == instr->exp;
         (r == if instr is stx then b2i(stx_success)
             else if instr is mov then instr->src

@@ -6,7 +6,7 @@ use std::fmt::Display;
 pub use parser::parse_arm_assembly;
 pub use transform::{extract_arm_functions, remove_directives, transform_labels};
 
-use crate::{BoogieFunction, BoogieInstruction, DUMMY_REG, ToBoogie};
+use crate::{atomic_types, BoogieFunction, BoogieInstruction, ToBoogie, Width, DUMMY_REG};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RegisterType {
@@ -193,22 +193,31 @@ pub struct ArmFunction {
     pub instructions: Vec<ArmInstruction>,
 }
 
-pub fn riscv_to_boogie(function: ArmFunction) -> BoogieFunction {
-    let instructions = function
-        .instructions
-        .iter()
-        .map(|instr| arm_instruction_to_boogie(instr))
-        .collect();
 
-    BoogieFunction {
-        name: function.name.clone(),
-        instructions,
-    }
-}
+pub const ARMV8_WIDTH : Width = Width::Wide;
 
 impl ToBoogie for ArmFunction {
     fn to_boogie(self) -> BoogieFunction {
-        riscv_to_boogie(self)
+        let instructions = self
+            .instructions
+            .iter()
+            .map(|instr| arm_instruction_to_boogie(instr))
+            .collect();
+        let atomic_type = atomic_types(&self.name);
+
+        let register_ident = match atomic_type.type_width(ARMV8_WIDTH) {
+            Width::Thin => "w",
+            Width::Wide => "x",
+        };
+
+        BoogieFunction {
+            name: self.name.clone(),
+            instructions,
+            address: "x0".to_string(),
+            input1: format!("{}1", register_ident),
+            input2: format!("{}2", register_ident),
+            output: format!("{}0", register_ident),
+        }
     }
 }
 

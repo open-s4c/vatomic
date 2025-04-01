@@ -1,8 +1,7 @@
 use super::*;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use head_tail_iter::HeadTailIterator;
-use itertools::Itertools;
 
 pub fn extract_riscv_functions(
     parsed: Vec<RiscvInstruction>,

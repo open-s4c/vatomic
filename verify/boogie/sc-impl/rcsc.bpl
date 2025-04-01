@@ -1,1 +1,0 @@
-axiom sc_impl is RCsc;

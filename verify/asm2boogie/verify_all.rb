@@ -1,6 +1,6 @@
 require 'optparse'
 
-Archs = { "arm-v8" => ["armv8", "atomics.s"], "risc-v" => ["risc", "atomic_riscv.s"] }
+Archs = { "arm-v8" => ["armv8", "atomic.s"], "risc-v" => ["risc", "atomic_riscv.s"] }
 options = {}
 options[:generate] = true;
 options[:which] = "atomics_list_full.txt"
@@ -25,8 +25,12 @@ OptionParser.new do |opts|
     options[:where] = v
   end
 
-  opts.on("-v", "--verify-only", "only do verification") do |v|
+  opts.on("-v", "--verify-only [fun1,...,funk:prop1,...,propn]", "only do verification [of specified functions & properties]") do |v|
     options[:extract] = false
+    if v
+      funcs, ops = v.split(":").map { |foo| foo.split(",") }
+      options[:limit] = { :functions => funcs, :properties => ops } 
+    end
   end
 
   opts.on("-h", "--help", "Prints this help") do
@@ -38,7 +42,7 @@ end.parse!
 
 def verify(arch, out, atomic, template)
   (library, asm_file) = Archs[arch]
-  `boogie ../boogie/auxiliary.bpl ../boogie_#{library}/library.bpl  ../boogie/sc-impl/rcsc.bpl #{out}/#{atomic}/#{template}`.strip
+  `boogie ../boogie/auxiliary.bpl ../boogie_#{library}/library.bpl #{out}/#{atomic}/#{template}`.strip
 end
 
 
@@ -56,15 +60,22 @@ if options[:extract]
     }
 end
 
+def drop_extension(path)
+  File.basename(path, File.extname(path))
+end
 options[:archs].each { |arch|   
     base_path = File.join(options[:where], arch)
     Dir::children(base_path).each { |atomic|
+      if ! options[:limit] || options[:limit][:functions].include?(atomic)
         puts "======================="
         puts "verifying #{atomic} on #{arch}"
         Dir::children(File.join(base_path,atomic)).each { |template|
+          if ! options[:limit] || options[:limit][:properties].include?(drop_extension(template))
             puts "#{template}:"
             puts verify(arch, base_path, atomic, template)
             puts "\n"
+          end
         }
+      end
     }
 }

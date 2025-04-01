@@ -1,5 +1,4 @@
 use generate::boogie_to_string;
-use itertools::Itertools;
 use phf::phf_map;
 use std::{
     collections::{HashMap, HashSet},
@@ -21,11 +20,20 @@ pub struct AssemblyFunction<'a> {
     pub code: Vec<&'a str>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum FenceConvention {
+    RCsc,
+    TrailingFence,
+    LeadingFence,
+}
+
 pub trait Arch {
     fn name(&self) -> String;
-    fn registers(&self) -> Vec<String>;
+    fn all_registers(&self) -> Vec<String>;
     fn width(&self) -> Width;
-    fn parse_functions(&self, assembly: &str) -> Result<Vec<BoogieFunction>, Box<dyn std::error::Error>>;    
+    fn parse_functions(&self, assembly: &str) -> Result<Vec<BoogieFunction>, Box<dyn std::error::Error>>;
+    fn state(&self) -> String;
+    fn fence_convention(&self) -> FenceConvention;
 }
 
 
@@ -152,11 +160,64 @@ fn get_templates_for_type(func_type: FunctionClass) -> Vec<&'static str> {
 #[derive(Debug, Clone)]
 pub struct BoogieFunction {
     pub name: String,
+    pub address: String,
+    pub input1: String,
+    pub input2: String,
+    pub output: String,
     pub instructions: Vec<BoogieInstruction>,
 }
 
 pub trait ToBoogie {
     fn to_boogie(self) -> BoogieFunction;
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Width {
+    Thin,
+    Wide,
+}
+
+pub fn wide_arch_widths(type_name: AtomicType) -> Width {
+    match type_name {
+        AtomicType::V32 | AtomicType::V8 => Width::Thin,
+        _ => Width::Wide,
+    }
+}
+
+pub fn thin_arch_widths(type_name: AtomicType) -> Width {
+    match type_name {
+        AtomicType::V32 | AtomicType::V8 | AtomicType::VSZ | AtomicType::VPTR => Width::Thin,
+        _ => Width::Wide,
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum AtomicType {
+    V64,
+    VSZ,
+    VPTR,
+    V32,
+    V16,
+    V8,
+    VFENCE,
+}
+
+
+pub fn atomic_types(function_name: &str) -> AtomicType {
+    WIDTH_RE
+        .captures(function_name)
+        .map(|c| ATOMIC_TYPE[&c[0]])
+        .unwrap_or(AtomicType::VFENCE)
+}
+
+impl AtomicType {
+    pub fn type_width(&self, arch_width: Width) -> Width {
+        match arch_width {
+            Width::Thin => thin_arch_widths(*self),
+            Width::Wide => wide_arch_widths(*self),
+        }
+    }
 }
 
 fn get_assumptions(
@@ -181,36 +242,6 @@ fn get_assumptions(
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Width {
-    Thin,
-    Wide,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum AtomicType {
-    V64,
-    VSZ,
-    VPTR,
-    V32,
-    V16,
-    V8,
-    VFENCE,
-}
-
-pub fn wide_arch_widths(type_name: AtomicType) -> Width {
-    match type_name {
-        AtomicType::V32 | AtomicType::V8 => Width::Thin,
-        _ => Width::Wide,
-    }
-}
-
-pub fn thin_arch_widths(type_name: AtomicType) -> Width {
-    match type_name {
-        AtomicType::V32 | AtomicType::V8 | AtomicType::VSZ | AtomicType::VPTR => Width::Thin,
-        _ => Width::Wide,
-    }
-}
 
 pub fn generate_boogie_file(
     function: &BoogieFunction,
@@ -218,39 +249,17 @@ pub fn generate_boogie_file(
     template_dir: &str,
     arch: &dyn Arch
 ) -> Result<(), std::io::Error> {
-    let type_map = match arch.width() {
-        Width::Thin => thin_arch_widths,
-        Width::Wide => wide_arch_widths,
-    };
-
     let func_type = classify_function(&function.name);
     let templates = get_templates_for_type(func_type);
 
     let boogie_code = boogie_to_string(&function.instructions);
 
-    let registers = arch.registers();
+    let registers = arch.all_registers();
 
-    let state = "local_monitor, monitor_exclusive, flags, event_register";
+    let state = arch.state();
 
-    let atomic_type = WIDTH_RE
-        .captures(&function.name)
-        .map(|c| ATOMIC_TYPE[&c[0]])
-        .unwrap_or(AtomicType::VFENCE);
-    let type_width = type_map(atomic_type);
+    let atomic_type = atomic_types(&function.name);
 
-    let address = "x0";
-    let output = match type_width {
-        Width::Thin => "w0",
-        _ => "x0",
-    };
-    let input1 = match type_width {
-        Width::Thin => "w1",
-        _ => "x1",
-    };
-    let input2 = match type_width {
-        Width::Thin => "w2",
-        _ => "x2",
-    };
 
     let target_path = Path::new(output_dir).join(&function.name);
     fs::create_dir_all(&target_path)?;
@@ -300,7 +309,12 @@ pub fn generate_boogie_file(
         let template_content = fs::read_to_string(&template_path)?;
 
         let boogie_code_with_assume = format!(
-            "    assume (last_store < step);\n{}\n{}",
+            "
+    assume (last_store < step);
+    assume (sc_impl is {:?});
+    {}
+    {}",
+            arch.fence_convention(),
             get_assumptions(
                 template,
                 load_order,
@@ -315,11 +329,11 @@ pub fn generate_boogie_file(
         let content = template_content
             .replace("    #implementation", &boogie_code_with_assume)
             .replace("#registers", registers.join(",").as_str())
-            .replace("#address", address)
-            .replace("#state", state)
-            .replace("#output", output)
-            .replace("#input1", input1)
-            .replace("#input2", input2);
+            .replace("#address", &function.address)
+            .replace("#state", &state)
+            .replace("#output", &function.output)
+            .replace("#input1", &function.input1)
+            .replace("#input2", &function.input2);
 
         fs::write(&target_path.join(template), content)?;
     }

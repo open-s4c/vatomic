@@ -276,7 +276,7 @@ fn parse_directive(input: &str) -> IResult<&str, Directive> {
     .parse(input)
 }
 
-fn parse_label_def(input: &str) -> IResult<&str, ArmInstruction> {
+pub fn parse_label_def(input: &str) -> IResult<&str, ArmInstruction> {
     map(terminated(parse_label, char(':')), |label| {
         ArmInstruction::Label(label)
     })

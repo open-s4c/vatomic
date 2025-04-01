@@ -180,22 +180,23 @@ pub struct RiscvFunction {
     pub instructions: Vec<RiscvInstruction>,
 }
 
-pub fn riscv_to_boogie(function: RiscvFunction) -> BoogieFunction {
-    let instructions = function
-        .instructions
-        .iter()
-        .map(|instr| riscv_instruction_to_boogie(instr))
-        .collect();
-
-    BoogieFunction {
-        name: function.name.clone(),
-        instructions,
-    }
-}
 
 impl ToBoogie for RiscvFunction {
     fn to_boogie(self) -> BoogieFunction {
-        riscv_to_boogie(self)
+        let instructions = self
+            .instructions
+            .iter()
+            .map(|instr| riscv_instruction_to_boogie(instr))
+            .collect();
+    
+        BoogieFunction {
+            name: self.name.clone(),
+            instructions,
+            address: "a0".to_string(),
+            input1: "a1".to_string(),
+            input2: "a2".to_string(),
+            output: "a0".to_string(),
+        }
     }
 }
 

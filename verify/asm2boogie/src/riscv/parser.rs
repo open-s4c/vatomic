@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use nom::{
     IResult, Parser,
     branch::alt,

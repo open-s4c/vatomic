@@ -1,8 +1,11 @@
 datatype Ordering {
-    AcquirePC(),
     Acquire(),
     Release(),
-    Fence(ra, wa, rb, wb: bool)
+    AcquirePC(),
+    ReleasePC(),
+    AcqRel(),
+    Fence(ra, wa, rb, wb: bool),
+    NoOrd()
 }
 
 datatype AtomicType {
@@ -42,7 +45,7 @@ datatype Instruction {
 
 
 procedure execute(instr: Instruction) returns (r : int);
-    modifies effects, ordering, step, local_monitor, monitor_exclusive, last_store, last_load, atomic;
+    modifies step, local_monitor, monitor_exclusive, last_store, last_load;
     requires (instr is sc ==> local_monitor is exclusive && local_monitor->addr == instr->addr);
     ensures step == old(step + 1);
     ensures (
@@ -83,39 +86,32 @@ procedure execute(instr: Instruction) returns (r : int);
                     else
                         old(local_monitor))
         &&
-        effects == old(effects[
-            step := (
-                ConstArray(false)
-                    [read(instr->addr, r, true) :=
-                        instr is ld
-                        || instr is lr
-                    ]
-                    [write(instr->addr, instr->src) :=
-                        instr is sd
-                        || (instr is sc && sc_success)
-                    ]
-
-                )
-            ])
+        (effects[old(step)] == if 
+                instr is ld
+                || instr is lr
+            then read(instr->addr, r, true)
+            else if 
+                instr is sd 
+                || (instr is sc && sc_success)
+            then write(instr->addr, instr->src)
+            else no_effect())
         &&
-        ordering == old(ordering[
-            step := ConstArray(false)
-                [Acquire() :=
-                    instr->acq && (
-                        instr is ld || 
-                        instr is lr
-                    )
-                ]
-                [Release() :=
-                    instr->rel && (
-                        instr is sd
-                        || (instr is sc && sc_success)
-                    )
-                ]
-                [Fence(instr->ra, instr->wa, instr->rb, instr->wb) := 
-                    instr is fence
-                ]
-            ])
+        (ordering[old(step)] == 
+            if instr->acq && instr->rel
+                && (instr is lr
+                    || (instr is sc && sc_success))
+            then AcqRel()
+            else if instr->acq
+                && (instr is ld 
+                    || instr is lr)
+            then Acquire()
+            else if instr->rel
+                && (instr is sd
+                    || (instr is sc && sc_success))
+            then Release()
+            else if instr is fence
+            then Fence(instr->ra, instr->wa, instr->rb, instr->wb) 
+            else NoOrd())
         &&
         ((
             monitor_exclusive == false  // external write can clear monitor at any moment
@@ -129,9 +125,8 @@ procedure execute(instr: Instruction) returns (r : int);
                 monitor_exclusive
         ))
         &&
-        atomic == old(atomic[last_load, old(step) := 
-            instr is sc && sc_success 
-        ])
+        (atomic[last_load, old(step)] == 
+            instr is sc && sc_success)
     );
 
 function bne(r1: int, r2:int): bool {
@@ -142,12 +137,20 @@ function bnez(r: int): bool {
     r != 0
 }
 
+function is_acq(order: Ordering) : bool {
+    order is Acquire || order is AcqRel || order is AcquirePC
+}
+
+function is_rel(order: Ordering) : bool {
+    order is Release || order is AcqRel || order is ReleasePC
+}
+
+
 function ppo(step1, step2: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect): bool {
     step1 < step2 && (
         // Barrier-ordered-before
-        ordering[step1] == Acquire() ||
-        ordering[step1] == AcquirePC() ||
-        ordering[step2] == Release() ||
+        is_acq(ordering[step1]) ||
+        is_rel(ordering[step2]) ||
         (ordering[step1] == Release() && ordering[step2] == Acquire()) ||
 
         (exists fenceId: StateIndex, fence: Ordering, e1, e2: Effect :: 
