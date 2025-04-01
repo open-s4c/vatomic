@@ -21,7 +21,6 @@ pub fn extract_riscv_functions(
                     .map_or(false, |c| c.is_alphabetic() || c == '_') =>
             {
                 if let Some((prev_name, prev_instrs)) = current_function {
-                    println!("{} split {}",prev_name, prev_instrs.iter().map(|s| format!("{:?}", s)).join("\n"));
                     functions.push(RiscvFunction {
                         name: prev_name,
                         instructions: prev_instrs,
@@ -105,16 +104,11 @@ pub fn transform_labels(function: &RiscvFunction) -> RiscvFunction {
         .enumerate()
         .map(|(i, (instr, remaining))| {
             let mut fwd_map: HashMap<&str, usize> = HashMap::new();
-            for (idx, label) in remaining.iter()
-                .filter_map( |instr|
-                    match instr {
-                        RiscvInstruction::Label(label) => Some(label),
-                        _ => None,
-                    }
-                ).enumerate() {
-
-                fwd_map.entry(label.as_str()).or_insert(idx+i+1);
-            };
+            for (idx, instr) in remaining.iter().enumerate() {
+                if let RiscvInstruction::Label(label) = instr {
+                    fwd_map.entry(label.as_str()).or_insert(idx+i+1);
+                }
+            }
             
             match instr {
                 RiscvInstruction::Label(name) => {

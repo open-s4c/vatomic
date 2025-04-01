@@ -1,11 +1,11 @@
 require 'optparse'
 
-archs = { "arm-v8" => ["armv8", "atomics.s"], "risc-v" => ["riscv", "atomic_riscv.s"] }
+Archs = { "arm-v8" => ["armv8", "atomics.s"], "risc-v" => ["risc", "atomic_riscv.s"] }
 options = {}
 options[:generate] = true;
 options[:which] = "atomics_list_full.txt"
 options[:where] = "out"
-options[:archs] = archs.keys
+options[:archs] = Archs.keys
 options[:extract] = true
 
 OptionParser.new do |opts|
@@ -36,8 +36,8 @@ OptionParser.new do |opts|
 end.parse!
 
 
-def verify(arch, out,atomic,template)
-  (library, asm_file) = archs[arch]
+def verify(arch, out, atomic, template)
+  (library, asm_file) = Archs[arch]
   `boogie ../boogie/auxiliary.bpl ../boogie_#{library}/library.bpl  ../boogie/sc-impl/rcsc.bpl #{out}/#{atomic}/#{template}`.strip
 end
 
@@ -51,7 +51,7 @@ end
 
 if options[:extract]
     options[:archs].each { |arch|
-        (library, asm_file) = archs[arch]
+        (library, asm_file) = Archs[arch]
         `cargo run -- --input data/#{asm_file} --functions #{options[:which]} --templates ../boogie/templates/ --directory #{options[:where]}/#{arch} --arch #{arch}`
     }
 end
@@ -63,7 +63,7 @@ options[:archs].each { |arch|
         puts "verifying #{atomic} on #{arch}"
         Dir::children(File.join(base_path,atomic)).each { |template|
             puts "#{template}:"
-            puts verify(base_path, atomic, template)
+            puts verify(arch, base_path, atomic, template)
             puts "\n"
         }
     }

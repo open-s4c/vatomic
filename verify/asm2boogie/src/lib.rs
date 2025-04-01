@@ -1,4 +1,5 @@
 use generate::boogie_to_string;
+use itertools::Itertools;
 use phf::phf_map;
 use std::{
     collections::{HashMap, HashSet},
@@ -357,6 +358,7 @@ pub fn loop_headers(code: &[BoogieInstruction]) -> HashSet<usize> {
         })
         .collect();
 
+
     for (i, instr) in code.iter().enumerate() {
         match &instr {
             BoogieInstruction::Jump(target) => {
@@ -364,7 +366,6 @@ pub fn loop_headers(code: &[BoogieInstruction]) -> HashSet<usize> {
             }
             BoogieInstruction::Branch(target, _)
             => {
-                println!("{}", target);
                 graph.add_edge(i, label_idx[target], ());
                 graph.add_edge(i, i + 1, ());
             }

@@ -6,6 +6,7 @@ use asm2boogie::{
 };
 
 use clap::{Parser, ValueEnum};
+use itertools::Itertools;
 use std::{fs, iter};
 use std::path::Path;
 
