@@ -353,7 +353,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             let dest_reg = operand_to_boogie(dest);
             let op1_reg = operand_to_boogie(op1);
             let op2_reg = operand_to_boogie(op2);
-            let cond = condition_code_to_boogie(*ce);
+            let cond = condition_to_boogie(&Condition::Code(*ce));
             BoogieInstruction::Instr(
                 "csel".to_string(),
                 dest_reg,

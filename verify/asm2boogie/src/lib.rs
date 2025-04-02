@@ -271,6 +271,10 @@ pub fn generate_boogie_file(
                 read_ret = op.to_string();
             }
         }
+
+        if func_type == FunctionClass::AwaitRmw {
+            rmw_op = format!("(lambda x, y1, y2: int :: {}[x, y2, y1])", rmw_op);
+        }
     }
 
     let mut await_cond = "".to_string();
@@ -452,6 +456,8 @@ pub fn loop_headers(code: &[BoogieInstruction]) -> HashSet<usize> {
 
     for (i, instr) in code.iter().enumerate() {
         match &instr {
+            BoogieInstruction::Return => {
+            }
             BoogieInstruction::Jump(target) => {
                 graph.add_edge(i, label_idx[target], ());
             }

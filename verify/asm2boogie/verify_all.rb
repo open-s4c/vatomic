@@ -11,9 +11,16 @@ options[:extract] = true
 OptionParser.new do |opts|
   opts.banner = "Usage: verify_all.rb [options]"
 
-  opts.on("-s", "--specified=PATH/TO/ATOMICS_LIST", "verify only specified functions") do |v|
+  opts.on("-s", "--specified=PATH/TO/ATOMICS_LIST|fun1,...,funk:prop1,...,propn", "verify only specified functions & properties") do |v|
     options[:generate] = false
-    options[:which] = v
+
+    if /\w+(,\w+)*:\w+(,\w+)*/ =~ v
+      funcs, ops = v.split(":").map { |foo| foo.split(",") }
+      options[:limit] = { :functions => funcs, :properties => ops } 
+      puts "only verifying #{funcs} : #{ops}" 
+    else
+      options[:which] = v
+    end
   end
 
   
@@ -25,12 +32,8 @@ OptionParser.new do |opts|
     options[:where] = v
   end
 
-  opts.on("-v", "--verify-only [fun1,...,funk:prop1,...,propn]", "only do verification [of specified functions & properties]") do |v|
+  opts.on("-v", "--verify-only", "only do verification") do |v|
     options[:extract] = false
-    if v
-      funcs, ops = v.split(":").map { |foo| foo.split(",") }
-      options[:limit] = { :functions => funcs, :properties => ops } 
-    end
   end
 
   opts.on("-h", "--help", "Prints this help") do
