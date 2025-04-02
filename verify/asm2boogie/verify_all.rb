@@ -66,19 +66,45 @@ end
 def drop_extension(path)
   File.basename(path, File.extname(path))
 end
-options[:archs].each { |arch|   
-    base_path = File.join(options[:where], arch)
-    Dir::children(base_path).each { |atomic|
-      if ! options[:limit] || options[:limit][:functions].include?(atomic)
-        puts "======================="
-        puts "verifying #{atomic} on #{arch}"
-        Dir::children(File.join(base_path,atomic)).each { |template|
-          if ! options[:limit] || options[:limit][:properties].include?(drop_extension(template))
-            puts "#{template}:"
-            puts verify(arch, base_path, atomic, template)
-            puts "\n"
-          end
-        }
+
+$failing = []
+begin
+  options[:archs].each { |arch|   
+      base_path = File.join(options[:where], arch)
+      Dir::children(base_path).each { |atomic|
+        if ! options[:limit] || options[:limit][:functions].include?(atomic)
+          puts "======================="
+          puts "verifying #{atomic} on #{arch}"
+          Dir::children(File.join(base_path,atomic)).each { |template|
+            base_template = drop_extension(template)
+            if ! options[:limit] || options[:limit][:properties].include?(base_template)
+              puts "#{template}:"
+              out = verify(arch, base_path, atomic, template)
+              puts out
+              if ! (/0 errors/ =~ out) 
+                puts "to rerun this test:\n\n    ruby #{__FILE__} -a #{arch} -s #{atomic}:#{base_template}\n"
+                $failing << atomic
+              end
+
+              puts "\n"
+            end
+          }
+        end
+      }
+  }
+  puts "finished verification"
+ensure
+  if $failing.size > 0 
+    if /FAILED_/ =~ options[:which]
+      puts "to rerun:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{options[:which]}"
+    else
+      failed_file = "FAILED_#{options[:which]}"
+      File.open(failed_file, "w") do |f|
+        f.write($failing.join("\n"))
       end
-    }
-}
+      puts "to rerun all failed atomics:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{failed_file}"
+    end
+  else
+    puts "no failures found"
+  end
+end

@@ -201,7 +201,9 @@ function no_writes(from, to, write: StateIndex): bool {
     (write < from || to <= write)
 }
 
-
+function valid_mask(val, mask : int) : bool {
+    val == bit_and(val, mask)
+}
 
 type RMWOp = [int, int, int] int;
 

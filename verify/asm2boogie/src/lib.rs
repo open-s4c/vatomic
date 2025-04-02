@@ -175,17 +175,22 @@ pub enum Width {
     Wide,
 }
 
-pub fn wide_arch_widths(type_name: AtomicType) -> Width {
+pub fn wide_arch_widths(type_name: AtomicType) -> u32 {
     match type_name {
-        AtomicType::V32 | AtomicType::V8 => Width::Thin,
-        _ => Width::Wide,
+        AtomicType::V8 => 1,
+        AtomicType::V16 => 2,
+        AtomicType::V32 => 4,
+        _ => 8,
     }
 }
 
-pub fn thin_arch_widths(type_name: AtomicType) -> Width {
+pub fn thin_arch_widths(type_name: AtomicType) -> u32 {
     match type_name {
-        AtomicType::V32 | AtomicType::V8 | AtomicType::VSZ | AtomicType::VPTR => Width::Thin,
-        _ => Width::Wide,
+
+        AtomicType::V8 => 1,
+        AtomicType::V16 => 2,
+        AtomicType::VSZ | AtomicType::VPTR | AtomicType::V32 => 4,
+        _ => 8,
     }
 }
 
@@ -209,7 +214,7 @@ pub fn atomic_types(function_name: &str) -> AtomicType {
 }
 
 impl AtomicType {
-    pub fn type_width(&self, arch_width: Width) -> Width {
+    pub fn type_width(&self, arch_width: Width) -> u32 {
         match arch_width {
             Width::Thin => thin_arch_widths(*self),
             Width::Wide => wide_arch_widths(*self),
@@ -305,6 +310,9 @@ pub fn generate_boogie_file(
         _ => {}
     }
 
+    let pointer_size = 2u64.wrapping_pow(8*AtomicType::VPTR.type_width(arch.width())).wrapping_sub(1);
+    let register_size = 2u64.wrapping_pow(8*atomic_type.type_width(arch.width())).wrapping_sub(1);
+
     for template in templates {
         let template_path = Path::new(template_dir).join(template);
         let template_content = fs::read_to_string(&template_path)?;
@@ -313,9 +321,17 @@ pub fn generate_boogie_file(
             "
     assume (last_store < step);
     assume (sc_impl is {:?});
+    assume (valid_mask({}, {}));
+    assume (valid_mask({}, {}));
+    assume (valid_mask({}, {}));
+    assume (valid_mask({}, {}));
     {}
     {}",
             arch.fence_convention(),
+            function.address, pointer_size,
+            function.input1, register_size,
+            function.input2, register_size,
+            function.output, register_size,
             get_assumptions(
                 template,
                 load_order,
