@@ -360,7 +360,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
         ArmInstruction::Directive(directive) => {
             BoogieInstruction::Comment(format!("Directive: {:?}", directive))
         }
-        _ => { 
+        _ => {
             log::warn!("Unhandled: {:?}", instr);
             BoogieInstruction::Unhandled(format!("{:?}", instr))
         }

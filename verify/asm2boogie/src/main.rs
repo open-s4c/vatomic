@@ -62,10 +62,7 @@ impl Arch for ArchSpecifier {
                     extract_riscv_functions(parsed_asm, None, &["ptr", "32", "64", "sz", "8", ""])
                         .into_iter()
                         .map(|f| riscv::transform_labels(&f));
-                Ok(functions
-                    .into_iter()
-                    .map(ToBoogie::to_boogie)
-                    .collect())
+                Ok(functions.into_iter().map(ToBoogie::to_boogie).collect())
             }
         }
     }
