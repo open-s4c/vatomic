@@ -2097,10 +2097,7 @@ vatomic8_get_xor:
 	1:
 	lr.w.aqrl	a5, 0(a0)
 	xor	a6, a5, a1
-	and	a6, a6, a3// 	lr.d.aqrl	a0,0(a5)
-// 	bne	a0,a1,1f
-// 	sc.d.rl	a4,a2,0(a5)
-// 	bnez	a4,1b
+	and	a6, a6, a3
 	and	a7, a5, a2
 	or	a7, a7, a6
 	sc.w.rl	a6, a7, 0(a0)

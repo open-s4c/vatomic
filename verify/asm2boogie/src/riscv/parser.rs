@@ -2,10 +2,10 @@ use nom::{
     IResult, Parser,
     branch::alt,
     bytes::complete::{tag, take_till, take_while1},
-    character::complete::{char, digit1, multispace0, space0, space1},
+    character::complete::{char, digit1, hex_digit1, multispace0, space0, space1},
     combinator::{map, map_res, opt, recognize, value},
     multi::{many0, separated_list0},
-    sequence::{delimited, preceded, terminated},
+    sequence::{delimited, pair, preceded, terminated},
 };
 
 use super::*;
@@ -54,14 +54,23 @@ fn parse_register(input: &str) -> IResult<&str, Register> {
     Ok((input, Register { reg_type, number }))
 }
 
+fn parse_memory_operand(input: &str) -> IResult<&str, MemoryOperand> {
+    map(
+        (
+            parse_immediate,
+            delimited(char('('), parse_register, char(')')),
+        ),
+        |(offset, base)| MemoryOperand { offset, base },
+    )
+    .parse(input)
+}
+
 fn parse_immediate(input: &str) -> IResult<&str, i64> {
     let (input, _) = alt((tag("#"), tag(""))).parse(input)?;
     let (input, signed) = opt(char('-')).parse(input)?;
+
     let (input, value_str) = alt((
-        recognize((
-            alt((tag("0x"), tag("0X"))),
-            take_while1(|c: char| c.is_digit(16)),
-        )),
+        recognize(pair(alt((tag("0x"), tag("0X"))), hex_digit1)),
         recognize(digit1),
     ))
     .parse(input)?;
@@ -71,6 +80,13 @@ fn parse_immediate(input: &str) -> IResult<&str, i64> {
     } else {
         10
     };
+
+    if base == 10 && (input.contains('b') || input.contains('f')) {
+        return Err(nom::Err::Error(nom::error::Error::new(
+            input,
+            nom::error::ErrorKind::Tag,
+        )));
+    }
 
     let value = i64::from_str_radix(
         if base == 16 {
@@ -85,24 +101,45 @@ fn parse_immediate(input: &str) -> IResult<&str, i64> {
     Ok((input, if signed.is_some() { -value } else { value }))
 }
 
-fn parse_memory_operand(input: &str) -> IResult<&str, MemoryOperand> {
+fn parse_label(input: &str) -> IResult<&str, String> {
     map(
-        (
-            parse_immediate,
-            delimited(char('('), parse_register, char(')')),
-        ),
-        |(offset, base)| MemoryOperand { offset, base },
+        take_while1(|c: char| c.is_alphanumeric() || c == '_' || c == '.' || c == '$'),
+        |s: &str| s.to_string(),
     )
     .parse(input)
 }
 
-fn parse_label(input: &str) -> IResult<&str, String> {
-    map(
-        take_while1(|c: char| {
-            c.is_alphanumeric() || c == '_' || c == '.' || c == '$' || c == 'f' || c == 'b'
-        }),
-        |s: &str| s.to_string(),
-    )
+fn parse_operand_label(input: &str) -> IResult<&str, String> {
+    let (input, label) = take_while1(|c: char| {
+        c.is_alphanumeric() || c == '_' || c == '.' || c == '$' || c == 'f' || c == 'b'
+    })(input)?;
+
+    if label.starts_with("0x") || label.starts_with("0X") {
+        return Err(nom::Err::Error(nom::error::Error::new(
+            input,
+            nom::error::ErrorKind::Tag,
+        )));
+    }
+
+    let is_numeric_prefix = label.chars().next().unwrap_or(' ').is_numeric();
+    if is_numeric_prefix && !label.ends_with('f') && !label.ends_with('b') {
+        return Err(nom::Err::Error(nom::error::Error::new(
+            input,
+            nom::error::ErrorKind::Tag,
+        )));
+    }
+
+    Ok((input, label.to_string()))
+}
+
+fn parse_operand(input: &str) -> IResult<&str, Operand> {
+    alt((
+        map(parse_memory_operand, Operand::Memory),
+        map(parse_register, Operand::Register),
+        map(parse_fence_mode_operand, Operand::FenceMode),
+        map(parse_immediate, Operand::Immediate),
+        map(parse_operand_label, Operand::Label),
+    ))
     .parse(input)
 }
 
@@ -111,17 +148,6 @@ fn parse_fence_mode_operand(input: &str) -> IResult<&str, FenceMode> {
         value(FenceMode::ReadWrite, tag("rw")),
         value(FenceMode::Read, tag("r")),
         value(FenceMode::Write, tag("w")),
-    ))
-    .parse(input)
-}
-
-fn parse_operand(input: &str) -> IResult<&str, Operand> {
-    alt((
-        map(parse_memory_operand, Operand::Memory),
-        map(parse_register, Operand::Register),
-        map(parse_fence_mode_operand, Operand::FenceMode),
-        map(parse_label, Operand::Label),
-        map(parse_immediate, Operand::Immediate),
     ))
     .parse(input)
 }
@@ -229,10 +255,22 @@ fn is_store_instruction(name: &str) -> Option<Size> {
         _ => None,
     }
 }
+
+fn is_unsigned_load_instruction(name: &str) -> Option<Size> {
+    match name.to_lowercase().as_str() {
+        "lbu" => Some(Size::Byte),
+        "lhu" => Some(Size::Half),
+        "lwu" => Some(Size::Word),
+        "ldu" => Some(Size::Double),
+        _ => None,
+    }
+}
+
 fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
     let name_lower = name.to_lowercase();
+
     match name_lower.as_str() {
-        "beq" | "bne" | "blt" | "bge" | "bltu" | "bgeu" => {
+        "beq" | "bne" | "blt" | "bge" | "bgtu" | "bltu" | "bgeu" | "bleu" => {
             let op = match name_lower.as_str() {
                 "beq" => ComparisonOp::Eq,
                 "bne" => ComparisonOp::Ne,
@@ -240,6 +278,8 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                 "bge" => ComparisonOp::Ge,
                 "bltu" => ComparisonOp::Ltu,
                 "bgeu" => ComparisonOp::Geu,
+                "bgtu" => ComparisonOp::Bgtu,
+                "bleu" => ComparisonOp::Bleu,
                 _ => unreachable!(),
             };
             if operands.len() == 3 {
@@ -267,6 +307,40 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                     operands.len()
                 ))
             }
+        }
+        "not" => {
+            if operands.len() == 2 {
+                if let (Operand::Register(rd), Operand::Register(rs)) =
+                    (operands[0].clone(), operands[1].clone())
+                {
+                    return RiscvInstruction::Not { rd, rs };
+                }
+            }
+            RiscvInstruction::Unhandled(format!("Invalid operands for not: {:?}", operands))
+        }
+        "neg" => {
+            if operands.len() == 2 {
+                if let (Operand::Register(rd), Operand::Register(rs)) =
+                    (operands[0].clone(), operands[1].clone())
+                {
+                    return RiscvInstruction::Neg { rd, rs, size: None };
+                }
+            }
+            RiscvInstruction::Unhandled(format!("Invalid operands for neg: {:?}", operands))
+        }
+        "negw" => {
+            if operands.len() == 2 {
+                if let (Operand::Register(rd), Operand::Register(rs)) =
+                    (operands[0].clone(), operands[1].clone())
+                {
+                    return RiscvInstruction::Neg {
+                        rd,
+                        rs,
+                        size: Some(Size::Word),
+                    };
+                }
+            }
+            RiscvInstruction::Unhandled(format!("Invalid operands for negw: {:?}", operands))
         }
         "li" => {
             if operands.len() == 2 {
@@ -440,6 +514,25 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                         operands
                     ));
                 }
+            }
+            if let Some(size) = is_unsigned_load_instruction(&name_lower) {
+                if operands.len() == 2 {
+                    if let (Operand::Register(dst), Operand::Memory(src)) =
+                        (operands[0].clone(), operands[1].clone())
+                    {
+                        return RiscvInstruction::UnsignedLoad { size, dst, src };
+                    } else {
+                        return RiscvInstruction::Unhandled(format!(
+                            "Invalid operands for load: {:?}",
+                            operands
+                        ));
+                    }
+                } else {
+                    return RiscvInstruction::Unhandled(format!(
+                        "Invalid operands for load: {:?}",
+                        operands
+                    ));
+                }
             } else if let Some(size) = is_store_instruction(&name_lower) {
                 if operands.len() == 2 {
                     if let (Operand::Register(src), Operand::Memory(dst)) =
@@ -567,6 +660,87 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                     ));
                 }
             } else {
+                if name_lower.ends_with('w') {
+                    let base_name = name_lower.trim_end_matches('w');
+
+                    match base_name {
+                        "add" | "sub" | "mul" | "and" | "or" | "xor" | "sll" | "srl" | "sra" => {
+                            if operands.len() == 3 {
+                                if let (
+                                    Operand::Register(rd),
+                                    Operand::Register(rs1),
+                                    Operand::Register(rs2),
+                                ) = (
+                                    operands[0].clone(),
+                                    operands[1].clone(),
+                                    operands[2].clone(),
+                                ) {
+                                    let op = match base_name {
+                                        "add" => ArithmeticOp::Add,
+                                        "sub" => ArithmeticOp::Sub,
+                                        "mul" => ArithmeticOp::Mul,
+                                        "and" => ArithmeticOp::And,
+                                        "or" => ArithmeticOp::Or,
+                                        "xor" => ArithmeticOp::Xor,
+                                        "sll" => ArithmeticOp::Sll,
+                                        "srl" => ArithmeticOp::Srl,
+                                        "sra" => ArithmeticOp::Sra,
+                                        _ => unreachable!(),
+                                    };
+                                    return RiscvInstruction::ArithmeticRR {
+                                        op,
+                                        rd,
+                                        rs1,
+                                        rs2,
+                                        size: Some(Size::Word),
+                                    };
+                                }
+                            }
+                            return RiscvInstruction::Unhandled(format!("{} {:?}", name, operands));
+                        }
+                        _ => {}
+                    }
+                }
+
+                if name_lower.ends_with("iw") {
+                    let base_name = &name_lower[0..name_lower.len() - 2];
+
+                    match base_name {
+                        "add" | "and" | "or" | "xor" | "sll" | "srl" | "sra" => {
+                            if operands.len() == 3 {
+                                if let (
+                                    Operand::Register(rd),
+                                    Operand::Register(rs1),
+                                    Operand::Immediate(imm),
+                                ) = (
+                                    operands[0].clone(),
+                                    operands[1].clone(),
+                                    operands[2].clone(),
+                                ) {
+                                    let op = match base_name {
+                                        "add" => ArithmeticOp::Add,
+                                        "and" => ArithmeticOp::And,
+                                        "or" => ArithmeticOp::Or,
+                                        "xor" => ArithmeticOp::Xor,
+                                        "sll" => ArithmeticOp::Sll,
+                                        "srl" => ArithmeticOp::Srl,
+                                        "sra" => ArithmeticOp::Sra,
+                                        _ => unreachable!(),
+                                    };
+                                    return RiscvInstruction::ArithmeticRI {
+                                        op,
+                                        rd,
+                                        rs1,
+                                        imm,
+                                        size: Some(Size::Word),
+                                    };
+                                }
+                            }
+                            return RiscvInstruction::Unhandled(format!("{} {:?}", name, operands));
+                        }
+                        _ => {}
+                    }
+                }
                 match name_lower.as_str() {
                     "add" | "sub" | "mul" | "and" | "or" | "xor" | "sll" | "srl" | "sra" => {
                         if operands.len() == 3 {
@@ -591,7 +765,13 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                                     "sra" => ArithmeticOp::Sra,
                                     _ => unreachable!(),
                                 };
-                                return RiscvInstruction::ArithmeticRR { op, rd, rs1, rs2 };
+                                return RiscvInstruction::ArithmeticRR {
+                                    op,
+                                    rd,
+                                    rs1,
+                                    rs2,
+                                    size: None,
+                                };
                             }
                         }
                         RiscvInstruction::Unhandled(format!("{} {:?}", name, operands))
@@ -617,7 +797,13 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                                     "srai" => ArithmeticOp::Sra,
                                     _ => unreachable!(),
                                 };
-                                return RiscvInstruction::ArithmeticRI { op, rd, rs1, imm };
+                                return RiscvInstruction::ArithmeticRI {
+                                    op,
+                                    rd,
+                                    rs1,
+                                    imm,
+                                    size: None,
+                                };
                             }
                         }
                         RiscvInstruction::Unhandled(format!("{} {:?}", name, operands))
@@ -936,6 +1122,7 @@ vatomic64_write:
                     reg_type: RegisterType::A,
                     number: Some(2)
                 },
+                size: None,
             }
         );
     }
@@ -956,6 +1143,7 @@ vatomic64_write:
                     number: Some(1)
                 },
                 imm: 42,
+                size: None,
             }
         );
     }
@@ -986,7 +1174,7 @@ vatomic64_write:
         assert_eq!(
             instr,
             RiscvInstruction::Branch {
-                op: ComparisonOp::Ne,
+                op: ComparisonOp::Nez,
                 rs1: Register {
                     reg_type: RegisterType::A,
                     number: Some(0)
@@ -1050,5 +1238,207 @@ vatomic64_write:
                 label: "my_label".to_string(),
             }
         );
+    }
+
+    #[test]
+    fn test_parse_amoswap() {
+        let (_, instr) = parse_instruction("amoswap.w.rl a1,a1,0(a0)").unwrap();
+        assert_eq!(
+            instr,
+            RiscvInstruction::Atomic {
+                op: AtomicOp::Swap,
+                size: Size::Word,
+                semantics: AtomicSemantics::Release,
+                rd: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(1)
+                },
+                rs2: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(1)
+                },
+                addr: MemoryOperand {
+                    offset: 0,
+                    base: Register {
+                        reg_type: RegisterType::A,
+                        number: Some(0)
+                    }
+                },
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_amoadd() {
+        let (_, instr) = parse_instruction("amoadd.w.aqrl a5,a1,0(a0)").unwrap();
+        assert_eq!(
+            instr,
+            RiscvInstruction::Atomic {
+                op: AtomicOp::Add,
+                size: Size::Word,
+                semantics: AtomicSemantics::AcquireRelease,
+                rd: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(5)
+                },
+                rs2: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(1)
+                },
+                addr: MemoryOperand {
+                    offset: 0,
+                    base: Register {
+                        reg_type: RegisterType::A,
+                        number: Some(0)
+                    }
+                },
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_hex_immediate() {
+        let (_, instr) = parse_instruction("andi a0, a5, 0xff").unwrap();
+        assert_eq!(
+            instr,
+            RiscvInstruction::ArithmeticRI {
+                op: ArithmeticOp::And,
+                rd: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(0)
+                },
+                rs1: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(5)
+                },
+                imm: 0xff,
+                size: None,
+            }
+        );
+
+        let (_, instr) = parse_instruction("addi a0, a1, 0xFF").unwrap();
+        assert_eq!(
+            instr,
+            RiscvInstruction::ArithmeticRI {
+                op: ArithmeticOp::Add,
+                rd: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(0)
+                },
+                rs1: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(1)
+                },
+                imm: 0xFF,
+                size: None,
+            }
+        );
+
+        let (_, instr) = parse_instruction("addi a0, a1, 0x10").unwrap();
+        assert_eq!(
+            instr,
+            RiscvInstruction::ArithmeticRI {
+                op: ArithmeticOp::Add,
+                rd: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(0)
+                },
+                rs1: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(1)
+                },
+                imm: 16,
+                size: None,
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_numeric_local_labels() {
+        let (_, instructions) = parse_riscv_assembly("1f:\n  beq a0, a1, 1f").unwrap();
+        assert_eq!(instructions.len(), 2);
+        assert_eq!(instructions[0], RiscvInstruction::Label("1f".to_string()));
+        assert_eq!(
+            instructions[1],
+            RiscvInstruction::Branch {
+                op: ComparisonOp::Eq,
+                rs1: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(0)
+                },
+                rs2: Register {
+                    reg_type: RegisterType::A,
+                    number: Some(1)
+                },
+                label: "1f".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_multiline_assembly() {
+        let input = r#"
+main:
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    li a0, 10
+    li a1, 20
+    add a2, a0, a1
+loop_start:
+    addi a0, a0, -1
+    bnez a0, loop_start
+
+    mv a0, a2 
+    ld ra, 8(sp)
+    addi sp, sp, 16
+    ret
+"#;
+
+        let (remaining, instructions) = parse_riscv_assembly(input).unwrap();
+
+        assert!(remaining.is_empty(), "Parser did not consume all input");
+
+        assert_eq!(
+            instructions.len(),
+            13,
+            "Incorrect number of instructions parsed"
+        );
+
+        assert!(
+            instructions
+                .iter()
+                .any(|instr| matches!(instr, RiscvInstruction::Label(label) if label == "main")),
+            "Main label not found"
+        );
+
+        let arithmetic_count = instructions
+            .iter()
+            .filter(|instr| {
+                matches!(
+                    instr,
+                    RiscvInstruction::ArithmeticRI { .. } | RiscvInstruction::ArithmeticRR { .. }
+                )
+            })
+            .count();
+        assert_eq!(
+            arithmetic_count, 4,
+            "Incorrect number of arithmetic instructions"
+        );
+
+        let has_branch = instructions.iter().any(|instr| {
+            matches!(
+                instr,
+                RiscvInstruction::Branch {
+                    op: ComparisonOp::Nez,
+                    ..
+                }
+            )
+        });
+        assert!(has_branch, "Branch instruction not found");
+
+        let has_return = instructions
+            .iter()
+            .any(|instr| matches!(instr, RiscvInstruction::Return));
+        assert!(has_return, "Return instruction not found");
     }
 }

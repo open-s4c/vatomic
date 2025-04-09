@@ -1,13 +1,11 @@
 use asm2boogie::arm::{self, extract_arm_functions, parse_arm_assembly};
 use asm2boogie::riscv::{self, extract_riscv_functions, parse_riscv_assembly};
-use asm2boogie::{BoogieFunction, FenceConvention, Width, DUMMY_REG};
-use asm2boogie::{
-    Arch, ToBoogie, generate_boogie_file, generate_debug_file,
-};
+use asm2boogie::{Arch, ToBoogie, generate_boogie_file, generate_debug_file};
+use asm2boogie::{BoogieFunction, DUMMY_REG, FenceConvention, Width};
 
 use clap::{Parser, ValueEnum};
-use std::{fs, iter};
 use std::path::Path;
+use std::{fs, iter};
 
 enum OutputMode {
     File(String),
@@ -20,7 +18,6 @@ enum ArchSpecifier {
     RiscV,
 }
 
-
 impl Arch for ArchSpecifier {
     fn name(&self) -> String {
         format!("{:?}", self)
@@ -28,46 +25,70 @@ impl Arch for ArchSpecifier {
 
     fn all_registers(&self) -> Vec<String> {
         match self {
-            ArchSpecifier::ArmV8 => 
-                iter::once(DUMMY_REG.to_string())
-                .chain((0..=31).flat_map(|i| [format!("x{}", i), format!("w{}", i)])).collect(),
-            ArchSpecifier::RiscV => 
-                iter::once(DUMMY_REG.to_string())
+            ArchSpecifier::ArmV8 => iter::once(DUMMY_REG.to_string())
+                .chain((0..=31).flat_map(|i| [format!("x{}", i), format!("w{}", i)]))
+                .collect(),
+            ArchSpecifier::RiscV => iter::once(DUMMY_REG.to_string())
                 .chain((0..=7).map(|i| format!("a{}", i)))
                 .chain((0..=11).map(|i| format!("s{}", i)))
-                .chain((0..=6).map(|i| format!("t{}", i))).collect(),
-        } 
+                .chain((0..=6).map(|i| format!("t{}", i)))
+                .collect(),
+        }
     }
 
     fn width(&self) -> asm2boogie::Width {
         Width::Wide
     }
-    
-    fn parse_functions(&self, assembly: &str) -> Result<Vec<BoogieFunction>, Box<dyn std::error::Error>> {
+
+    fn parse_functions(
+        &self,
+        assembly: &str,
+    ) -> Result<Vec<BoogieFunction>, Box<dyn std::error::Error>> {
         /* @TODO intermediate step -- Vec<AsmFunction>. AsmFunction -> BoogieFunction. Here AsmFunction is a generic type of just name + string defining code. */
         match self {
             ArchSpecifier::ArmV8 => {
-                let (_, parsed_asm) = parse_arm_assembly(assembly).map_err(|err| err.to_string())?;
-                let functions = extract_arm_functions(parsed_asm, None, &["ptr", "32", "64", "sz", "8", ""])
-                    .into_iter().map(|f| arm::transform_labels(&f));
+                let (_, parsed_asm) =
+                    parse_arm_assembly(assembly).map_err(|err| err.to_string())?;
+                let functions =
+                    extract_arm_functions(parsed_asm, None, &["ptr", "32", "64", "sz", "8", ""])
+                        .into_iter()
+                        .map(|f| arm::transform_labels(&f));
                 Ok(functions.into_iter().map(ToBoogie::to_boogie).collect())
             }
             ArchSpecifier::RiscV => {
-                let (_, parsed_asm) = parse_riscv_assembly(assembly).map_err(|err| err.to_string())?;
-                let functions = extract_riscv_functions(parsed_asm, None, &["ptr", "32", "64", "sz", "8", ""])
-                    .into_iter().map(|f| riscv::transform_labels(&f));
-                Ok(functions.into_iter().map(ToBoogie::to_boogie).collect())
+                let (_, parsed_asm) =
+                    parse_riscv_assembly(assembly).map_err(|err| err.to_string())?;
+                let functions =
+                    extract_riscv_functions(parsed_asm, None, &["ptr", "32", "64", "sz", "8", ""])
+                        .into_iter()
+                        .map(|f| riscv::transform_labels(&f));
+                Ok(functions
+                    .into_iter()
+                    .inspect(|f| {
+                        for instr in &f.instructions {
+                            match instr {
+                                riscv::RiscvInstruction::Unhandled(msg) => {
+                                    log::warn!("Unhandled: {}", msg)
+                                }
+                                _ => {}
+                            }
+                        }
+                    })
+                    .map(ToBoogie::to_boogie)
+                    .collect())
             }
         }
     }
-    
+
     fn state(&self) -> String {
         match self {
-            ArchSpecifier::ArmV8 => "local_monitor, monitor_exclusive, flags, event_register".to_string(),
+            ArchSpecifier::ArmV8 => {
+                "local_monitor, monitor_exclusive, flags, event_register".to_string()
+            }
             ArchSpecifier::RiscV => "local_monitor, monitor_exclusive".to_string(),
         }
     }
-    
+
     fn fence_convention(&self) -> FenceConvention {
         match self {
             ArchSpecifier::ArmV8 => FenceConvention::RCsc,
@@ -181,8 +202,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let name_re = regex::Regex::new(function_names.join("|").as_str())?;
 
-    let boogie_functions : Vec<_> = args.arch.parse_functions(&input_content)?
-        .iter().filter(|func| name_re.is_match(func.name.as_str()))
+    let boogie_functions: Vec<_> = args
+        .arch
+        .parse_functions(&input_content)?
+        .iter()
+        .filter(|func| name_re.is_match(func.name.as_str()))
         .cloned()
         .collect();
 

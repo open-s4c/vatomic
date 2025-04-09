@@ -94,13 +94,15 @@ pub enum ArithmeticOp {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ComparisonOp {
-    Eq,  // Equal (for beq)
-    Ne,  // Not equal (for bne)
-    Lt,  // Less than, signed (for blt)
-    Ge,  // Greater than or equal, signed (for bge)
-    Ltu, // Less than, unsigned (for bltu)
-    Geu, // Greater than or equal, unsigned (for bgeu)
-    Nez, // Not equal zero (for bnez)
+    Eq,   // Equal (for beq)
+    Ne,   // Not equal (for bne)
+    Lt,   // Less than, signed (for blt)
+    Ge,   // Greater than or equal, signed (for bge)
+    Ltu,  // Less than, unsigned (for bltu)
+    Geu,  // Greater than or equal, unsigned (for bgeu)
+    Nez,  // Not equal zero (for bnez)
+    Bgtu, //
+    Bleu, //
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -111,7 +113,18 @@ pub enum RiscvInstruction {
         pred: FenceMode,
         succ: FenceMode,
     },
+    Branch {
+        op: ComparisonOp,
+        rs1: Register,
+        rs2: Register,
+        label: String,
+    },
     Load {
+        size: Size,
+        dst: Register,
+        src: MemoryOperand,
+    },
+    UnsignedLoad {
         size: Size,
         dst: Register,
         src: MemoryOperand,
@@ -146,26 +159,32 @@ pub enum RiscvInstruction {
         rs2: Register,
         addr: MemoryOperand,
     },
+    Not {
+        rd: Register,
+        rs: Register,
+    },
+    Neg {
+        rd: Register,
+        rs: Register,
+        size: Option<Size>,
+    },
     ArithmeticRR {
         op: ArithmeticOp,
         rd: Register,
         rs1: Register,
         rs2: Register,
+        size: Option<Size>,
     },
     ArithmeticRI {
         op: ArithmeticOp,
         rd: Register,
         rs1: Register,
         imm: i64,
+        size: Option<Size>,
     },
     Move(Register, Register),
     SignExtendWord(Register, Register),
-    Branch {
-        op: ComparisonOp,
-        rs1: Register,
-        rs2: Register,
-        label: String,
-    },
+    // TODO: support jal
     Jump {
         rd: Register,
         label: String,
@@ -180,7 +199,6 @@ pub struct RiscvFunction {
     pub instructions: Vec<RiscvInstruction>,
 }
 
-
 impl ToBoogie for RiscvFunction {
     fn to_boogie(self) -> BoogieFunction {
         let instructions = self
@@ -188,7 +206,7 @@ impl ToBoogie for RiscvFunction {
             .iter()
             .map(|instr| riscv_instruction_to_boogie(instr))
             .collect();
-    
+
         BoogieFunction {
             name: self.name.clone(),
             instructions,
@@ -203,6 +221,21 @@ impl ToBoogie for RiscvFunction {
 pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstruction {
     match instr {
         RiscvInstruction::Label(name) => BoogieInstruction::Label(name.clone()),
+        RiscvInstruction::Fence { pred, succ } => {
+            let (pr, pw) = fence_mode_to_boogie(pred);
+            let (sr, sw) = fence_mode_to_boogie(succ);
+
+            BoogieInstruction::Instr(
+                "fence".to_string(),
+                DUMMY_REG.to_string(),
+                vec![
+                    pr.to_string(),
+                    pw.to_string(),
+                    sr.to_string(),
+                    sw.to_string(),
+                ],
+            )
+        }
         RiscvInstruction::Branch {
             op,
             rs1,
@@ -211,21 +244,17 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
         } => {
             let r1 = register_to_string(rs1);
             let r2 = register_to_string(rs2);
-            log::debug!("op: {:?}", op);
-            BoogieInstruction::Branch(label.to_string(), 
-                match *op { 
+            BoogieInstruction::Branch(
+                label.to_string(),
+                match *op {
                     ComparisonOp::Nez => format!("bnez({})", r1.to_string()),
-                    _ => format!("b{}({}, {})", format!("{:?}", op).to_lowercase(), r1.to_string(), r2.to_string()),
-                })
-        }
-        RiscvInstruction::Fence { pred, succ } => {
-            let (pr, pw) = fence_mode_to_boogie(pred);
-            let (sr, sw) = fence_mode_to_boogie(succ);
-
-            BoogieInstruction::Instr(
-                "fence".to_string(),
-                DUMMY_REG.to_string(),
-                vec![pr.to_string(), pw.to_string(), sr.to_string(), sw.to_string()],
+                    _ => format!(
+                        "b{}({}, {})",
+                        format!("{:?}", op).to_lowercase(),
+                        r1.to_string(),
+                        r2.to_string()
+                    ),
+                },
             )
         }
         RiscvInstruction::Load { dst, src, .. } => {
@@ -234,11 +263,21 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
 
             BoogieInstruction::Instr("ld".to_string(), dst_reg, vec![src_reg])
         }
-        RiscvInstruction::LoadImmidate { register, value } => {
-            let dst = register_to_string(register);
-            let value = operand_to_boogie(&Operand::Immediate(*value));
+        RiscvInstruction::UnsignedLoad { dst, src, .. } => {
+            let dst_reg = register_to_string(dst);
+            let src_reg = operand_to_boogie(&Operand::Memory(src.clone()));
 
-            BoogieInstruction::Instr("li".to_string(), dst, vec![value])
+            BoogieInstruction::Instr("ldu".to_string(), dst_reg, vec![src_reg])
+        }
+        RiscvInstruction::Store { dst, src, .. } => {
+            let src_reg = operand_to_boogie(&Operand::Register(src.clone()));
+            let dst_reg = operand_to_boogie(&Operand::Memory(dst.clone()));
+
+            BoogieInstruction::Instr(
+                "sb".to_string(),
+                DUMMY_REG.to_string(),
+                vec![src_reg, dst_reg],
+            )
         }
         RiscvInstruction::LoadReserved {
             semantics,
@@ -286,23 +325,14 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
             BoogieInstruction::Instr(
                 "sc".to_string(),
                 dst_reg,
-                vec![
-                    aq.to_string(),
-                    rl.to_string(),
-                    src_reg,
-                    addr_op,
-                ],
+                vec![aq.to_string(), rl.to_string(), src_reg, addr_op],
             )
         }
-        RiscvInstruction::Store { dst, src, .. } => {
-            let src_reg = operand_to_boogie(&Operand::Register(src.clone()));
-            let dst_reg = operand_to_boogie(&Operand::Memory(dst.clone()));
+        RiscvInstruction::LoadImmidate { register, value } => {
+            let dst = register_to_string(register);
+            let value = operand_to_boogie(&Operand::Immediate(*value));
 
-            BoogieInstruction::Instr(
-                "sb".to_string(),
-                DUMMY_REG.to_string(),
-                vec![src_reg, dst_reg],
-            )
+            BoogieInstruction::Instr("li".to_string(), dst, vec![value])
         }
         RiscvInstruction::Move(dst, src) => {
             let dst_reg = register_to_string(dst);
@@ -346,20 +376,94 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
             BoogieInstruction::Instr(
                 "atomic".to_string(),
                 dst_reg,
-                vec![
-                    atomic_op,
-                    aq.to_string(),
-                    rl.to_string(),
-                    src_reg,
-                    addr_op,
-                ],
+                vec![atomic_op, aq.to_string(), rl.to_string(), src_reg, addr_op],
             )
         }
+        RiscvInstruction::ArithmeticRR {
+            op,
+            rd,
+            rs1,
+            rs2,
+            size,
+        } => {
+            let dst_reg = register_to_string(rd);
+            let src1_reg = register_to_string(rs1);
+            let src2_reg = register_to_string(rs2);
+
+            let op_name = match op {
+                ArithmeticOp::Add => "add",
+                ArithmeticOp::Sub => "sub",
+                ArithmeticOp::Mul => "mul",
+                ArithmeticOp::And => "and",
+                ArithmeticOp::Or => "or",
+                ArithmeticOp::Xor => "xor",
+                ArithmeticOp::Sll => "sll",
+                ArithmeticOp::Srl => "srl",
+                ArithmeticOp::Sra => "sra",
+            };
+
+            let _op_suffix = if let Some(Size::Word) = size { "w" } else { "" };
+
+            BoogieInstruction::Instr(format!("{}", op_name), dst_reg, vec![src1_reg, src2_reg])
+        }
+        RiscvInstruction::ArithmeticRI {
+            op,
+            rd,
+            rs1,
+            imm,
+            size,
+        } => {
+            let dst_reg = register_to_string(rd);
+            let src_reg = register_to_string(rs1);
+            let imm_str = imm.to_string();
+
+            let op_name = match op {
+                ArithmeticOp::Add => "addi",
+                ArithmeticOp::Sub => "subi",
+                ArithmeticOp::And => "andi",
+                ArithmeticOp::Or => "ori",
+                ArithmeticOp::Xor => "xori",
+                ArithmeticOp::Sll => "slli",
+                ArithmeticOp::Srl => "srli",
+                ArithmeticOp::Sra => "srai",
+                _ => unreachable!(),
+            };
+
+            let _op_suffix = if let Some(Size::Word) = size { "w" } else { "" };
+
+            BoogieInstruction::Instr(format!("{}", op_name), dst_reg, vec![src_reg, imm_str])
+        }
+        RiscvInstruction::Not { rd, rs } => {
+            let dst_reg = register_to_string(rd);
+            let src_reg = register_to_string(rs);
+            BoogieInstruction::Instr("not".to_string(), dst_reg, vec![src_reg])
+        }
+        RiscvInstruction::Neg { rd, rs, size } => {
+            let dst_reg = register_to_string(rd);
+            let src_reg = register_to_string(rs);
+            let op_name = if let Some(Size::Word) = size {
+                "negw"
+            } else {
+                "neg"
+            };
+            BoogieInstruction::Instr(op_name.to_string(), dst_reg, vec![src_reg])
+        }
+        RiscvInstruction::SignExtendWord(dst, src) => {
+            let dst_reg = register_to_string(dst);
+            let src_reg = register_to_string(src);
+            BoogieInstruction::Instr("sext".to_string(), dst_reg, vec![src_reg])
+        }
+        RiscvInstruction::Jump { rd, label } => {
+            let _reg = register_to_string(rd);
+            BoogieInstruction::Jump(label.clone())
+        }
         RiscvInstruction::Return => BoogieInstruction::Return,
-        _ => BoogieInstruction::Unhandled(format!("// unimplemented {:?}", instr)),
+        RiscvInstruction::Directive(d) => BoogieInstruction::Comment(format!("Directive: {:?}", d)),
+        RiscvInstruction::Unhandled(instr) => {
+            BoogieInstruction::Unhandled(format!("Unhandled Risc Instruction {}", instr))
+        }
     }
 }
-
 
 fn register_to_string(reg: &Register) -> String {
     match &reg.reg_type {

@@ -6,7 +6,9 @@ use std::fmt::Display;
 pub use parser::parse_arm_assembly;
 pub use transform::{extract_arm_functions, remove_directives, transform_labels};
 
-use crate::{atomic_types, AtomicType, BoogieFunction, BoogieInstruction, ToBoogie, Width, DUMMY_REG};
+use crate::{
+    AtomicType, BoogieFunction, BoogieInstruction, DUMMY_REG, ToBoogie, Width, atomic_types,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RegisterType {
@@ -53,7 +55,7 @@ pub enum Operand {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ConditionCode {
     EQ, // Equal
-    NE, // Not equal    
+    NE, // Not equal
 
     HS, // Higher or same
     CS, // Carry set
@@ -74,7 +76,6 @@ pub enum ConditionCode {
     AL, // Always (default)
     NV, // Never
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Condition {
@@ -193,8 +194,7 @@ pub struct ArmFunction {
     pub instructions: Vec<ArmInstruction>,
 }
 
-
-pub const ARMV8_WIDTH : Width = Width::Wide;
+pub const ARMV8_WIDTH: Width = Width::Wide;
 
 impl ToBoogie for ArmFunction {
     fn to_boogie(self) -> BoogieFunction {
@@ -225,23 +225,21 @@ impl ToBoogie for ArmFunction {
     }
 }
 
-
-pub fn condition_code_to_boogie(code : ConditionCode) -> String {
+pub fn condition_code_to_boogie(code: ConditionCode) -> String {
     match code {
         ConditionCode::CS => condition_code_to_boogie(ConditionCode::HS),
         ConditionCode::CC => condition_code_to_boogie(ConditionCode::LO),
         _ => format!("{:?}()", code),
     }
-} 
+}
 
-
-pub fn condition_to_boogie(cond : &Condition) -> String {
+pub fn condition_to_boogie(cond: &Condition) -> String {
     match cond {
         Condition::Code(code) => format!("branch({},flags)", condition_code_to_boogie(*code)),
         Condition::Zero(reg) => format!("cbz({})", operand_to_boogie(&reg)),
         Condition::NotZero(reg) => format!("cbnz({})", operand_to_boogie(&reg)),
     }
-} 
+}
 
 pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
     match instr {
@@ -249,10 +247,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
         ArmInstruction::Branch(cond_opt, target) => match target {
             Operand::Label(label_name) => {
                 if let Some(cond) = cond_opt {
-                    BoogieInstruction::Branch(
-                        label_name.to_string(),
-                        condition_to_boogie(cond)
-                    )
+                    BoogieInstruction::Branch(label_name.to_string(), condition_to_boogie(cond))
                 } else {
                     BoogieInstruction::Jump(label_name.to_string())
                 }
@@ -358,11 +353,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             let op1_reg = operand_to_boogie(op1);
             let op2_reg = operand_to_boogie(op2);
             let cond = condition_to_boogie(&Condition::Code(*ce));
-            BoogieInstruction::Instr(
-                "csel".to_string(),
-                dest_reg,
-                vec![op1_reg, op2_reg, cond],
-            )
+            BoogieInstruction::Instr("csel".to_string(), dest_reg, vec![op1_reg, op2_reg, cond])
         }
         _ => BoogieInstruction::Unhandled(format!("{:?}", instr)),
     }
@@ -396,4 +387,3 @@ fn operand_to_boogie(operand: &Operand) -> String {
         _ => unimplemented!(),
     }
 }
-

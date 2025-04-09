@@ -46,6 +46,9 @@ pub fn boogie_to_string(instructions: &[BoogieInstruction]) -> String {
             BoogieInstruction::Unhandled(ins) => {
                 code.push_str(&format!("    // Unhandled: {}\n", ins));
             }
+            BoogieInstruction::Comment(comment) => {
+                code.push_str(&format!("    // {}\n", comment));
+            }
         }
     }
     code
