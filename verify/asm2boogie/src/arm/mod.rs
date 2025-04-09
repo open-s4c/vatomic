@@ -203,12 +203,14 @@ impl ToBoogie for ArmFunction {
             .iter()
             .map(|instr| arm_instruction_to_boogie(instr))
             .collect();
+
         let atomic_type = atomic_types(&self.name);
 
         let register_ident = match atomic_type.type_width(ARMV8_WIDTH) {
             8 => "x",
             _ => "w",
         };
+
         let ptr_ident = match AtomicType::VPTR.type_width(ARMV8_WIDTH) {
             8 => "x",
             _ => "w",
@@ -355,7 +357,13 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             let cond = condition_to_boogie(&Condition::Code(*ce));
             BoogieInstruction::Instr("csel".to_string(), dest_reg, vec![op1_reg, op2_reg, cond])
         }
-        _ => BoogieInstruction::Unhandled(format!("{:?}", instr)),
+        ArmInstruction::Directive(directive) => {
+            BoogieInstruction::Comment(format!("Directive: {:?}", directive))
+        }
+        _ => { 
+            log::warn!("Unhandled: {:?}", instr);
+            BoogieInstruction::Unhandled(format!("{:?}", instr))
+        }
     }
 }
 

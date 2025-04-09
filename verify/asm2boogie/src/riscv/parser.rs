@@ -416,7 +416,6 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
             }
         }
         "jal" => {
-            println!("lool: {:?}", operands);
             if operands.len() == 2 {
                 if let (Operand::Register(rd), Operand::Label(label)) =
                     (operands[0].clone(), operands[1].clone())
@@ -703,7 +702,7 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                 }
 
                 if name_lower.ends_with("iw") {
-                    let base_name = &name_lower[0..name_lower.len() - 2];
+                    let base_name = name_lower.trim_end_matches("iw");
 
                     match base_name {
                         "add" | "and" | "or" | "xor" | "sll" | "srl" | "sra" => {
@@ -892,7 +891,6 @@ mod tests {
     #[test]
     fn test_parse_fence() {
         let (_, instr) = parse_instruction("fence rw,w").unwrap();
-        println!("ttt {:?}", instr);
         assert_eq!(
             instr,
             RiscvInstruction::Fence {
@@ -976,7 +974,6 @@ _start:
 .label$with$dollars:
     "#;
         let (_, instructions) = parse_riscv_assembly(input).unwrap();
-        println!("instr:{:#?}", instructions);
         assert_eq!(instructions.len(), 5);
         assert_eq!(
             instructions[0],

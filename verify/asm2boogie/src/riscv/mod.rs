@@ -460,6 +460,7 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
         RiscvInstruction::Return => BoogieInstruction::Return,
         RiscvInstruction::Directive(d) => BoogieInstruction::Comment(format!("Directive: {:?}", d)),
         RiscvInstruction::Unhandled(instr) => {
+            log::warn!("Unhandled: {:?}", instr);
             BoogieInstruction::Unhandled(format!("Unhandled Risc Instruction {}", instr))
         }
     }

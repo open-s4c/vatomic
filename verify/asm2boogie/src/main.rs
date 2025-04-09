@@ -64,16 +64,6 @@ impl Arch for ArchSpecifier {
                         .map(|f| riscv::transform_labels(&f));
                 Ok(functions
                     .into_iter()
-                    .inspect(|f| {
-                        for instr in &f.instructions {
-                            match instr {
-                                riscv::RiscvInstruction::Unhandled(msg) => {
-                                    log::warn!("Unhandled: {}", msg)
-                                }
-                                _ => {}
-                            }
-                        }
-                    })
                     .map(ToBoogie::to_boogie)
                     .collect())
             }
