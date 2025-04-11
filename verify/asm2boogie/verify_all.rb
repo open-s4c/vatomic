@@ -67,40 +67,48 @@ def drop_extension(path)
   File.basename(path, File.extname(path))
 end
 
-$failing = []
+$results = {}
+
+require 'parallel'
 begin
   options[:archs].each { |arch|   
       base_path = File.join(options[:where], arch)
-      Dir::children(base_path).each { |atomic|
+      $results[arch] = Parallel.map(Dir::children(base_path), in_processes: 10) { |atomic|
         if ! options[:limit] || options[:limit][:functions].include?(atomic)
-          puts "======================="
-          puts "verifying #{atomic} on #{arch}"
+          lines = ["=======================", 
+            "verifying #{atomic} on #{arch}",
+          ]
+          local_results = []
           Dir::children(File.join(base_path,atomic)).each { |template|
             base_template = drop_extension(template)
             if ! options[:limit] || options[:limit][:properties].include?(base_template)
-              puts "#{template}:"
+              lines << "#{template}:"
               out = verify(arch, base_path, atomic, template)
-              puts out
-              if ! (/0 errors/ =~ out) 
-                puts "to rerun this test:\n\n    ruby #{__FILE__} -a #{arch} -s #{atomic}:#{base_template}\n"
-                $failing << atomic
+              lines << out
+              pass = /0 errors/ =~ out
+              local_results << [atomic, template, pass]
+              
+              if ! pass
+                lines << "to rerun this test:\n\n    ruby #{__FILE__} -a #{arch} -s #{atomic}:#{base_template}\n"
               end
 
-              puts "\n"
+              lines << "\n"
             end
           }
+          puts lines
+          local_results
         end
       }
-  }
+    }.flatten
   puts "finished verification"
 ensure
-  if $failing.size > 0 
+  if $results.any? { |result| result.any? { |(_,_,pass)| ! pass }} 
     if /FAILED_/ =~ options[:which]
       puts "to rerun:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{options[:which]}"
     else
       failed_file = "FAILED_#{options[:which]}"
       File.open(failed_file, "w") do |f|
-        f.write($failing.join("\n"))
+        f.write($results.map { |result| result.filter { |(_,_,pass)| pass }.map {|(atomic,_,_)| atomic} }.flatten.join("\n"))
       end
       puts "to rerun all failed atomics:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{failed_file}"
     end
