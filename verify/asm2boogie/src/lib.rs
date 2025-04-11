@@ -41,7 +41,7 @@ pub trait Arch {
 pub enum BoogieInstruction {
     Label(String),
     Instr(String, String, Vec<String>),
-    Branch(String, String),
+    Branch(Vec<String>, String),
     Unhandled(String),
     Comment(String),
     Return,

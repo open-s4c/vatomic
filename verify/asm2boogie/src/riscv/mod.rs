@@ -256,7 +256,7 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
             let r1 = register_to_string(rs1);
             let r2 = register_to_string(rs2);
             BoogieInstruction::Branch(
-                label.to_string(),
+                vec![label.to_string()],
                 match *op {
                     ComparisonOp::Nez => format!("bnez({})", r1.to_string()),
                     _ => format!(
@@ -475,7 +475,7 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
         }
         RiscvInstruction::Jump { rd, label } => {
             if let Some(label) = label {
-                BoogieInstruction::Branch(label.clone(), "true".to_string())
+                BoogieInstruction::Branch(vec![label.clone()], "true".to_string())
             } else {
                 let reg = register_to_string(rd);
                 if reg.to_lowercase() == "ra" {

@@ -92,9 +92,11 @@ pub fn cfg(code: &[BoogieInstruction]) -> GraphMap<usize, (), Directed> {
         match &instr {
             BoogieInstruction::Return => {
             }
-            BoogieInstruction::Branch(target, cond)
+            BoogieInstruction::Branch(targets, cond)
             => {
-                graph.add_edge(i, label_idx[target], ());
+                for label in targets {
+                    graph.add_edge(i, label_idx[label], ());
+                }
                 if cond != "true" {
                     graph.add_edge(i, i + 1, ());
                 }
@@ -166,7 +168,7 @@ fn insert_loop_exit_labels(code: &mut Vec<BoogieInstruction>) {
 fn collect_loops(code : &[BoogieInstruction]) -> Vec<HashSet<usize>> {
     let mut graph = cfg(code);
     let mut loops = Vec::new();
-    all_loops(&mut graph, |the_loop,_| {
+    top_level_loops(&mut graph, |the_loop| {
         loops.push(the_loop.clone());
     });
     loops
@@ -176,17 +178,26 @@ fn duplicate_loops(code: &mut Vec<BoogieInstruction>) {
     /* @TODO
      * Pretty sure this function only really works for the top level loops - nested loops are not unrolled inside the duplicated code! 
     */
+
     let loops = collect_loops(code);
     let graph = cfg(code);
     let labels = all_labels(code.iter());
 
     for (loop_id, the_loop) in loops.into_iter().enumerate() {
+    
+
+
         let loop_headers : HashSet<_> = the_loop.iter().copied().filter(|&i| 
                 graph.edges_directed(i, petgraph::Direction::Incoming).any(|edge|
                     ! the_loop.contains(&edge.source()))).collect();
+
+
+        let mut sorted_loop : Vec<_> = the_loop.iter().copied().collect();
+        sorted_loop.sort();
+
         // first step: insert forced loop
 
-        for &i in the_loop.iter() {
+        for &i in sorted_loop.iter() {
             code.push(transformed(&code[i], |label| transform_label(label, loop_id, LOOP_FORCED_ITER_SUFFIX), 
             |targets| {
                 targets.iter().flat_map(|label| {
@@ -204,19 +215,15 @@ fn duplicate_loops(code: &mut Vec<BoogieInstruction>) {
             
             if graph.edges_directed(i, petgraph::Direction::Outgoing).any(|edge| edge.target() == i+1 && ! the_loop.contains(&(i+1))) {
                 // indirect loop exit
-                assert!(i+1 < code.len());
-                let BoogieInstruction::Label(label) = &code[i+1] else {
-                    panic!("A loop exit point does not have a label. Please call `insert_loop_exit_labels` before using this function.")
-                };
-                // @TODO -- put empty jump label to block off exit!
-                code.push(BoogieInstruction::Branch(label.clone(), "".to_string()));
+                // empty jump label to block off exit!
+                code.push(BoogieInstruction::Branch(vec![], "true".to_string()));
             }
         }
 
         // second step: insert final loop
 
 
-        for &i in the_loop.iter() {
+        for &i in sorted_loop.iter() {
             code.push(transformed(&code[i], |label| transform_label(label, loop_id, LOOP_FINAL_ITER_SUFFIX), 
             |targets| {
                 targets.iter().flat_map(|label| {
@@ -238,8 +245,7 @@ fn duplicate_loops(code: &mut Vec<BoogieInstruction>) {
                 let BoogieInstruction::Label(label) = &code[i+1] else {
                     panic!("A loop exit point does not have a label. Please call `insert_loop_exit_labels` before using this function.")
                 };
-                // @TODO -- put empty jump label to block off exit!
-                code.push(BoogieInstruction::Branch(label.clone(), "".to_string()));
+                code.push(BoogieInstruction::Branch(vec![label.clone()], "true".to_string()));
             }
         }
         
@@ -280,8 +286,8 @@ fn transform_label(label: &String, loop_id : usize, suffix : &str) -> String {
 
 fn transformed<F : Fn(&String) -> String, G : Fn(&[String]) -> Vec<String>>(instr: &BoogieInstruction, label_transformer: F, branch_transformer: G) -> BoogieInstruction {
     match instr {
-        BoogieInstruction::Branch(target,cond) => BoogieInstruction::Branch(branch_transformer(&[target.clone()])[0].clone(), cond.clone()),
-        BoogieInstruction::Label(target) => BoogieInstruction::Label(label_transformer(target)),
+        BoogieInstruction::Branch(targets,cond) => BoogieInstruction::Branch(branch_transformer(targets), cond.clone()),
+        BoogieInstruction::Label(label) => BoogieInstruction::Label(label_transformer(label)),
         _ => instr.clone(),
     }
 }

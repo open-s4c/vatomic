@@ -37,7 +37,11 @@ pub fn boogie_to_string(instructions: &[BoogieInstruction]) -> String {
                 ));
             }
             BoogieInstruction::Branch(target, condition) => {
-                code.push_str(&format!("    if ({}) {{ goto {}; }}\n", condition, &target,));
+                if target.is_empty() {
+                    code.push_str(&format!("    assume false;\n"));
+                } else {
+                    code.push_str(&format!("    if ({}) {{ goto {}; }}\n", condition, &target.join(","),));
+                }
             }
             BoogieInstruction::Return => {
                 code.push_str("    return;\n");

@@ -248,7 +248,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
         ArmInstruction::Label(name) => BoogieInstruction::Label(name.clone()),
         ArmInstruction::Branch(cond_opt, target) => match target {
             Operand::Label(label_name) => {
-                BoogieInstruction::Branch(label_name.to_string(), if let Some(cond) = cond_opt {
+                BoogieInstruction::Branch(vec![label_name.to_string()], if let Some(cond) = cond_opt {
                     condition_to_boogie(cond)
                 } else {
                     "true".to_string()
