@@ -1256,7 +1256,7 @@ vatomic64_write:
                     reg_type: RegisterType::Special("ra".to_string()),
                     number: None,
                 },
-                label: "my_function".to_string(),
+                label: Some("my_function".to_string()),
             }
         );
     }
@@ -1271,7 +1271,7 @@ vatomic64_write:
                     reg_type: RegisterType::Special("zero".to_string()),
                     number: None,
                 },
-                label: "my_label".to_string(),
+                label: Some("my_label".to_string()),
             }
         );
     }
