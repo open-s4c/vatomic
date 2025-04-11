@@ -44,6 +44,8 @@ pub enum FenceMode {
     Read,
     Write,
     ReadWrite,
+    OutputWrite,
+    InputOutputReadWrite,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -159,6 +161,7 @@ pub enum RiscvInstruction {
         rs2: Register,
         addr: MemoryOperand,
     },
+
     Not {
         rd: Register,
         rs: Register,
@@ -184,12 +187,20 @@ pub enum RiscvInstruction {
     },
     Move(Register, Register),
     SignExtendWord(Register, Register),
-    // TODO: support jal
     Jump {
         rd: Register,
-        label: String,
+        label: Option<String>,
     },
     Return,
+    // TODO: add to boogie
+    Call {
+        label: String,
+    },
+    // TODO: add to boogie
+    LoadAddress {
+        register: Register,
+        label: String,
+    },
     Unhandled(String),
 }
 
@@ -301,6 +312,15 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
                 dst_reg,
                 vec![aq.to_string(), rl.to_string(), src_reg],
             )
+        }
+        RiscvInstruction::Call { label } => BoogieInstruction::Instr(
+            "call".to_string(),
+            DUMMY_REG.to_string(),
+            vec![label.to_string()],
+        ),
+        RiscvInstruction::LoadAddress { register, label } => {
+            let dst_reg = register_to_string(register);
+            BoogieInstruction::Instr("la".to_string(), dst_reg, vec![label.to_string()])
         }
         RiscvInstruction::StoreConditional {
             semantics,
@@ -454,8 +474,13 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
             BoogieInstruction::Instr("sext".to_string(), dst_reg, vec![src_reg])
         }
         RiscvInstruction::Jump { rd, label } => {
-            let _reg = register_to_string(rd);
-            BoogieInstruction::Jump(label.clone())
+            if let Some(label) = label {
+                BoogieInstruction::Jump(label.clone())
+            } else {
+                let reg = register_to_string(rd);
+                // TODO: support this in boogie!
+                BoogieInstruction::Instr("jr".to_string(), reg.to_string(), vec![])
+            }
         }
         RiscvInstruction::Return => BoogieInstruction::Return,
         RiscvInstruction::Directive(d) => BoogieInstruction::Comment(format!("Directive: {:?}", d)),
@@ -496,5 +521,7 @@ fn fence_mode_to_boogie(mode: &FenceMode) -> (bool, bool) {
         FenceMode::Read => (true, false),
         FenceMode::Write => (false, true),
         FenceMode::ReadWrite => (true, true),
+        FenceMode::OutputWrite => (false, true), // TODO: fix this
+        FenceMode::InputOutputReadWrite => (true, true),
     }
 }

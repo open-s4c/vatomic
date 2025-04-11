@@ -111,7 +111,7 @@ fn parse_label(input: &str) -> IResult<&str, String> {
 
 fn parse_operand_label(input: &str) -> IResult<&str, String> {
     let (input, label) = take_while1(|c: char| {
-        c.is_alphanumeric() || c == '_' || c == '.' || c == '$' || c == 'f' || c == 'b'
+        c.is_alphanumeric() || c == '_' || c == '.' || c == '$' || c == 'f' || c == 'b' || c == '@'
     })(input)?;
 
     if label.starts_with("0x") || label.starts_with("0X") {
@@ -145,6 +145,8 @@ fn parse_operand(input: &str) -> IResult<&str, Operand> {
 
 fn parse_fence_mode_operand(input: &str) -> IResult<&str, FenceMode> {
     alt((
+        value(FenceMode::InputOutputReadWrite, tag("iorw")),
+        value(FenceMode::OutputWrite, tag("ow")),
         value(FenceMode::ReadWrite, tag("rw")),
         value(FenceMode::Read, tag("r")),
         value(FenceMode::Write, tag("w")),
@@ -420,7 +422,10 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                 if let (Operand::Register(rd), Operand::Label(label)) =
                     (operands[0].clone(), operands[1].clone())
                 {
-                    RiscvInstruction::Jump { rd, label }
+                    RiscvInstruction::Jump {
+                        rd,
+                        label: Some(label),
+                    }
                 } else {
                     RiscvInstruction::Unhandled(format!("Invalid operands for jal: {:?}", operands))
                 }
@@ -439,7 +444,7 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                             reg_type: RegisterType::Special("zero".to_string()),
                             number: None,
                         },
-                        label,
+                        label: Some(label),
                     }
                 } else {
                     RiscvInstruction::Unhandled(format!("Invalid operand for j: {:?}", operands[0]))
@@ -447,6 +452,62 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
             } else {
                 RiscvInstruction::Unhandled(format!(
                     "j requires one operand, got {}",
+                    operands.len()
+                ))
+            }
+        }
+        "jr" => {
+            if operands.len() == 1 {
+                if let Operand::Register(Register { reg_type, .. }) = operands[0].clone() {
+                    RiscvInstruction::Jump {
+                        rd: Register {
+                            reg_type,
+                            number: None,
+                        },
+                        label: None,
+                    }
+                } else {
+                    RiscvInstruction::Unhandled(format!(
+                        "Invalid operand for jr: {:?}",
+                        operands[0]
+                    ))
+                }
+            } else {
+                RiscvInstruction::Unhandled(format!(
+                    "jr requires one operand, got {}",
+                    operands.len()
+                ))
+            }
+        }
+        "call" => {
+            if operands.len() == 1 {
+                if let Operand::Label(name) = operands[0].clone() {
+                    RiscvInstruction::Call { label: name }
+                } else {
+                    RiscvInstruction::Unhandled(format!(
+                        "Invalid operand for call: {:?}",
+                        operands[0]
+                    ))
+                }
+            } else {
+                RiscvInstruction::Unhandled(format!(
+                    "call requires one operand/label, got {}",
+                    operands.len()
+                ))
+            }
+        }
+        "la" => {
+            if operands.len() == 2 {
+                if let (Operand::Register(register), Operand::Label(label)) =
+                    (operands[0].clone(), operands[1].clone())
+                {
+                    RiscvInstruction::LoadAddress { register, label }
+                } else {
+                    RiscvInstruction::Unhandled(format!("Invalid la operands: {:?}", operands))
+                }
+            } else {
+                RiscvInstruction::Unhandled(format!(
+                    "la requires two operands, got {}",
                     operands.len()
                 ))
             }

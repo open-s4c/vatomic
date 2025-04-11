@@ -122,9 +122,9 @@ pub fn transform_labels(function: &RiscvFunction) -> RiscvFunction {
                     back_map.insert(name.as_str(), i);
                     RiscvInstruction::Label(to_label_name!(i))
                 }
-                RiscvInstruction::Jump { rd, label } => RiscvInstruction::Jump {
+                RiscvInstruction::Jump { rd, label: Some(label) } => RiscvInstruction::Jump {
                     rd: rd.clone(),
-                    label: get_label_index(&fwd_map, &back_map, label),
+                    label: Some(get_label_index(&fwd_map, &back_map, label)),
                 },
                 RiscvInstruction::Branch {
                     op,
