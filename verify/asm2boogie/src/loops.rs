@@ -92,13 +92,12 @@ pub fn cfg(code: &[BoogieInstruction]) -> GraphMap<usize, (), Directed> {
         match &instr {
             BoogieInstruction::Return => {
             }
-            BoogieInstruction::Jump(target) => {
-                graph.add_edge(i, label_idx[target], ());
-            }
-            BoogieInstruction::Branch(target, _)
+            BoogieInstruction::Branch(target, cond)
             => {
                 graph.add_edge(i, label_idx[target], ());
-                graph.add_edge(i, i + 1, ());
+                if cond != "true" {
+                    graph.add_edge(i, i + 1, ());
+                }
             }
             _ => {
                 graph.add_edge(i, i + 1, ());
@@ -210,7 +209,7 @@ fn duplicate_loops(code: &mut Vec<BoogieInstruction>) {
                     panic!("A loop exit point does not have a label. Please call `insert_loop_exit_labels` before using this function.")
                 };
                 // @TODO -- put empty jump label to block off exit!
-                code.push(BoogieInstruction::Jump(label.clone()));
+                code.push(BoogieInstruction::Branch(label.clone(), "".to_string()));
             }
         }
 
@@ -240,7 +239,7 @@ fn duplicate_loops(code: &mut Vec<BoogieInstruction>) {
                     panic!("A loop exit point does not have a label. Please call `insert_loop_exit_labels` before using this function.")
                 };
                 // @TODO -- put empty jump label to block off exit!
-                code.push(BoogieInstruction::Jump(label.clone()));
+                code.push(BoogieInstruction::Branch(label.clone(), "".to_string()));
             }
         }
         
@@ -282,7 +281,6 @@ fn transform_label(label: &String, loop_id : usize, suffix : &str) -> String {
 fn transformed<F : Fn(&String) -> String, G : Fn(&[String]) -> Vec<String>>(instr: &BoogieInstruction, label_transformer: F, branch_transformer: G) -> BoogieInstruction {
     match instr {
         BoogieInstruction::Branch(target,cond) => BoogieInstruction::Branch(branch_transformer(&[target.clone()])[0].clone(), cond.clone()),
-        BoogieInstruction::Jump(target) => BoogieInstruction::Jump(branch_transformer(&[target.clone()])[0].clone()),
         BoogieInstruction::Label(target) => BoogieInstruction::Label(label_transformer(target)),
         _ => instr.clone(),
     }

@@ -475,11 +475,15 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
         }
         RiscvInstruction::Jump { rd, label } => {
             if let Some(label) = label {
-                BoogieInstruction::Jump(label.clone())
+                BoogieInstruction::Branch(label.clone(), "true".to_string())
             } else {
                 let reg = register_to_string(rd);
-                // TODO: support this in boogie!
-                BoogieInstruction::Instr("jr".to_string(), reg.to_string(), vec![])
+                if reg.to_lowercase() == "ra" {
+                    BoogieInstruction::Return
+                } else {
+                    // TODO: support this in boogie!
+                    BoogieInstruction::Instr("jr".to_string(), reg.to_string(), vec![])
+                }
             }
         }
         RiscvInstruction::Return => BoogieInstruction::Return,

@@ -248,11 +248,11 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
         ArmInstruction::Label(name) => BoogieInstruction::Label(name.clone()),
         ArmInstruction::Branch(cond_opt, target) => match target {
             Operand::Label(label_name) => {
-                if let Some(cond) = cond_opt {
-                    BoogieInstruction::Branch(label_name.to_string(), condition_to_boogie(cond))
+                BoogieInstruction::Branch(label_name.to_string(), if let Some(cond) = cond_opt {
+                    condition_to_boogie(cond)
                 } else {
-                    BoogieInstruction::Jump(label_name.to_string())
-                }
+                    "true".to_string()
+                })
             }
             _ => BoogieInstruction::Unhandled(format!(
                 "// Unhandled Branch Type: {:?}, {:?}",

@@ -42,7 +42,6 @@ pub enum BoogieInstruction {
     Label(String),
     Instr(String, String, Vec<String>),
     Branch(String, String),
-    Jump(String),
     Unhandled(String),
     Comment(String),
     Return,
