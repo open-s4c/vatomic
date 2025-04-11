@@ -280,7 +280,7 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                 "bge" => ComparisonOp::Ge,
                 "bltu" => ComparisonOp::Ltu,
                 "bgeu" => ComparisonOp::Geu,
-                "bgtu" => ComparisonOp::Bgtu,
+                "bgtu" => ComparisonOp::Gtu,
                 "bleu" => ComparisonOp::Bleu,
                 _ => unreachable!(),
             };

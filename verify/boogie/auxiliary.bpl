@@ -81,6 +81,23 @@ axiom (forall x: int, y: int :: bit_and(x, y) == bit_and(y, x));
 axiom (forall x: int, y: int :: bit_or(x, y) == bit_or(y, x));
 axiom (forall x: int, y: int :: bit_xor(x, y) == bit_xor(y, x));
 
+
+function shift_left(i : int, shift_amount : int) : int;
+function shift_right(i : int, shift_amount : int) : int;
+function align_value(address : int, value : int, old_value : int, value_mask: int) : int {
+    bit_or(
+            shift_left(
+                bit_and(value, value_mask), 
+                shift_left(bit_and(address, 3), 2)),
+        bit_and(old_value, -value_mask-1))
+}
+
+axiom (forall i : int :: shift_left(shift_right(i, 1), 1) == bit_and(i, -2));
+axiom (forall i : int :: shift_left(shift_right(i, 2), 2) == bit_and(i, -4));
+
+
+
+
 const max: [int, int] int;
 axiom max == (lambda x, y: int ::
     if x > y then x else y

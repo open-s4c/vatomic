@@ -38,7 +38,27 @@ datatype Instruction {
     sub(first, second: int),
     andd(first, second: int),
     orr(first, second: int),
+    and(first, second: int),
+    or(first, second: int),
     eor(first, second: int),
+
+
+    negw(src: int),
+
+    andi(first, second: int),
+    slli(first, second: int),
+    sll(first, second: int),
+    li(first: int),
+    not(first: int),
+
+
+    srli(first, second: int),
+    srl(first, second: int),
+    sra(first, second: int),
+
+    sext(src: int),
+
+
     fence(ra, wa, rb, wb: bool)
 }
 
@@ -66,7 +86,6 @@ function writes(instr: Instruction) : bool {
     rmw(instr) || instr is sd
 }
 
-
 procedure execute(instr: Instruction) returns (r : int);
     modifies step, local_monitor, monitor_exclusive, last_store, last_load;
     requires (instr is sc ==> local_monitor is exclusive && local_monitor->addr == instr->addr);
@@ -76,12 +95,21 @@ procedure execute(instr: Instruction) returns (r : int);
                     old(local_monitor is exclusive
                         && (local_monitor->addr == instr->addr)
                         && monitor_exclusive);
-        (r == if instr is mv then instr->src
+        (r == if instr is mv || instr is sext then instr->src
             else if instr is sc then b2i(!sc_success)
             else if instr is add then instr->first + instr->second
             else if instr is sub then instr->first - instr->second
-            else if instr is andd then b2i(i2b(instr->first)&&i2b(instr->second))
-            else if instr is orr then  b2i(i2b(instr->first)||i2b(instr->second))
+            else if instr is andi then bit_and(instr->first, instr->second)
+            else if instr is negw then -(instr->first-1)
+            else if instr is slli || instr is sll then shift_left(instr->first, instr->second)
+
+            /* realistically, sra and srl behave differently - srl on unsigned, sra on signed */
+            else if instr is srli || instr is srl || instr is sra then shift_right(instr->first, instr->second)
+            else if instr is li then instr->first
+            else if instr is not then  b2i(! i2b(instr->first))
+
+            else if instr is andd || instr is and then b2i(i2b(instr->first)&&i2b(instr->second))
+            else if instr is orr || instr is or then  b2i(i2b(instr->first)||i2b(instr->second))
             else if instr is eor then  b2i(i2b(instr->first)!=i2b(instr->second))
             else r)
         &&

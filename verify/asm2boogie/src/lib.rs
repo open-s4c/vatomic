@@ -326,7 +326,6 @@ pub fn generate_boogie_file(
     assume (valid_mask({}, {}));
     assume (valid_mask({}, {}));
     assume (valid_mask({}, {}));
-    assume (valid_mask({}, {}));
     {}
     {}",
             arch.fence_convention(),
@@ -335,8 +334,6 @@ pub fn generate_boogie_file(
             function.input1,
             register_size,
             function.input2,
-            register_size,
-            function.output,
             register_size,
             get_assumptions(
                 template,

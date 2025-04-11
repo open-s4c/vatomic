@@ -5,8 +5,9 @@ use crate::{loops::{loop_headers, unroll}, BoogieInstruction};
 pub fn boogie_to_string(instructions: &[BoogieInstruction]) -> String {
     let mut code = String::new();
 
-   let instructions = &unroll(instructions);
-
+    /* @TODO: make this optional
+     * let instructions = &unroll(instructions);
+     */
     let loop_header_idx = loop_headers(instructions);
     let backward_branch_targets: HashSet<_> = loop_header_idx
         .iter()
