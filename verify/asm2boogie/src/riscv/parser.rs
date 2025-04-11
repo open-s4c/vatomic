@@ -281,7 +281,7 @@ fn map_instruction(name: &str, operands: Vec<Operand>) -> RiscvInstruction {
                 "bltu" => ComparisonOp::Ltu,
                 "bgeu" => ComparisonOp::Geu,
                 "bgtu" => ComparisonOp::Gtu,
-                "bleu" => ComparisonOp::Bleu,
+                "bleu" => ComparisonOp::Leu,
                 _ => unreachable!(),
             };
             if operands.len() == 3 {

@@ -103,8 +103,8 @@ pub enum ComparisonOp {
     Ltu,  // Less than, unsigned (for bltu)
     Geu,  // Greater than or equal, unsigned (for bgeu)
     Nez,  // Not equal zero (for bnez)
-    Bgtu, //
-    Bleu, //
+    Gtu, //
+    Leu, //
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -230,6 +230,14 @@ impl ToBoogie for RiscvFunction {
 }
 
 pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstruction {
+    match riscv_instruction_to_boogie_direct(instr) {
+        BoogieInstruction::Instr(instr,reg,  args) if reg.to_lowercase() == "zero" => 
+            BoogieInstruction::Instr(instr, DUMMY_REG.to_string(), args),
+        instr => instr,
+    }
+}
+
+fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruction {
     match instr {
         RiscvInstruction::Label(name) => BoogieInstruction::Label(name.clone()),
         RiscvInstruction::Fence { pred, succ } => {
@@ -479,6 +487,7 @@ pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstructio
             } else {
                 let reg = register_to_string(rd);
                 if reg.to_lowercase() == "ra" {
+                    // @TODO: check that ra is maintained properly! perhaps just emit an assertion that ra==old(ra)
                     BoogieInstruction::Return
                 } else {
                     // TODO: support this in boogie!

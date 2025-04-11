@@ -28,20 +28,24 @@ var monitor_exclusive: bool;
 
 datatype Instruction {
     ld(addr: int),
+    ldu(addr: int),
     sd(src, addr: int),
+    sb(src, addr: int),
     lr(acq, rel: bool, addr: int),
     sc(acq, rel: bool, src, addr: int),
     mv(src: int),
     atomic(atom: AtomicType, acq, rel: bool, src, addr: int),
 
     add(first, second: int),
+    addi(first, second: int),
     sub(first, second: int),
+    neg(src: int),
+
     andd(first, second: int),
     orr(first, second: int),
     and(first, second: int),
     or(first, second: int),
     eor(first, second: int),
-
 
     negw(src: int),
 
@@ -79,11 +83,11 @@ function rmw(instr: Instruction) : bool {
 }
 
 function reads(instr: Instruction) : bool {
-    rmw(instr) || instr is ld || instr is lr
+    rmw(instr) || instr is ld || instr is ldu || instr is lr
 }
 
 function writes(instr: Instruction) : bool {
-    rmw(instr) || instr is sd
+    rmw(instr) || instr is sd || instr is sb
 }
 
 procedure execute(instr: Instruction) returns (r : int);
@@ -97,8 +101,9 @@ procedure execute(instr: Instruction) returns (r : int);
                         && monitor_exclusive);
         (r == if instr is mv || instr is sext then instr->src
             else if instr is sc then b2i(!sc_success)
-            else if instr is add then instr->first + instr->second
+            else if instr is add || instr is addi then instr->first + instr->second
             else if instr is sub then instr->first - instr->second
+            else if instr is neg then -instr->first
             else if instr is andi then bit_and(instr->first, instr->second)
             else if instr is negw then -(instr->first-1)
             else if instr is slli || instr is sll then shift_left(instr->first, instr->second)
@@ -173,6 +178,10 @@ procedure execute(instr: Instruction) returns (r : int);
         (atomic[last_load, old(step)] == (rmw(instr) || (instr is sc && sc_success)))
     );
 
+function beq(r1: int, r2:int): bool {
+    r1 == r2
+}
+
 function bne(r1: int, r2:int): bool {
     r1 != r2
 }
@@ -180,6 +189,41 @@ function bne(r1: int, r2:int): bool {
 function bnez(r: int): bool {
     r != 0
 }
+
+
+function bgt(r1, r2: int): bool {
+    r1 > r2
+}
+
+function bgtu(r1, r2: int): bool {
+    r1 > r2
+}
+
+function ble(r1, r2: int): bool {
+    r1 <= r2
+}
+
+function bleu(r1, r2: int): bool {
+    r1 <= r2
+}
+
+
+function blt(r1, r2: int): bool {
+    r1 < r2
+}
+
+function bltu(r1, r2: int): bool {
+    r1 < r2
+}
+
+function bge(r1, r2: int): bool {
+    r1 >= r2
+}
+
+function bgeu(r1, r2: int): bool {
+    r1 >= r2
+}
+
 
 function is_acq(order: Ordering) : bool {
     order is Acquire || order is AcqRel || order is AcquirePC

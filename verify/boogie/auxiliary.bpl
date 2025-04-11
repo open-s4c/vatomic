@@ -42,7 +42,7 @@ type StateIndex = int;
 
 datatype Effect {
     // read(a,v,vis) == read at a the value v. vis means whether this read is visible to barriers
-    read(addr: int, read_value: int, visible: bool),
+    read(addr: int, read_value: int, read_visible: bool),
     write(addr: int, write_value: int),
     update(addr: int, read_value: int, read_visible: bool, write_value: int),
     no_effect()
@@ -195,7 +195,7 @@ axiom order_rel_sc == (lambda store, entry, exit: StateIndex, ordering: [StateIn
 const order_fence_acq: OrderRelation;
 axiom order_fence_acq == (lambda fence, entry, exit: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect ::
         (forall i, j: StateIndex ::
-            (i < entry) && (j >= exit) && (exists e: Effect :: effects[i] == e && is_read(e) && e->visible) && (exists e: Effect :: effects[j] == e)
+            (i < entry) && (j >= exit) && (exists e: Effect :: effects[i] == e && is_read(e) && e->read_visible) && (exists e: Effect :: effects[j] == e)
                 ==> ppo(i, j, ordering, effects))
 );
 

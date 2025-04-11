@@ -12,8 +12,8 @@ procedure read(ret : RMWOp, load_order: OrderRelation)
     ensures {:msg "load order"}
         load_order[last_load, old(step), step, ordering, effects];
     ensures {:msg "correct output"}
-        (exists v : int :: effects[last_load] == read(old(#address),v, true) &&
-                #output == ret[v, old(#input1), old(#input2)]);
+        (is_read(effects[last_load]) && effects[last_load]->read_visible &&
+                #output == ret[effects[last_load]->read_value, old(#input1), old(#input2)]);
 
 {
     #implementation
