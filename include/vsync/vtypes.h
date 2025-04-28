@@ -113,11 +113,22 @@ typedef bool vbool_t;
     #define VINT32_MAX V_SIGNED_INT_MAX(vint32_t)
 #endif
 
+#if !defined(__SIZEOF_POINTER__)
+#error "Cannot detect pointer size"
+#endif
+
 /* Format */
 #if !defined(VSYNC_ENABLE_FREESTANDING)
-    #define VUINTPTR_FORMAT PRIuPTR
     #define VUINT64_FORMAT  PRIu64
     #define VUINT32_FORMAT  PRIu32
+    #if defined(PRIuPTR)
+        #define VUINTPTR_FORMAT PRIuPTR
+    #elif VUINTPTR_WIDTH == 64
+        #define VUINTPTR_FORMAT VUINT64_FORMAT
+    #else
+        #define VUINTPTR_FORMAT VUINT32_FORMAT
+    #endif
+
 #else
     /* If using FREESTANDING, we have no way how to define these format
      * properly. Here we do our best shot at the moment. */
