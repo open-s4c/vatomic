@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ * Copyright (C) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
 
@@ -113,14 +113,10 @@ typedef bool vbool_t;
     #define VINT32_MAX V_SIGNED_INT_MAX(vint32_t)
 #endif
 
-#if !defined(__SIZEOF_POINTER__)
-#error "Cannot detect pointer size"
-#endif
-
 /* Format */
 #if !defined(VSYNC_ENABLE_FREESTANDING)
-    #define VUINT64_FORMAT  PRIu64
-    #define VUINT32_FORMAT  PRIu32
+    #define VUINT64_FORMAT PRIu64
+    #define VUINT32_FORMAT PRIu32
     #if defined(PRIuPTR)
         #define VUINTPTR_FORMAT PRIuPTR
     #elif VUINTPTR_WIDTH == 64
