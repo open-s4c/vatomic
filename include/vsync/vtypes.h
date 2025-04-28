@@ -115,8 +115,18 @@ typedef bool vbool_t;
 
 /* Format */
 #if !defined(VSYNC_ENABLE_FREESTANDING)
-    #define VUINT64_FORMAT PRIu64
-    #define VUINT32_FORMAT PRIu32
+    #if defined(PRIu64)
+        #define VUINT64_FORMAT PRIu64
+    #else
+        #define VUINT64_FORMAT  "lu"
+    #endif
+
+    #if defined(PRIu32)
+        #define VUINT32_FORMAT PRIu32
+    #else
+        #define VUINT32_FORMAT  "u"
+    #endif
+
     #if defined(PRIuPTR)
         #define VUINTPTR_FORMAT PRIuPTR
     #elif VUINTPTR_WIDTH == 64
