@@ -29,9 +29,10 @@
     #include <stdint.h>
     #include <stdbool.h>
     #include <stddef.h>
-    #if !defined(__APPLE__)
-        #include <inttypes.h>
-    #endif
+    // #if !defined(__APPLE__)
+    #define __STDC_FORMAT_MACROS
+    #include <inttypes.h>
+// #endif
 typedef uint8_t vuint8_t;
 typedef uint16_t vuint16_t;
 typedef uint32_t vuint32_t;
@@ -115,26 +116,9 @@ typedef bool vbool_t;
 
 /* Format */
 #if !defined(VSYNC_ENABLE_FREESTANDING)
-    #if defined(PRIu64)
-        #define VUINT64_FORMAT PRIu64
-    #else
-        #define VUINT64_FORMAT "lu"
-    #endif
-
-    #if defined(PRIu32)
-        #define VUINT32_FORMAT PRIu32
-    #else
-        #define VUINT32_FORMAT "u"
-    #endif
-
-    #if defined(PRIuPTR)
-        #define VUINTPTR_FORMAT PRIuPTR
-    #elif VUINTPTR_WIDTH == 64
-        #define VUINTPTR_FORMAT VUINT64_FORMAT
-    #else
-        #define VUINTPTR_FORMAT VUINT32_FORMAT
-    #endif
-
+    #define VUINT64_FORMAT  PRIu64
+    #define VUINT32_FORMAT  PRIu32
+    #define VUINTPTR_FORMAT PRIuPTR
 #else
     /* If using FREESTANDING, we have no way how to define these format
      * properly. Here we do our best shot at the moment. */
