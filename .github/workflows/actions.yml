@@ -36,8 +36,14 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer    
-      - name: Configure Testing
-        run: cmake -S. -Bbuild
+      - name: Configure Testing Ubuntu
+        run: |
+          cmake -S. -Bbuild
+        if: matrix.os != 'macos-latest'
+      - name: Configure Testing Mac
+        run: |
+          cmake -S. -Bbuild -DCMAKE_OSX_SYSROOT=$(xcrun --sdk macosx --show-sdk-path)
+        if: matrix.os == 'macos-latest'       
       - name: Build Tests
         run: cmake --build build
       - name: Run Tests
