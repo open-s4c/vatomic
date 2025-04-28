@@ -118,13 +118,13 @@ typedef bool vbool_t;
     #if defined(PRIu64)
         #define VUINT64_FORMAT PRIu64
     #else
-        #define VUINT64_FORMAT  "lu"
+        #define VUINT64_FORMAT "lu"
     #endif
 
     #if defined(PRIu32)
         #define VUINT32_FORMAT PRIu32
     #else
-        #define VUINT32_FORMAT  "u"
+        #define VUINT32_FORMAT "u"
     #endif
 
     #if defined(PRIuPTR)
