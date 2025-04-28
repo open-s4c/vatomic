@@ -42,6 +42,7 @@ jobs:
         if: matrix.os != 'macos-latest'
       - name: Configure Testing Mac
         run: |
+          xcrun --sdk macosx --show-sdk-path
           cmake -S. -Bbuild -DCMAKE_OSX_SYSROOT=$(xcrun --sdk macosx --show-sdk-path)
         if: matrix.os == 'macos-latest'       
       - name: Build Tests
