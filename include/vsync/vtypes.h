@@ -30,7 +30,7 @@
     #include <stdbool.h>
     #include <stddef.h>
     // #if !defined(__APPLE__)
-    #define __STDC_FORMAT_MACROS
+    // #define __STDC_FORMAT_MACROS
     #include <inttypes.h>
 // #endif
 typedef uint8_t vuint8_t;
