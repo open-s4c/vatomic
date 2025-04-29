@@ -121,9 +121,9 @@ typedef bool vbool_t;
 
 /* Format */
 #if !defined(VSYNC_ENABLE_FREESTANDING)
+    #define VUINTPTR_FORMAT PRIuPTR
     #define VUINT64_FORMAT  PRIu64
     #define VUINT32_FORMAT  PRIu32
-    #define VUINTPTR_FORMAT PRIuPTR
 #else
     /* If using FREESTANDING, we have no way how to define these format
      * properly. Here we do our best shot at the moment. */
