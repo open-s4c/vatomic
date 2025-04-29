@@ -29,10 +29,15 @@
     #include <stdint.h>
     #include <stdbool.h>
     #include <stddef.h>
-    // #if !defined(__APPLE__)
-    // #define __STDC_FORMAT_MACROS
+    #if !defined(__APPLE__) && !defined(__STDC_FORMAT_MACROS)
+        // For the github's runner this is not really needed.
+        // However, there has been cases mentioned on the internet
+        // where one needs to define this for e.g. PRIuPTR
+        // is defined in `inttypes.h`.
+        // https://stackoverflow.com/questions/26182336/priuptr-preprocessor-bug-in-gcc
+        #define __STDC_FORMAT_MACROS
+    #endif
     #include <inttypes.h>
-// #endif
 typedef uint8_t vuint8_t;
 typedef uint16_t vuint16_t;
 typedef uint32_t vuint32_t;
