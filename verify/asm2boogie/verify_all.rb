@@ -55,11 +55,14 @@ if options[:generate]
 end
 
 
+def compile(asm_file, library, functions_path, out, arch, unroll = false)
+  `cargo run -- --input data/#{asm_file} --functions #{functions_path} --templates ../boogie/templates/ --directory #{out}/#{arch} --arch #{arch} #{ unroll ? "--unroll" : nil }`
+end
 
 if options[:extract]
     options[:archs].each { |arch|
         (library, asm_file) = Archs[arch]
-        `cargo run -- --input data/#{asm_file} --functions #{options[:which]} --templates ../boogie/templates/ --directory #{options[:where]}/#{arch} --arch #{arch}`
+        compile(asm_file, library, options[:which], options[:where], arch)
     }
 end
 
@@ -67,52 +70,90 @@ def drop_extension(path)
   File.basename(path, File.extname(path))
 end
 
-$results = {}
 
+def verify_all(archs, out, limit)
+  $results = {}
+  archs.each { |arch|   
+    base_path = File.join(out, arch)
+    $results[arch] = Parallel.map(Dir::children(base_path), in_processes: 10) { |atomic|
+      if ! limit || limit[:functions].include?(atomic)
+        lines = ["=======================", 
+          "verifying #{atomic} on #{arch}",
+        ]
+        local_results = []
+        Dir::children(File.join(base_path,atomic)).each { |template|
+          base_template = drop_extension(template)
+          if ! limit || limit[:properties].include?(base_template)
+            lines << "#{template}:"
+            out = verify(arch, base_path, atomic, template)
+            lines << out
+            pass = /0 errors/ =~ out
+            local_results << [atomic, template, pass]
+            
+            if ! pass
+              lines << "to rerun this test:\n\n    ruby #{__FILE__} -a #{arch} -s #{atomic}:#{base_template}\n"
+            end
+
+            lines << "\n"
+          end
+        }
+        puts lines
+        local_results
+      end
+    }.flatten 1
+  }
+end
+
+
+require 'pp'
 require 'parallel'
 begin
-  options[:archs].each { |arch|   
-      base_path = File.join(options[:where], arch)
-      $results[arch] = Parallel.map(Dir::children(base_path), in_processes: 10) { |atomic|
-        if ! options[:limit] || options[:limit][:functions].include?(atomic)
-          lines = ["=======================", 
-            "verifying #{atomic} on #{arch}",
-          ]
-          local_results = []
-          Dir::children(File.join(base_path,atomic)).each { |template|
-            base_template = drop_extension(template)
-            if ! options[:limit] || options[:limit][:properties].include?(base_template)
-              lines << "#{template}:"
-              out = verify(arch, base_path, atomic, template)
-              lines << out
-              pass = /0 errors/ =~ out
-              local_results << [atomic, template, pass]
-              
-              if ! pass
-                lines << "to rerun this test:\n\n    ruby #{__FILE__} -a #{arch} -s #{atomic}:#{base_template}\n"
-              end
-
-              lines << "\n"
-            end
-          }
-          puts lines
-          local_results
-        end
-      }
-    }.flatten
-  puts "finished verification"
+  verify_all(options[:archs], options[:where], options[:limit])
+  puts ""
+  puts "finished simple verification"
+  puts ""
+      
 ensure
   if $results.any? { |result| result.any? { |(_,_,pass)| ! pass }} 
     if /FAILED_/ =~ options[:which]
       puts "to rerun:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{options[:which]}"
     else
       failed_file = "FAILED_#{options[:which]}"
+
       File.open(failed_file, "w") do |f|
-        f.write($results.map { |result| result.filter { |(_,_,pass)| pass }.map {|(atomic,_,_)| atomic} }.flatten.join("\n"))
+        f.write($results.map { |_arch, result| result.filter { |(_,_,pass)| ! pass }.map {|(atomic,_,_)| atomic} }.flatten.join("\n"))
       end
+      
+      puts ""
+      
       puts "to rerun all failed atomics:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{failed_file}"
+      puts ""
+      puts ""
+      puts ""
+      puts "========================================================="
+      puts "*                                                       *"
+      puts "*    retrying failed atomics with heavy verification    *"
+      puts "*                                                       *"
+      puts "========================================================="
+      puts ""
+      puts ""
+      puts ""
+      
+      retry_out = "#{options[:where]}_retry"
+      options[:archs].each { |arch|
+          (library, asm_file) = Archs[arch]
+          compile(asm_file, library, failed_file, retry_out, arch, unroll=true)
+      }
+
+
+      verify_all(options[:archs], retry_out, nil)
+
+      puts ""
+      puts "finished heavy verification"
     end
-  else
+  end
+
+  if $results.all? { |_arch, result| result.all? { |(_,_,pass)| pass }} 
     puts "no failures found"
   end
 end

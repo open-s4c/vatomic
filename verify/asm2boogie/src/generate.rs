@@ -1,13 +1,10 @@
 use std::collections::HashSet;
 
-use crate::{loops::{loop_headers, unroll}, BoogieInstruction};
+use crate::{loops::loop_headers, BoogieInstruction};
 
 pub fn boogie_to_string(instructions: &[BoogieInstruction]) -> String {
     let mut code = String::new();
 
-    /* @TODO: make this optional
-     * let instructions = &unroll(instructions);
-     */
     let loop_header_idx = loop_headers(instructions);
     let backward_branch_targets: HashSet<_> = loop_header_idx
         .iter()
@@ -40,6 +37,9 @@ pub fn boogie_to_string(instructions: &[BoogieInstruction]) -> String {
             BoogieInstruction::Branch(target, condition) => {
                 if target.is_empty() {
                     code.push_str(&format!("    assume false;\n"));
+                } else if condition == "true" {
+                    /* this special case is required to make the control flow explicit to boogie, which otherwise makes an incorrect CFG that may be irreducible. */
+                    code.push_str(&format!("    goto {};\n", &target.join(","),));
                 } else {
                     code.push_str(&format!("    if ({}) {{ goto {}; }}\n", condition, &target.join(","),));
                 }

@@ -95,6 +95,10 @@ struct Args {
         help = "Target architecture (armv8 or riscv)"
     )]
     arch: ArchSpecifier,
+
+    #[clap(short = 'u', long, help = "unroll the main loop to prove at least one iteration of the loop occurs", action)]
+    unroll: bool,
+
     #[clap(short = 'i', long, value_name = "FILE", help = "input file")]
     input: String,
     #[clap(short = 'f', long, value_name = "FILE", help = "function names")]
@@ -209,7 +213,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             for function in &boogie_functions {
                 log::info!("Generating Boogie code for function: {}", function.name);
-                generate_boogie_file(function, &dir_path, template_dir, &args.arch)?;
+                generate_boogie_file(function, &dir_path, template_dir, &args.arch, args.unroll)?;
             }
         }
     }

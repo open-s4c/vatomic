@@ -1,4 +1,5 @@
 use generate::boogie_to_string;
+use loops::unroll;
 use phf::phf_map;
 use std::{
      fs, io::Write, path::Path
@@ -249,11 +250,14 @@ pub fn generate_boogie_file(
     output_dir: &str,
     template_dir: &str,
     arch: &dyn Arch,
+    unroll_loop: bool,
 ) -> Result<(), std::io::Error> {
     let func_type = classify_function(&function.name);
     let templates = get_templates_for_type(func_type);
 
-    let boogie_code = boogie_to_string(&function.instructions);
+    let instructions = if unroll_loop { &unroll(&function.instructions ) } else { &function.instructions };
+
+    let boogie_code = boogie_to_string(&instructions);
 
     let registers = arch.all_registers();
 
