@@ -49,6 +49,9 @@ datatype Effect {
 }
 
 
+function is_effect(effect: Effect) : bool {
+    ! (effect is no_effect)
+}
 function is_read(effect: Effect) : bool {
     effect is read || effect is update
 }
@@ -139,14 +142,14 @@ axiom order_rlx == (lambda i, entry, exit: StateIndex, ordering: [StateIndex] Or
 const order_acq: OrderRelation;
 axiom order_acq == (lambda load, entry, exit: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect ::
     (forall i: StateIndex ::
-        (i >= exit) && (exists e: Effect :: effects[i] == e) ==> ppo(load, i, ordering, effects)
+        (i >= exit) && is_effect(effects[i]) ==> ppo(load, i, ordering, effects)
     )
 );
 
 const order_rel: OrderRelation;
 axiom order_rel == (lambda store, entry, exit: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect ::
     (forall i: StateIndex ::
-        (i < entry) && (exists e: Effect :: effects[i] == e) ==> ppo(i, store, ordering, effects)
+        (i < entry) && is_effect(effects[i]) ==> ppo(i, store, ordering, effects)
     )
 );
 
@@ -159,7 +162,7 @@ axiom order_acq_sc == (lambda load, entry, exit: StateIndex, ordering: [StateInd
     if sc_impl is LeadingFence then
         // ordered with all previous operations
         (forall i: StateIndex ::
-            (i < entry) && (exists e: Effect :: effects[i] == e) ==> ppo(i, load, ordering, effects)
+            (i < entry) && is_effect(effects[i]) ==> ppo(i, load, ordering, effects)
         )
     else if sc_impl is TrailingFence then
         true
@@ -167,7 +170,7 @@ axiom order_acq_sc == (lambda load, entry, exit: StateIndex, ordering: [StateInd
         // ordered with all previous SC operations
         is_sc(ordering[load]) &&
         (forall i: StateIndex ::
-            (i < entry) && (exists e: Effect :: effects[i] == e) ==> is_sc(ordering[i]) ==> ppo(i, load, ordering, effects)
+            (i < entry) && is_effect(effects[i]) ==> is_sc(ordering[i]) ==> ppo(i, load, ordering, effects)
         )
     else false
 );
@@ -180,13 +183,13 @@ axiom order_rel_sc == (lambda store, entry, exit: StateIndex, ordering: [StateIn
     else if sc_impl is TrailingFence then
         // ordered with all later operations
         (forall i: StateIndex ::
-            (i >= exit) && (exists e: Effect :: effects[i] == e) ==> ppo(store, i, ordering, effects)
+            (i >= exit) && is_effect(effects[i]) ==> ppo(store, i, ordering, effects)
         )
     else if sc_impl is RCsc then
         // ordered with all later SC operations
         is_sc(ordering[store]) &&
         (forall i: StateIndex ::
-            (i >= exit) && (exists e: Effect :: effects[i] == e) ==> is_sc(ordering[i]) ==> ppo(store, i, ordering, effects)
+            (i >= exit) && is_effect(effects[i]) ==> is_sc(ordering[i]) ==> ppo(store, i, ordering, effects)
         )
     else false
 );
@@ -195,20 +198,20 @@ axiom order_rel_sc == (lambda store, entry, exit: StateIndex, ordering: [StateIn
 const order_fence_acq: OrderRelation;
 axiom order_fence_acq == (lambda fence, entry, exit: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect ::
         (forall i, j: StateIndex ::
-            (i < entry) && (j >= exit) && (exists e: Effect :: effects[i] == e && is_read(e) && e->read_visible) && (exists e: Effect :: effects[j] == e)
+            (i < entry) && (j >= exit) && (is_read(effects[i]) && effects[i]->read_visible) && is_effect(effects[j])
                 ==> ppo(i, j, ordering, effects))
 );
 
 const order_fence_rel: OrderRelation;
 axiom order_fence_rel == (lambda fence, entry, exit: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect ::
         (forall i, j: StateIndex ::
-            (i < entry) && (j >= exit) && (exists e: Effect :: effects[i] == e) && (exists e: Effect :: effects[j] == e && is_write(e))
+            (i < entry) && (j >= exit) && is_effect(effects[i]) && is_write(effects[j])
                 ==> ppo(i, j, ordering, effects))
 );
 const order_fence_sc: OrderRelation;
 axiom order_fence_sc == (lambda fence, entry, exit: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect ::
         (forall i, j: StateIndex ::
-            (i < entry) && (j >= exit) && (exists e: Effect :: effects[i] == e) && (exists e: Effect :: effects[j] == e)
+            (i < entry) && (j >= exit) && is_effect(effects[i]) && is_effect(effects[j])
                 ==> ppo(i, j, ordering, effects))
 );
 
