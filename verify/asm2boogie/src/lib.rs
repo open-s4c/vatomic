@@ -112,7 +112,7 @@ static ATOMIC_TYPE: phf::Map<&'static str, AtomicType> = phf_map! {
 lazy_static! {
     static ref RETURNING_RMW : Regex = Regex::new(r"get|cmpxchg|xchg").unwrap();
     // @TODO: generate automatically from the keys
-    static ref RMW_RE : Regex = Regex::new(r"(?<get_>get_)?(?<type>add|sub|set|cmpxchg|min|max|xchg|dec|inc)(?<_get>_get)?").unwrap();
+    static ref RMW_RE : Regex = Regex::new(r"(?<get_>get_)?(?<type>add|sub|set|cmpxchg|min|max|xchg|dec|inc|and|xor|or)(?<_get>_get)?").unwrap();
     static ref ORDERING_RE : Regex = Regex::new(r"(_rlx|_acq|_rel|)$").unwrap();
     static ref AWAIT_RE : Regex = Regex::new(r"await_([^_]+)").unwrap();
     static ref WIDTH_RE : Regex = Regex::new(r"8|16|32|sz|ptr|64").unwrap();
@@ -357,7 +357,8 @@ pub fn generate_boogie_file(
             .replace("#state", &state)
             .replace("#output", &function.output)
             .replace("#input1", &function.input1)
-            .replace("#input2", &function.input2);
+            .replace("#input2", &function.input2)
+            .replace("#value_mask", &register_size.to_string());
 
         fs::write(&target_path.join(template), content)?;
     }

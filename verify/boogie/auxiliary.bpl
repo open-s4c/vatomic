@@ -83,16 +83,27 @@ axiom (forall x: int :: bit_not(bit_not(x)) == x); // double negation on bits
 axiom (forall x: int, y: int :: bit_and(x, y) == bit_and(y, x));
 axiom (forall x: int, y: int :: bit_or(x, y) == bit_or(y, x));
 axiom (forall x: int, y: int :: bit_xor(x, y) == bit_xor(y, x));
-
+axiom (forall x : int :: bit_and(0, x) == 0);
 
 function shift_left(i : int, shift_amount : int) : int;
 function shift_right(i : int, shift_amount : int) : int;
+axiom (forall x : int :: shift_left(x, 0) == x);
+axiom (forall x : int :: shift_right(x, 0) == x);
+axiom (forall x : int :: shift_left(0, x) == 0);
+axiom (forall x : int :: shift_right(0, x) == 0);
+
 function align_value(address : int, value : int, old_value : int, value_mask: int) : int {
     bit_or(
             shift_left(
                 bit_and(value, value_mask), 
                 shift_left(bit_and(address, 3), 2)),
         bit_and(old_value, -value_mask-1))
+}
+
+
+function extract_value(address : int, value : int, value_mask: int) : int {
+    bit_and(shift_right(value, 
+        shift_left(bit_and(address, 3), 2)), value_mask)
 }
 
 axiom (forall i : int :: shift_left(shift_right(i, 1), 1) == bit_and(i, -2));
