@@ -100,14 +100,20 @@ function align_value(address : int, value : int, old_value : int, value_mask: in
         bit_and(old_value, -value_mask-1))
 }
 
-
-function extract_value(address : int, value : int, value_mask: int) : int {
-    bit_and(shift_right(value, 
-        shift_left(bit_and(address, 3), 2)), value_mask)
+function extract_value(address : int, value : int) : int {
+    shift_right(value, 
+        shift_left(bit_and(address, 3), 3))
 }
+
+
+
+axiom (forall i, m : int :: bit_and(i - bit_and(i,-4),3) == bit_and(i, 3));
+
+axiom (forall i : int :: shift_left(i, 3) == i * 8);
 
 axiom (forall i : int :: shift_left(shift_right(i, 1), 1) == bit_and(i, -2));
 axiom (forall i : int :: shift_left(shift_right(i, 2), 2) == bit_and(i, -4));
+axiom (forall i : int :: shift_left(shift_right(i, 3), 3) == bit_and(i, -8));
 
 
 
