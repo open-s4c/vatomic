@@ -68,7 +68,8 @@ datatype Instruction {
 
 
 function updated_value(instr: Instruction, read_value : int) : int {
-    if instr->atom is AtomicAdd then instr->src + read_value
+    if instr is sc then instr->src 
+    else if instr->atom is AtomicAdd then instr->src + read_value
     else if instr->atom is AtomicAnd then and[instr->src, read_value]
     else if instr->atom is AtomicMax then max[instr->src, read_value]
     else if instr->atom is AtomicMin then min[instr->src, read_value]
