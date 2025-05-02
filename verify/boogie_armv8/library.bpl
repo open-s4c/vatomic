@@ -30,8 +30,8 @@ datatype FenceType {
 }
 
 datatype Instruction {
-    ld(acq: bool, addr: int),
-    ldx(acq: bool, addr: int),
+    ld(acq: bool, addr: int, mask: int),
+    ldx(acq: bool, addr: int, mask: int),
     st(rel: bool, src, addr: int),
     stx(rel: bool, src, addr: int),
 
@@ -52,14 +52,14 @@ datatype Instruction {
     mvn(src: int), // complements the bits in result
     neg(src: int), // negates the bits in the result
     
-    swp(acq, rel: bool, src, addr: int), // exchanges 
-    cas(acq, rel: bool, exp, src, addr: int), // compare and swap
+    swp(acq, rel: bool, src, addr: int, mask: int), // exchanges 
+    cas(acq, rel: bool, exp, src, addr: int, mask: int), // compare and swap
 
-    ldumax(acq, rel: bool, src, addr: int), // maximum between src register, and loaded value
-    ldclr(acq, rel: bool, src, addr: int), // bitwise and between src and ~loaded value
-    ldset(acq, rel: bool, src, addr: int), // bitwise or between  src and loaded value
-    ldeor(acq, rel: bool, src, addr: int), // bitwise xor between src and loaded value
-    ldadd(acq, rel: bool, src, addr: int), // sum of src and loaded value
+    ldumax(acq, rel: bool, src, addr: int, mask: int), // maximum between src register, and loaded value
+    ldclr(acq, rel: bool, src, addr: int, mask: int), // bitwise and between src and ~loaded value
+    ldset(acq, rel: bool, src, addr: int, mask: int), // bitwise or between  src and loaded value
+    ldeor(acq, rel: bool, src, addr: int, mask: int), // bitwise xor between src and loaded value
+    ldadd(acq, rel: bool, src, addr: int, mask: int), // sum of src and loaded value
 
     stumax(rel: bool, src, addr: int), // store maximum between src and addr
     stclr(rel: bool, src, addr: int), // store and between src and ~addr
@@ -183,6 +183,7 @@ procedure execute(instr: Instruction) returns (r : int);
             else if instr is mvn  then bit_not(instr->src)
             else if instr is neg  then 0 - instr->src
             else if instr is csel then if instr->cond then instr->src1 else instr->src2
+            else if returning_load(instr) then bit_and(r, instr->mask)
             else r)
         &&
         (last_load == if reads(instr)

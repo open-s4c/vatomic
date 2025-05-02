@@ -283,11 +283,13 @@ pub fn parse_label_def(input: &str) -> IResult<&str, ArmInstruction> {
     .parse(input)
 }
 
-fn parse_memory_size_from_suffix(suffix: &str) -> MemorySize {
+fn parse_memory_size_from_suffix(suffix: &str, operands: &[Operand]) -> MemorySize {
     match suffix {
         "b" => MemorySize::Byte,
         "h" => MemorySize::Half,
-        "" => MemorySize::Double,
+        _ if operands.iter().any(|op| {
+                if let Operand::Register(reg) = op { reg.reg_type == RegisterType::W } else { false } 
+            }) => MemorySize::Word,
         _ => MemorySize::Double,
     }
 }
@@ -409,13 +411,13 @@ fn parse_move_instruction(
     ))
 }
 
-fn parse_memory_attrs(instr_name: &str) -> MemoryAttrs {
+fn parse_memory_attrs(instr_name: &str, operands: &[Operand]) -> MemoryAttrs {
     let mut exclusive = false;
     let mut acquire = false;
     let mut release = false;
 
-    let suffix = &instr_name[instr_name.len() - 2..instr_name.len()];
-    let size = parse_memory_size_from_suffix(suffix);
+    let suffix = &instr_name[instr_name.len() - 1..instr_name.len()];
+    let size = parse_memory_size_from_suffix(suffix, operands);
 
     if instr_name.contains("xr") {
         exclusive = true;
@@ -460,7 +462,7 @@ fn parse_memory_instruction(
         )));
     };
 
-    let attrs = parse_memory_attrs(&base_op);
+    let attrs = parse_memory_attrs(&base_op, &operands);
 
     if (base_op.contains("stlxr") || base_op.contains("stxr")) && operands.len() >= 3 {
         return Ok((

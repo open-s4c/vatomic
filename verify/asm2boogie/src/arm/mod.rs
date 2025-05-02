@@ -125,6 +125,20 @@ pub enum MemorySize {
     Double, // 64-bit
 }
 
+impl MemorySize {
+    pub fn bytes(&self) -> u32 {
+        match self {
+            MemorySize::Byte => 1,
+            MemorySize::Half => 2,
+            MemorySize::Word => 4,
+            MemorySize::Double => 8,
+        }
+    }
+    pub fn mask(&self) -> u64 {
+        (2u64.overflowing_pow(self.bytes() * 8)).0.overflowing_add_signed(-1).0
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct MemoryAttrs {
     pub size: MemorySize,
@@ -314,7 +328,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
                 BoogieInstruction::Instr(
                     op_name.to_string(),
                     dest_or_src_reg,
-                    vec![attrs.acquire.to_string(), addr_reg],
+                    vec![attrs.acquire.to_string(), addr_reg, attrs.size.mask().to_string()],
                 )
             } else {
                 BoogieInstruction::Instr(
