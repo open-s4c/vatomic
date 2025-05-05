@@ -84,6 +84,7 @@ axiom (forall x: int, y: int :: bit_and(x, y) == bit_and(y, x));
 axiom (forall x: int, y: int :: bit_or(x, y) == bit_or(y, x));
 axiom (forall x: int, y: int :: bit_xor(x, y) == bit_xor(y, x));
 axiom (forall x : int :: bit_and(0, x) == 0);
+axiom (forall x : int :: bit_or(x, 0) == x);
 
 function shift_left(i : int, shift_amount : int) : int;
 function shift_right(i : int, shift_amount : int) : int;
@@ -253,6 +254,10 @@ function no_writes(from, to, write: StateIndex): bool {
 function valid_mask(val, mask : int) : bool {
     val == bit_and(val, mask)
 }
+
+axiom (forall i, m : int :: valid_mask(bit_and(i,m), m));
+axiom (forall i, m : int :: valid_mask(i,m) ==> bit_and(i, -m-1) == 0);
+
 
 type RMWOp = [int, int, int] int;
 
