@@ -351,7 +351,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             BoogieInstruction::Instr(
                 op_name.to_string(),
                 dest_reg,
-                vec![attrs.release.to_string(), exp_reg, src_reg],
+                vec![attrs.release.to_string(),  format!("bit_and({}, {})", exp_reg, attrs.size.mask()), src_reg],
             )
         }
         ArmInstruction::Cmp(op1, op2) => {
