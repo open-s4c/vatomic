@@ -10,7 +10,10 @@ procedure rmw (op: RMWOp)
     ensures {:msg "if no write happened, the value from memory is already the result of operation"} (
         var address, input1, input2 := old(#address), old(#input1), old(#input2);
         no_writes(old(step), step, last_store) ==>
-            (exists a,v : int, vis : bool :: effects[last_load] == read(a,v,vis) && v == op[v, input1, input2])
+            (
+                var extracted := bit_and(extract_value(old(a0) - effects[last_load]->addr, effects[last_load]->read_value), #value_mask);
+                extracted == op[extracted, input1, input2]
+            )
         );
     ensures {:msg "atomicity"}
         !no_writes(old(step), step, last_store) ==> (
@@ -19,9 +22,13 @@ procedure rmw (op: RMWOp)
     ensures {:msg "store produces write to correct address with correct value"}
         !no_writes(old(step), step, last_store) ==> (
             var address, input1, input2 := old(#address), old(#input1), old(#input2);
-            (is_write(effects[last_store])
-                && effects[last_store]->addr == address
-                && effects[last_store]->write_value == op[effects[last_load]->read_value, input1, input2])
+            (var extracted := bit_and(extract_value(old(a0) - effects[last_load]->addr, effects[last_load]->read_value), #value_mask);
+                effects[last_store]->write_value == 
+                        align_value(address - effects[last_store]->addr, 
+                            bit_and(op[extracted, input1, input2], #value_mask),
+                            effects[last_load]->read_value,
+                            #value_mask)
+                    )
         );
 {
     #implementation

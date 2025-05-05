@@ -106,17 +106,16 @@ procedure execute(instr: Instruction) returns (r : int);
             else if instr is sub then instr->first - instr->second
             else if instr is neg then -instr->first
             else if instr is andi then bit_and(instr->first, instr->second)
-            else if instr is negw then -(instr->first-1)
+            else if instr is negw || instr is not then -instr->first-1
             else if instr is slli || instr is sll then shift_left(instr->first, instr->second)
 
             /* realistically, sra and srl behave differently - srl on unsigned, sra on signed */
             else if instr is srli || instr is srl || instr is sra then shift_right(instr->first, instr->second)
             else if instr is li then instr->first
-            else if instr is not then  b2i(! i2b(instr->first))
 
-            else if instr is andd || instr is and then b2i(i2b(instr->first)&&i2b(instr->second))
-            else if instr is orr || instr is or then  b2i(i2b(instr->first)||i2b(instr->second))
-            else if instr is eor then  b2i(i2b(instr->first)!=i2b(instr->second))
+            else if instr is andd || instr is and then bit_and(instr->first, instr->second)
+            else if instr is orr || instr is or then  bit_or(instr->first, instr->second)
+            else if instr is eor then  bit_xor(instr->first, instr->second)
             else r)
         &&
         (last_load ==

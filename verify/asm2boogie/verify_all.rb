@@ -1,4 +1,5 @@
 require 'optparse'
+require 'set'
 
 Archs = { "arm-v8" => ["armv8", "atomic.s"], "risc-v" => ["risc", "atomic_riscv.s"] }
 options = {}
@@ -7,6 +8,7 @@ options[:which] = "atomics_list_full.txt"
 options[:where] = "out"
 options[:archs] = Archs.keys
 options[:extract] = true
+options[:phases] = Set.new [ 1, 2 ]
 
 OptionParser.new do |opts|
   opts.banner = "Usage: verify_all.rb [options]"
@@ -36,6 +38,9 @@ OptionParser.new do |opts|
     options[:extract] = false
   end
 
+  opts.on("-p", "--phases=PHASE1,...,PHASEN", "Only do these verification phase") do |v|
+    options[:phases] = Set.new (v.split.map { |s| s.to_i })
+  end
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -108,10 +113,12 @@ end
 require 'pp'
 require 'parallel'
 begin
-  verify_all(options[:archs], options[:where], options[:limit])
-  puts ""
-  puts "finished simple verification"
-  puts ""
+  if options[:phases].include? 1
+    verify_all(options[:archs], options[:where], options[:limit])
+    puts ""
+    puts "finished simple verification"
+    puts ""
+  end
       
 ensure
   if $results.any? { |result| result.any? { |(_,_,pass)| ! pass }} 
@@ -127,29 +134,32 @@ ensure
       puts ""
       
       puts "to rerun all failed atomics:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{failed_file}"
-      puts ""
-      puts ""
-      puts ""
-      puts "========================================================="
-      puts "*                                                       *"
-      puts "*    retrying failed atomics with heavy verification    *"
-      puts "*                                                       *"
-      puts "========================================================="
-      puts ""
-      puts ""
-      puts ""
-      
-      retry_out = "#{options[:where]}_retry"
-      options[:archs].each { |arch|
-          (library, asm_file) = Archs[arch]
-          compile(asm_file, library, failed_file, retry_out, arch, unroll=true)
-      }
+
+      if options[:phases].include? 2
+        puts ""
+        puts ""
+        puts ""
+        puts "========================================================="
+        puts "*                                                       *"
+        puts "*    retrying failed atomics with heavy verification    *"
+        puts "*                                                       *"
+        puts "========================================================="
+        puts ""
+        puts ""
+        puts ""
+        
+        retry_out = "#{options[:where]}_retry"
+        options[:archs].each { |arch|
+            (library, asm_file) = Archs[arch]
+            compile(asm_file, library, failed_file, retry_out, arch, unroll=true)
+        }
 
 
-      verify_all(options[:archs], retry_out, nil)
+        verify_all(options[:archs], retry_out, nil)
 
-      puts ""
-      puts "finished heavy verification"
+        puts ""
+        puts "finished heavy verification"
+      end
     end
   end
 

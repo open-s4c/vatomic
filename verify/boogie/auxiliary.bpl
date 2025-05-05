@@ -96,8 +96,8 @@ function align_value(address : int, value : int, old_value : int, value_mask: in
     bit_or(
             shift_left(
                 bit_and(value, value_mask), 
-                shift_left(bit_and(address, 3), 2)),
-        bit_and(old_value, -value_mask-1))
+                shift_left(bit_and(address, 3), 3)),
+        bit_and(old_value, -shift_left(value_mask, shift_left(bit_and(address, 3), 3))-1))
 }
 
 function extract_value(address : int, value : int) : int {
@@ -115,7 +115,19 @@ axiom (forall i : int :: shift_left(shift_right(i, 1), 1) == bit_and(i, -2));
 axiom (forall i : int :: shift_left(shift_right(i, 2), 2) == bit_and(i, -4));
 axiom (forall i : int :: shift_left(shift_right(i, 3), 3) == bit_and(i, -8));
 
+//axiom (forall i, m : int :: bit_and(shift_left(i, m), shift_left(7, m)) == shift_left(bit_and(i, 7), m));
+//axiom (forall i, m : int :: bit_and(shift_left(i, m), shift_left(255, m)) == shift_left(bit_and(i, 255), m));
+axiom (forall i, m : int :: bit_and(shift_left(i, m), shift_left(65535, m)) == shift_left(bit_and(i, 65535), m));
 
+axiom (forall a, b, m : int :: (bit_and(a, shift_left(7,m)) == shift_left(b,m)) == (bit_and(shift_right(a,m), 7) == b));
+axiom (forall a, b, m : int :: (bit_and(a, shift_left(255,m)) == shift_left(b,m)) == (bit_and(shift_right(a,m), 255) == b));
+axiom (forall a, b, m : int :: (bit_and(a, shift_left(65535,m)) == shift_left(b,m)) == (bit_and(shift_right(a,m), 65535) == b));
+
+/*
+axiom (forall a, b, m : int :: bit_and(a, shift_left(7,m)) != shift_left(b,m) && valid_mask(b,7) ==> bit_and(shift_right(a,m), 7) != b);
+axiom (forall a, b, m : int :: bit_and(a, shift_left(255,m)) != shift_left(b,m) && valid_mask(b,255) ==> bit_and(shift_right(a,m), 255) != b);
+axiom (forall a, b, m : int :: bit_and(a, shift_left(65535,m)) != shift_left(b,m) && valid_mask(b,65535) ==> bit_and(shift_right(a,m), 65535) != b);
+*/
 
 
 const max: [int, int] int;
