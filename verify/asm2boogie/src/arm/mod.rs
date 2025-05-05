@@ -94,7 +94,7 @@ pub enum Directive {
     Type(String, String),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum ArithmeticOp {
     Add,
     Sub,
@@ -104,20 +104,20 @@ pub enum ArithmeticOp {
     Eor,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum ShiftOp {
     Lsl,
     Lsr,
     Asr,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum MemoryOp {
     Load,
     Store,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum MemorySize {
     Byte,   // 8-bit
     Half,   // 16-bit

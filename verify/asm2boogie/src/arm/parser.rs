@@ -411,17 +411,19 @@ fn parse_move_instruction(
     ))
 }
 
-fn parse_memory_attrs(instr_name: &str, operands: &[Operand]) -> MemoryAttrs {
+fn parse_memory_attrs(op: MemoryOp, instr_name: &str, operands: &[Operand]) -> MemoryAttrs {
     let mut exclusive = false;
     let mut acquire = false;
     let mut release = false;
 
-    let suffix = &instr_name[instr_name.len() - 1..instr_name.len()];
-    let size = parse_memory_size_from_suffix(suffix, operands);
 
     if instr_name.contains("xr") {
         exclusive = true;
     }
+
+    let suffix = &instr_name[instr_name.len() - 1..instr_name.len()];
+    let size = parse_memory_size_from_suffix(suffix, if op == MemoryOp::Store && exclusive { &operands[1..] } else { operands });
+
 
     if instr_name.contains('a') {
         acquire = true;
@@ -462,7 +464,7 @@ fn parse_memory_instruction(
         )));
     };
 
-    let attrs = parse_memory_attrs(&base_op, &operands);
+    let attrs = parse_memory_attrs(op, &base_op, &operands);
 
     if (base_op.contains("stlxr") || base_op.contains("stxr")) && operands.len() >= 3 {
         return Ok((
