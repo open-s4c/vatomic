@@ -14,7 +14,7 @@ procedure read(ret : RMWOp, load_order: OrderRelation)
     ensures {:msg "correct output"}
         (var returned := ret[effects[last_load]->read_value, old(#input1), old(#input2)];
         is_read(effects[last_load]) && effects[last_load]->read_visible
-            && (bit_and(#output, #value_mask) == bit_and(extract_value(old(#address) - effects[last_load]->addr, returned), #value_mask)));
+            && (bit_and(#output, #value_mask) == bit_and(extract_value(bin_sub(old(#address), effects[last_load]->addr), returned), #value_mask)));
 
 {
     #implementation

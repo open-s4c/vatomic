@@ -15,7 +15,7 @@ datatype Ordering {
 }
 
 datatype Monitor {
-    exclusive(addr: int),
+    exclusive(addr: bv64),
     open()
 }
 
@@ -30,42 +30,42 @@ datatype FenceType {
 }
 
 datatype Instruction {
-    ld(acq: bool, addr: int, mask: int),
-    ldx(acq: bool, addr: int, mask: int),
-    st(rel: bool, src, addr: int),
-    stx(rel: bool, src, addr: int),
+    ld(acq: bool, addr: bv64, mask: bv64),
+    ldx(acq: bool, addr: bv64, mask: bv64),
+    st(rel: bool, src, write_mask, addr: bv64),
+    stx(rel: bool, src, write_mask, addr: bv64),
 
-    csel(src1, src2: int, cond: bool),
-    mov(src: int),
-    cmp(opnd1, opnd2: int),
-    add(first, second: int),
-    sub(first, second: int),
-    andd(first, second: int),
-    orr(first, second: int),
-    eor(first, second: int),
+    csel(src1, src2: bv64, cond: bool),
+    mov(src: bv64),
+    cmp(opnd1, opnd2: bv64),
+    add(first, second: bv64),
+    sub(first, second: bv64),
+    andd(first, second: bv64),
+    orr(first, second: bv64),
+    eor(first, second: bv64),
     wfe(),
     sevl(),
 
     dmb(mode : FenceType),
     //LSE instructions
 
-    mvn(src: int), // complements the bits in result
-    neg(src: int), // negates the bits in the result
+    mvn(src: bv64), // complements the bits in result
+    neg(src: bv64), // negates the bits in the result
     
-    swp(acq, rel: bool, src, addr: int, mask: int), // exchanges 
-    cas(acq, rel: bool, exp, src, addr: int, mask: int), // compare and swap
+    swp(acq, rel: bool, src, addr: bv64, mask: bv64), // exchanges 
+    cas(acq, rel: bool, exp, src, addr: bv64, mask: bv64), // compare and swap
 
-    ldumax(acq, rel: bool, src, addr: int, mask: int), // maximum between src register, and loaded value
-    ldclr(acq, rel: bool, src, addr: int, mask: int), // bitwise and between src and ~loaded value
-    ldset(acq, rel: bool, src, addr: int, mask: int), // bitwise or between  src and loaded value
-    ldeor(acq, rel: bool, src, addr: int, mask: int), // bitwise xor between src and loaded value
-    ldadd(acq, rel: bool, src, addr: int, mask: int), // sum of src and loaded value
+    ldumax(acq, rel: bool, src, addr: bv64, mask: bv64), // maximum between src register, and loaded value
+    ldclr(acq, rel: bool, src, addr: bv64, mask: bv64), // bitwise and between src and ~loaded value
+    ldset(acq, rel: bool, src, addr: bv64, mask: bv64), // bitwise or between  src and loaded value
+    ldeor(acq, rel: bool, src, addr: bv64, mask: bv64), // bitwise xor between src and loaded value
+    ldadd(acq, rel: bool, src, addr: bv64, mask: bv64), // sum of src and loaded value
 
-    stumax(rel: bool, src, addr: int), // store maximum between src and addr
-    stclr(rel: bool, src, addr: int), // store and between src and ~addr
-    stset(rel: bool, src, addr: int), // store or
-    steor(rel: bool, src, addr: int), // store xor
-    stadd(rel: bool, src, addr: int) // store sum
+    stumax(rel: bool, src, addr: bv64), // store maximum between src and addr
+    stclr(rel: bool, src, addr: bv64), // store and between src and ~addr
+    stset(rel: bool, src, addr: bv64), // store or
+    steor(rel: bool, src, addr: bv64), // store xor
+    stadd(rel: bool, src, addr: bv64) // store sum
 }
 
 function returning_load(instr : Instruction) : bool {
@@ -81,7 +81,7 @@ function returning_load(instr : Instruction) : bool {
 }
 
 /* Prove meta properties about execute, that are used in the proof */
-procedure verify_execute(instr : Instruction) returns (r : int)
+procedure verify_execute(instr : Instruction) returns (r : bv64)
     modifies flags, step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
 
     requires (instr is stx ==> local_monitor is exclusive && local_monitor->addr == instr->addr);
@@ -89,7 +89,7 @@ procedure verify_execute(instr : Instruction) returns (r : int)
 
 
     ensures {:msg "load return is correct"} (
-            forall a, v: int, vis : bool :: 
+            forall a, v: bv64, vis : bool :: 
                 effects[old(step)] == read(a,v,vis) && returning_load(instr)  ==> 
                     r == v
     );
@@ -107,11 +107,11 @@ procedure verify_execute(instr : Instruction) returns (r : int)
     ensures last_load < step;
     ensures last_store < step;
 
-    requires (forall i, j : int :: atomic[i, j] ==> i <= j && j < step);
-    ensures (forall i : int ::
+    requires (forall i, j : StateIndex :: atomic[i, j] ==> i <= j && j < step);
+    ensures (forall i : StateIndex ::
             atomic[i, old(step)] ==> i == last_load && old(step) == last_store
         );
-    ensures (forall i, j : int ::
+    ensures (forall i, j : StateIndex ::
             atomic[i, j] ==> i <= j && j < step);
 
     ensures step == old(step) + 1;
@@ -127,7 +127,7 @@ function visible(instr : Instruction) : bool {
     || instr is stadd)
 }
 
-function updated_value(instr: Instruction, read_value : int) : int {
+function updated_value(instr: Instruction, read_value : bv64) : bv64 {
     if instr is cas || instr is swp
     then instr->src
     else if instr is ldclr || instr is stclr
@@ -139,8 +139,8 @@ function updated_value(instr: Instruction, read_value : int) : int {
     else if instr is ldumax || instr is stumax
     then max[instr->src, read_value]
     else if instr is ldadd || instr is stadd
-    then instr->src + read_value
-    else 0
+    then add[instr->src, read_value]
+    else 0bv64
 }
 
 function rmw(instr: Instruction) : bool {
@@ -165,7 +165,7 @@ function writes(instr: Instruction) : bool {
     rmw(instr) || instr is st
 }
 
-procedure execute(instr: Instruction) returns (r : int);
+procedure execute(instr: Instruction) returns (r : bv64);
     modifies flags, step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
     ensures step == old(step + 1);
     ensures {:msg "state"} (
@@ -175,13 +175,13 @@ procedure execute(instr: Instruction) returns (r : int);
             r == instr->exp;
         (r == if instr is stx then b2i(! stx_success)
             else if instr is mov then instr->src
-            else if instr is add then instr->first + instr->second
-            else if instr is sub then instr->first - instr->second
+            else if instr is add then bin_add(instr->first, instr->second)
+            else if instr is sub then bin_sub(instr->first, instr->second)
             else if instr is andd then bit_and(instr->first, instr->second)
             else if instr is orr  then bit_or (instr->first, instr->second)
             else if instr is eor  then bit_xor(instr->first, instr->second)
-            else if instr is mvn  then bit_not(instr->src)
-            else if instr is neg  then 0 - instr->src
+            else if instr is mvn  then bit_inv(instr->src)
+            else if instr is neg  then bin_neg(instr->src)
             else if instr is csel then if instr->cond then instr->src1 else instr->src2
             else if returning_load(instr) then bit_and(r, instr->mask)
             else r)
@@ -210,8 +210,8 @@ procedure execute(instr: Instruction) returns (r : int);
         &&
         (flags == if instr is cmp
                 then (
-                    var diff := instr->opnd1 - instr->opnd2;
-                    Flags(diff < 0, diff == 0, diff >= 0)
+                    var diff := bin_sub(instr->opnd1, instr->opnd2);
+                    Flags(slt(diff, 0bv64), diff == 0bv64, sge(diff, 0bv64))
                 )
                 else
                     old(flags)
@@ -220,12 +220,12 @@ procedure execute(instr: Instruction) returns (r : int);
         (effects[old(step)] == 
                         if rmw(instr)
                         || (instr is cas && cas_success)
-                        then update(instr->addr, r, visible(instr), updated_value(instr, r))
+                        then update(instr->addr, r, visible(instr), updated_value(instr, r), instr->write_mask)
                         else if writes(instr) || (instr is stx && stx_success)
-                        then write(instr->addr, instr->src)
+                        then write(instr->addr, instr->src, instr->write_mask)
                         else if reads(instr)
                         then read(instr->addr, r, visible(instr))
-                        else no_effect() 
+                        else no_effect()
             )
         &&
         (ordering[old(step)] == if instr->acq && reads(instr)
@@ -272,12 +272,12 @@ procedure execute(instr: Instruction) returns (r : int);
         instr is stx ==> local_monitor == exclusive(instr->addr);
 
 
-function cbnz(test: int): bool {
-    test != 0
+function cbnz(test: bv64): bool {
+    test != 0bv64
 }
 
-function cbz(test: int): bool {
-    test == 0
+function cbz(test: bv64): bool {
+    test == 0bv64
 }
 
 // C1.2.4 Condition code
@@ -309,9 +309,9 @@ function ppo(step1, step2: StateIndex, ordering: [StateIndex] Ordering, effects:
         ordering[step1] is AcquirePC ||
         ordering[step2] is Release ||
         (ordering[step1] is Release && ordering[step2] is Acquire) ||
-        (exists f : int :: step1 < f && f < step2 && ordering[f] == Fence(SY())) ||
-        (exists f, a, v : int :: step1 < f && f < step2 && ordering[f] == Fence(LD())
-            && effects[step1] == read(a,v,true))
+        (exists f : StateIndex :: step1 < f && f < step2 && ordering[f] == Fence(SY())) ||
+        (exists f : StateIndex :: step1 < f && f < step2 && ordering[f] == Fence(LD())
+            && is_read(effects[step1]))
     )
 }
 

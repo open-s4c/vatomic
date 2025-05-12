@@ -1,4 +1,4 @@
-var #registers: int;
+var #registers: bv64;
 
 /*
     op          - operation to be performed
@@ -11,7 +11,7 @@ procedure rmw (op: RMWOp)
         var address, input1, input2 := old(#address), old(#input1), old(#input2);
         no_writes(old(step), step, last_store) ==>
             (
-                var extracted := bit_and(extract_value(address - effects[last_load]->addr, effects[last_load]->read_value), #value_mask);
+                var extracted := bit_and(extract_value(bin_sub(address, effects[last_load]->addr), effects[last_load]->read_value), #value_mask);
                 extracted == op[extracted, input1, input2]
             )
         );
@@ -22,12 +22,12 @@ procedure rmw (op: RMWOp)
     ensures {:msg "store produces write to correct address with correct value"}
         !no_writes(old(step), step, last_store) ==> (
             var address, input1, input2 := old(#address), old(#input1), old(#input2);
-            (var extracted := bit_and(extract_value(address - effects[last_load]->addr, effects[last_load]->read_value), #value_mask);
-                effects[last_store]->write_value == 
-                        align_value(address - effects[last_store]->addr, 
+            (var extracted := bit_and(extract_value(bin_sub(address, effects[last_load]->addr), effects[last_load]->read_value), #value_mask);
+                bit_and(effects[last_store]->write_value, effects[last_store]->write_mask) ==
+                bit_and(align_value(bin_sub(address, effects[last_load]->addr), 
                             bit_and(op[extracted, input1, input2], #value_mask),
                             effects[last_load]->read_value,
-                            #value_mask)
+                            #value_mask), effects[last_store]->write_mask)
                     )
         );
 {

@@ -328,30 +328,30 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
                 BoogieInstruction::Instr(
                     op_name.to_string(),
                     dest_or_src_reg,
-                    vec![attrs.acquire.to_string(), addr_reg, attrs.size.mask().to_string()],
+                    vec![attrs.acquire.to_string(), addr_reg, format!("{}bv64", attrs.size.mask())],
                 )
             } else {
                 BoogieInstruction::Instr(
                     op_name.to_string(),
                     DUMMY_REG.to_string(),
-                    vec![attrs.release.to_string(), dest_or_src_reg, addr_reg],
+                    vec![attrs.release.to_string(), dest_or_src_reg, format!("{}bv64", attrs.size.mask()), addr_reg],
                 )
             }
         }
-        ArmInstruction::MemoryExclusive(op, attrs, dest, exp, src) => {
+        ArmInstruction::MemoryExclusive(op, attrs, dest, src, addr) => {
             let op_name = match op {
                 MemoryOp::Store => "stx",
                 _ => unimplemented!(),
             };
 
             let dest_reg = operand_to_boogie(dest);
-            let exp_reg = operand_to_boogie(exp);
+            let addr_reg = operand_to_boogie(addr);
             let src_reg = operand_to_boogie(src);
 
             BoogieInstruction::Instr(
                 op_name.to_string(),
                 dest_reg,
-                vec![attrs.release.to_string(),  format!("bit_and({}, {})", exp_reg, attrs.size.mask()), src_reg],
+                vec![attrs.release.to_string(), src_reg, format!("{}bv64", attrs.size.mask()), addr_reg],
             )
         }
         ArmInstruction::Cmp(op1, op2) => {
@@ -398,7 +398,7 @@ fn register_to_boogie(reg: &Register) -> String {
 fn operand_to_boogie(operand: &Operand) -> String {
     match operand.clone() {
         Operand::Register(r) => register_to_boogie(&r),
-        Operand::ImmediateValue(val) => val.to_string(),
+        Operand::ImmediateValue(val) => format!("{}bv64", val),
         Operand::Memory(addr_mode) => match addr_mode {
             AddressingMode::BaseRegister(reg) => register_to_boogie(&reg),
             AddressingMode::BaseRegisterWithOffset(reg, offset) => {

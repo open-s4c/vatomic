@@ -280,7 +280,7 @@ pub fn generate_boogie_file(
         }
 
         if func_type == FunctionClass::AwaitRmw {
-            rmw_op = format!("(lambda x, y1, y2: int :: {}[x, y2, y1])", rmw_op);
+            rmw_op = format!("(lambda x, y1, y2: bv64 :: {}[x, y2, y1])", rmw_op);
         }
     }
 
@@ -327,9 +327,9 @@ pub fn generate_boogie_file(
             "
     assume (last_store < step);
     assume (sc_impl is {:?});
-    assume (valid_mask({}, {}));
-    assume (valid_mask({}, {}));
-    assume (valid_mask({}, {}));
+    assume (valid_mask({}, {}bv64));
+    assume (valid_mask({}, {}bv64));
+    assume (valid_mask({}, {}bv64));
     {}
     {}",
             arch.fence_convention(),
@@ -358,7 +358,7 @@ pub fn generate_boogie_file(
             .replace("#output", &function.output)
             .replace("#input1", &function.input1)
             .replace("#input2", &function.input2)
-            .replace("#value_mask", &register_size.to_string());
+            .replace("#value_mask", &format!("{}bv64", register_size));
 
         fs::write(&target_path.join(template), content)?;
     }
