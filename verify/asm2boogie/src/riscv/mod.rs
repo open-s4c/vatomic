@@ -13,7 +13,7 @@ pub struct MemoryOperand {
     pub base: Register,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Size {
     Byte,   // 8-bit
     Half,   // 16-bit
@@ -21,7 +21,22 @@ pub enum Size {
     Double, // 64-bit
 }
 
-#[derive(Debug, Clone, PartialEq)]
+impl Size {
+    pub fn bytes(&self) -> u32 {
+        match self {
+            Size::Byte => 1,
+            Size::Half => 2,
+            Size::Word => 4,
+            Size::Double => 8,
+        }
+    }
+
+    pub fn mask(&self) -> u64 {
+        (2u64.overflowing_pow(self.bytes() * 8)).0.overflowing_add_signed(-1).0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum AtomicSemantics {
     None,
     Acquire,
@@ -39,7 +54,7 @@ pub enum Directive {
     Type(String, String),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum FenceMode {
     Read,
     Write,
@@ -71,7 +86,7 @@ pub enum Operand {
     Label(String),
     FenceMode(FenceMode),
 }
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum AtomicOp {
     Swap,
     Add,
@@ -81,7 +96,7 @@ pub enum AtomicOp {
     Max,
     Min,
 }
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum ArithmeticOp {
     Add,
     Sub,
@@ -276,17 +291,17 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
                 },
             )
         }
-        RiscvInstruction::Load { dst, src, .. } => {
+        RiscvInstruction::Load { dst, src, size, .. } => {
             let dst_reg = register_to_string(dst);
             let src_reg = operand_to_boogie(&Operand::Memory(src.clone()));
 
-            BoogieInstruction::Instr("ld".to_string(), dst_reg, vec![src_reg])
+            BoogieInstruction::Instr("ld".to_string(), dst_reg, vec![src_reg, size.mask().to_string()])
         }
-        RiscvInstruction::UnsignedLoad { dst, src, .. } => {
+        RiscvInstruction::UnsignedLoad { dst, src, size, .. } => {
             let dst_reg = register_to_string(dst);
             let src_reg = operand_to_boogie(&Operand::Memory(src.clone()));
 
-            BoogieInstruction::Instr("ldu".to_string(), dst_reg, vec![src_reg])
+            BoogieInstruction::Instr("ldu".to_string(), dst_reg, vec![src_reg, size.mask().to_string()])
         }
         RiscvInstruction::Store { dst, src, .. } => {
             let src_reg = operand_to_boogie(&Operand::Register(src.clone()));
@@ -302,6 +317,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             semantics,
             rd,
             addr,
+            size,
             ..
         } => {
             let aq = matches!(
@@ -318,7 +334,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             BoogieInstruction::Instr(
                 "lr".to_string(),
                 dst_reg,
-                vec![aq.to_string(), rl.to_string(), src_reg],
+                vec![aq.to_string(), rl.to_string(), src_reg, size.mask().to_string()],
             )
         }
         RiscvInstruction::Call { label } => BoogieInstruction::Instr(
@@ -373,6 +389,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             rd,
             rs2,
             addr,
+            size,
             ..
         } => {
             let atomic_op = format!(
@@ -404,7 +421,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             BoogieInstruction::Instr(
                 "atomic".to_string(),
                 dst_reg,
-                vec![atomic_op, aq.to_string(), rl.to_string(), src_reg, addr_op],
+                vec![atomic_op, aq.to_string(), rl.to_string(), src_reg, addr_op, size.mask().to_string()],
             )
         }
         RiscvInstruction::ArithmeticRR {

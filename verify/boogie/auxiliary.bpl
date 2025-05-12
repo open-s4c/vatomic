@@ -124,6 +124,10 @@ axiom (forall a, b, m : int :: (bit_and(a, shift_left(7,m)) == shift_left(b,m)) 
 axiom (forall a, b, m : int :: (bit_and(a, shift_left(255,m)) == shift_left(b,m)) == (bit_and(shift_right(a,m), 255) == b));
 axiom (forall a, b, m : int :: (bit_and(a, shift_left(65535,m)) == shift_left(b,m)) == (bit_and(shift_right(a,m), 65535) == b));
 
+
+axiom (forall a : int :: valid_mask(a, 4294967295) ==> bit_and(a, -4294967295-1) == 0);
+
+
 /*
 axiom (forall a, b, m : int :: bit_and(a, shift_left(7,m)) != shift_left(b,m) && valid_mask(b,7) ==> bit_and(shift_right(a,m), 7) != b);
 axiom (forall a, b, m : int :: bit_and(a, shift_left(255,m)) != shift_left(b,m) && valid_mask(b,255) ==> bit_and(shift_right(a,m), 255) != b);

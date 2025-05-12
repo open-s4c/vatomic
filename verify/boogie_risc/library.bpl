@@ -27,14 +27,14 @@ var local_monitor: Monitor;
 var monitor_exclusive: bool;
 
 datatype Instruction {
-    ld(addr: int),
-    ldu(addr: int),
+    ld(addr: int, mask: int),
+    ldu(addr: int, mask: int),
     sd(src, addr: int),
     sb(src, addr: int),
-    lr(acq, rel: bool, addr: int),
+    lr(acq, rel: bool, addr: int, mask: int),
     sc(acq, rel: bool, src, addr: int),
     mv(src: int),
-    atomic(atom: AtomicType, acq, rel: bool, src, addr: int),
+    atomic(atom: AtomicType, acq, rel: bool, src, addr: int, mask: int),
 
     add(first, second: int),
     addi(first, second: int),
@@ -87,6 +87,12 @@ function reads(instr: Instruction) : bool {
     rmw(instr) || instr is ld || instr is ldu || instr is lr
 }
 
+
+
+function instruction_mask(instr: Instruction) : int {
+    instr->mask
+}
+
 function writes(instr: Instruction) : bool {
     rmw(instr) || instr is sd || instr is sb
 }
@@ -116,7 +122,7 @@ procedure execute(instr: Instruction) returns (r : int);
             else if instr is andd || instr is and then bit_and(instr->first, instr->second)
             else if instr is orr || instr is or then  bit_or(instr->first, instr->second)
             else if instr is eor then  bit_xor(instr->first, instr->second)
-            else r)
+            else bit_and(r, instruction_mask(instr)))
         &&
         (last_load ==
                     if reads(instr)

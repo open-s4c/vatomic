@@ -82,6 +82,7 @@ def verify_all(archs, out, limit)
     base_path = File.join(out, arch)
     $results[arch] = Parallel.map(Dir::children(base_path), in_processes: 10) { |atomic|
       if ! limit || limit[:functions].include?(atomic)
+        puts "[begin #{arch}/#{atomic}]"
         lines = ["=======================", 
           "verifying #{atomic} on #{arch}",
         ]
