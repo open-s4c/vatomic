@@ -73,7 +73,8 @@ template <> struct atomic<vuint32_t> {
         return v;
     }
 
-    operator vuint32_t() const noexcept {
+    operator vuint32_t() const noexcept
+    {
         return load();
     }
 
