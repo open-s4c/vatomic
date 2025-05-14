@@ -134,6 +134,19 @@ procedure assume_requires_execute(instr: Instruction);
     ensures instr is wfe ==> event_register || monitor_exclusive;
 
 
+procedure execute_local(instr: Instruction) returns (r : bv64);
+    ensures
+        (r == if instr is mov then instr->src
+            else if instr is add then bin_add(instr->first, instr->second)
+            else if instr is sub then bin_sub(instr->first, instr->second)
+            else if instr is andd then bit_and(instr->first, instr->second)
+            else if instr is orr  then bit_or (instr->first, instr->second)
+            else if instr is eor  then bit_xor(instr->first, instr->second)
+            else if instr is mvn  then bit_inv(instr->src)
+            else if instr is neg  then bin_neg(instr->src)
+            else if instr is csel then if instr->cond then instr->src1 else instr->src2
+            else r);
+
 procedure execute(instr: Instruction) returns (r : bv64);
     modifies flags, step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
     ensures step == old(step + 1);
@@ -143,15 +156,6 @@ procedure execute(instr: Instruction) returns (r : bv64);
             && monitor_exclusive),
             r == instr->exp;
         (r == if instr is stx then b2i(! stx_success)
-            else if instr is mov then instr->src
-            else if instr is add then bin_add(instr->first, instr->second)
-            else if instr is sub then bin_sub(instr->first, instr->second)
-            else if instr is andd then bit_and(instr->first, instr->second)
-            else if instr is orr  then bit_or (instr->first, instr->second)
-            else if instr is eor  then bit_xor(instr->first, instr->second)
-            else if instr is mvn  then bit_inv(instr->src)
-            else if instr is neg  then bin_neg(instr->src)
-            else if instr is csel then if instr->cond then instr->src1 else instr->src2
             else if returning_load(instr) then bit_and(r, instr->mask)
             else r)
         &&

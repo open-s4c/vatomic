@@ -99,6 +99,24 @@ function writes(instr: Instruction) : bool {
 }
 
 
+procedure execute_local(instr: Instruction) returns (r : bv64);
+    ensures
+        (r == if instr is mv || instr is sext || instr is li then instr->src
+            else if instr is add || instr is addi then bin_add(instr->first, instr->second)
+            else if instr is sub then bin_sub(instr->first, instr->second)
+            else if instr is neg || instr is negw then bin_neg(instr->src)
+            else if instr is slli || instr is sll then shift_left(instr->first, instr->second)
+
+            /* realistically, sra and srl behave differently - srl on unsigned, sra on signed */
+            else if instr is srli || instr is srl || instr is sra then shift_right(instr->first, instr->second)
+
+            else if instr is not then bit_inv(instr->src)
+            else if instr is andd || instr is and || instr is andi then bit_and(instr->first, instr->second)
+            else if instr is orr || instr is or then  bit_or(instr->first, instr->second)
+            else if instr is eor then  bit_xor(instr->first, instr->second)
+            else bit_and(r, instruction_mask(instr)));
+
+
 procedure assume_requires_execute(instr: Instruction);
     modifies step, local_monitor, monitor_exclusive, last_store, last_load;
     ensures (instr is sc ==> local_monitor is exclusive && local_monitor->addr == instr->addr);
@@ -114,18 +132,6 @@ procedure execute(instr: Instruction) returns (r : bv64);
                         && monitor_exclusive);
         (r == if instr is mv || instr is sext || instr is li then instr->src
             else if instr is sc then b2i(!sc_success)
-            else if instr is add || instr is addi then bin_add(instr->first, instr->second)
-            else if instr is sub then bin_sub(instr->first, instr->second)
-            else if instr is neg || instr is negw then bin_neg(instr->src)
-            else if instr is slli || instr is sll then shift_left(instr->first, instr->second)
-
-            /* realistically, sra and srl behave differently - srl on unsigned, sra on signed */
-            else if instr is srli || instr is srl || instr is sra then shift_right(instr->first, instr->second)
-
-            else if instr is not then bit_inv(instr->src)
-            else if instr is andd || instr is and || instr is andi then bit_and(instr->first, instr->second)
-            else if instr is orr || instr is or then  bit_or(instr->first, instr->second)
-            else if instr is eor then  bit_xor(instr->first, instr->second)
             else bit_and(r, instruction_mask(instr)))
         &&
         (last_load ==

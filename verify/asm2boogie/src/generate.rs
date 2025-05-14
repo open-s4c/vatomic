@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::{loops::loop_headers, BoogieInstruction};
+use crate::{loops::loop_headers, BoogieInstruction, SideEffect};
 
 pub fn boogie_to_string(instructions: &[BoogieInstruction]) -> String {
     let mut code = String::new();
@@ -26,10 +26,11 @@ pub fn boogie_to_string(instructions: &[BoogieInstruction]) -> String {
                     code.push_str("    assert (forall i : int, e : Effect :: old(step) <= i && i < step && effects[i] == e ==> ! (is_write(e)));\n\n");
                 }
             }
-            BoogieInstruction::Instr(name, out, ops) => {
+            BoogieInstruction::Instr(name, side_effects, out, ops) => {
                 code.push_str(&format!(
-                    "    call {} := execute({}({}));\n",
+                    "    call {} := execute{}({}({}));\n",
                     out,
+                    match *side_effects { SideEffect::Global => "", SideEffect::Local => "_local" },
                     name,
                     ops.join(",")
                 ));

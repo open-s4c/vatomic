@@ -39,10 +39,17 @@ pub trait Arch {
     fn fence_convention(&self) -> FenceConvention;
 }
 
+
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub enum SideEffect {
+    Local,
+    Global,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum BoogieInstruction {
     Label(String),
-    Instr(String, String, Vec<String>),
+    Instr(String, SideEffect, String, Vec<String>),
     Branch(Vec<String>, String),
     Unhandled(String),
     Comment(String),

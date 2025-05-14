@@ -7,7 +7,7 @@ pub use parser::parse_arm_assembly;
 pub use transform::{extract_arm_functions, remove_directives, transform_labels};
 
 use crate::{
-    AtomicType, BoogieFunction, BoogieInstruction, DUMMY_REG, ToBoogie, Width, atomic_types,
+    atomic_types, AtomicType, BoogieFunction, BoogieInstruction, SideEffect, ToBoogie, Width, DUMMY_REG
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -274,7 +274,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             )),
         },
         ArmInstruction::Dmb(mode) => BoogieInstruction::Instr(
-            "dmb".to_string(),
+            "dmb".to_string(), SideEffect::Global,
             DUMMY_REG.to_string(),
             vec![mode.to_string()],
         ),
@@ -297,7 +297,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             } else {
                 vec![src1]
             };
-            BoogieInstruction::Instr(op_name.to_string(), dest_reg, ops)
+            BoogieInstruction::Instr(op_name.to_string(), SideEffect::Local, dest_reg, ops)
         }
         ArmInstruction::Move(op, dest, src) => {
             let op_name = match op {
@@ -307,7 +307,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
 
             let dest_reg = operand_to_boogie(dest);
             let src_reg = operand_to_boogie(src);
-            BoogieInstruction::Instr(op_name.to_string(), dest_reg, vec![src_reg])
+            BoogieInstruction::Instr(op_name.to_string(), SideEffect::Local, dest_reg, vec![src_reg])
         }
         ArmInstruction::Memory(op, attrs, reg1, reg2) => {
             let (op_name, has_output) = match op {
@@ -326,13 +326,13 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
 
             if has_output {
                 BoogieInstruction::Instr(
-                    op_name.to_string(),
+                    op_name.to_string(), SideEffect::Global,
                     dest_or_src_reg,
                     vec![attrs.acquire.to_string(), addr_reg, format!("{}bv64", attrs.size.mask())],
                 )
             } else {
                 BoogieInstruction::Instr(
-                    op_name.to_string(),
+                    op_name.to_string(), SideEffect::Global,
                     DUMMY_REG.to_string(),
                     vec![attrs.release.to_string(), dest_or_src_reg, format!("{}bv64", attrs.size.mask()), addr_reg],
                 )
@@ -349,7 +349,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             let src_reg = operand_to_boogie(src);
 
             BoogieInstruction::Instr(
-                op_name.to_string(),
+                op_name.to_string(), SideEffect::Local,
                 dest_reg,
                 vec![attrs.release.to_string(), src_reg, format!("{}bv64", attrs.size.mask()), addr_reg],
             )
@@ -359,7 +359,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             let op2_reg = operand_to_boogie(op2);
 
             BoogieInstruction::Instr(
-                "cmp".to_string(),
+                "cmp".to_string(), SideEffect::Local,
                 DUMMY_REG.to_string(),
                 vec![op1_reg, op2_reg],
             )
@@ -369,7 +369,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             let op1_reg = operand_to_boogie(op1);
             let op2_reg = operand_to_boogie(op2);
             let cond = condition_to_boogie(&Condition::Code(*ce));
-            BoogieInstruction::Instr("csel".to_string(), dest_reg, vec![op1_reg, op2_reg, cond])
+            BoogieInstruction::Instr("csel".to_string(), SideEffect::Local, dest_reg, vec![op1_reg, op2_reg, cond])
         }
         ArmInstruction::Directive(directive) => {
             BoogieInstruction::Comment(format!("Directive: {:?}", directive))

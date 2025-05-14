@@ -5,7 +5,7 @@ mod transform;
 pub use parser::parse_riscv_assembly;
 pub use transform::{extract_riscv_functions, remove_directives, transform_labels};
 
-use crate::{BoogieFunction, BoogieInstruction, DUMMY_REG, ToBoogie};
+use crate::{BoogieFunction, BoogieInstruction, SideEffect, ToBoogie, DUMMY_REG};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MemoryOperand {
@@ -246,8 +246,8 @@ impl ToBoogie for RiscvFunction {
 
 pub fn riscv_instruction_to_boogie(instr: &RiscvInstruction) -> BoogieInstruction {
     match riscv_instruction_to_boogie_direct(instr) {
-        BoogieInstruction::Instr(instr,reg,  args) if reg.to_lowercase() == "zero" => 
-            BoogieInstruction::Instr(instr, DUMMY_REG.to_string(), args),
+        BoogieInstruction::Instr(instr, side_effects, reg,  args) if reg.to_lowercase() == "zero" => 
+            BoogieInstruction::Instr(instr, side_effects, DUMMY_REG.to_string(), args),
         instr => instr,
     }
 }
@@ -260,7 +260,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             let (sr, sw) = fence_mode_to_boogie(succ);
 
             BoogieInstruction::Instr(
-                "fence".to_string(),
+                "fence".to_string(), SideEffect::Global,
                 DUMMY_REG.to_string(),
                 vec![
                     pr.to_string(),
@@ -295,20 +295,20 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             let dst_reg = register_to_string(dst);
             let src_reg = operand_to_boogie(&Operand::Memory(src.clone()));
 
-            BoogieInstruction::Instr("ld".to_string(), dst_reg, vec![src_reg, format!("{}bv64", size.mask())])
+            BoogieInstruction::Instr("ld".to_string(), SideEffect::Global, dst_reg, vec![src_reg, format!("{}bv64", size.mask())])
         }
         RiscvInstruction::UnsignedLoad { dst, src, size, .. } => {
             let dst_reg = register_to_string(dst);
             let src_reg = operand_to_boogie(&Operand::Memory(src.clone()));
 
-            BoogieInstruction::Instr("ldu".to_string(), dst_reg, vec![src_reg, format!("{}bv64", size.mask())])
+            BoogieInstruction::Instr("ldu".to_string(), SideEffect::Global, dst_reg, vec![src_reg, format!("{}bv64", size.mask())])
         }
         RiscvInstruction::Store { dst, src, .. } => {
             let src_reg = operand_to_boogie(&Operand::Register(src.clone()));
             let dst_reg = operand_to_boogie(&Operand::Memory(dst.clone()));
 
             BoogieInstruction::Instr(
-                "sb".to_string(),
+                "sb".to_string(), SideEffect::Global,
                 DUMMY_REG.to_string(),
                 vec![src_reg, dst_reg],
             )
@@ -332,19 +332,20 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             let src_reg = operand_to_boogie(&Operand::Memory(addr.clone()));
 
             BoogieInstruction::Instr(
-                "lr".to_string(),
+                "lr".to_string(), SideEffect::Global,
                 dst_reg,
                 vec![aq.to_string(), rl.to_string(), src_reg, format!("{}bv64", size.mask())],
             )
         }
         RiscvInstruction::Call { label } => BoogieInstruction::Instr(
             "call".to_string(),
+            SideEffect::Local,
             DUMMY_REG.to_string(),
             vec![label.to_string()],
         ),
         RiscvInstruction::LoadAddress { register, label } => {
             let dst_reg = register_to_string(register);
-            BoogieInstruction::Instr("la".to_string(), dst_reg, vec![label.to_string()])
+            BoogieInstruction::Instr("la".to_string(), SideEffect::Global, dst_reg, vec![label.to_string()])
         }
         RiscvInstruction::StoreConditional {
             semantics,
@@ -367,7 +368,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             let addr_op = operand_to_boogie(&Operand::Memory(addr.clone()));
 
             BoogieInstruction::Instr(
-                "sc".to_string(),
+                "sc".to_string(), SideEffect::Global,
                 dst_reg,
                 vec![aq.to_string(), rl.to_string(), src_reg, addr_op],
             )
@@ -376,12 +377,12 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             let dst = register_to_string(register);
             let value = operand_to_boogie(&Operand::Immediate(*value));
 
-            BoogieInstruction::Instr("li".to_string(), dst, vec![value])
+            BoogieInstruction::Instr("li".to_string(), SideEffect::Local, dst, vec![value])
         }
         RiscvInstruction::Move(dst, src) => {
             let dst_reg = register_to_string(dst);
             let src_reg = operand_to_boogie(&Operand::Register(src.clone()));
-            BoogieInstruction::Instr("mv".to_string(), dst_reg, vec![src_reg])
+            BoogieInstruction::Instr("mv".to_string(), SideEffect::Local, dst_reg, vec![src_reg])
         }
         RiscvInstruction::Atomic {
             op,
@@ -419,7 +420,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             let addr_op = operand_to_boogie(&Operand::Memory(addr.clone()));
 
             BoogieInstruction::Instr(
-                "atomic".to_string(),
+                "atomic".to_string(), SideEffect::Global,
                 dst_reg,
                 vec![atomic_op, aq.to_string(), rl.to_string(), src_reg, addr_op, format!("{}bv64", size.mask())],
             )
@@ -449,7 +450,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
 
             let _op_suffix = if let Some(Size::Word) = size { "w" } else { "" };
 
-            BoogieInstruction::Instr(format!("{}", op_name), dst_reg, vec![src1_reg, src2_reg])
+            BoogieInstruction::Instr(format!("{}", op_name), SideEffect::Local, dst_reg, vec![src1_reg, src2_reg])
         }
         RiscvInstruction::ArithmeticRI {
             op,
@@ -476,12 +477,12 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
 
             let _op_suffix = if let Some(Size::Word) = size { "w" } else { "" };
 
-            BoogieInstruction::Instr(format!("{}", op_name), dst_reg, vec![src_reg, imm_str])
+            BoogieInstruction::Instr(format!("{}", op_name), SideEffect::Local, dst_reg, vec![src_reg, imm_str])
         }
         RiscvInstruction::Not { rd, rs } => {
             let dst_reg = register_to_string(rd);
             let src_reg = register_to_string(rs);
-            BoogieInstruction::Instr("not".to_string(), dst_reg, vec![src_reg])
+            BoogieInstruction::Instr("not".to_string(), SideEffect::Local, dst_reg, vec![src_reg])
         }
         RiscvInstruction::Neg { rd, rs, size } => {
             let dst_reg = register_to_string(rd);
@@ -491,12 +492,12 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             } else {
                 "neg"
             };
-            BoogieInstruction::Instr(op_name.to_string(), dst_reg, vec![src_reg])
+            BoogieInstruction::Instr(op_name.to_string(), SideEffect::Local, dst_reg, vec![src_reg])
         }
         RiscvInstruction::SignExtendWord(dst, src) => {
             let dst_reg = register_to_string(dst);
             let src_reg = register_to_string(src);
-            BoogieInstruction::Instr("sext".to_string(), dst_reg, vec![src_reg])
+            BoogieInstruction::Instr("sext".to_string(), SideEffect::Local, dst_reg, vec![src_reg])
         }
         RiscvInstruction::Jump { rd, label } => {
             if let Some(label) = label {
@@ -508,7 +509,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
                     BoogieInstruction::Return
                 } else {
                     // TODO: support this in boogie!
-                    BoogieInstruction::Instr("jr".to_string(), reg.to_string(), vec![])
+                    BoogieInstruction::Instr("jr".to_string(), SideEffect::Local, reg.to_string(), vec![])
                 }
             }
         }
