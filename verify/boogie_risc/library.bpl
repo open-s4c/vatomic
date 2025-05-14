@@ -29,8 +29,8 @@ var monitor_exclusive: bool;
 datatype Instruction {
     ld(addr: bv64, mask: bv64),
     ldu(addr: bv64, mask: bv64),
-    sd(src, addr: bv64),
-    sb(src, addr: bv64),
+    sd(src, addr: bv64, mask: bv64),
+    sb(src, addr: bv64, mask: bv64),
     lr(acq, rel: bool, addr: bv64, mask: bv64),
     sc(acq, rel: bool, src, addr: bv64),
     mv(src: bv64),

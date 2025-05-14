@@ -145,11 +145,13 @@ begin
   end
       
 ensure
-  if $results.any? { |result| result.any? { |(_,pass)| ! pass }} 
+  retry_out = "#{options[:where]}_retry"
+  failed_file = "FAILED_#{options[:which]}"
+
+  if $results && $results.any? { |result| result.any? { |(_,pass)| ! pass }} 
     if /FAILED_/ =~ options[:which]
       puts "to rerun:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{options[:which]}"
     else
-      failed_file = "FAILED_#{options[:which]}"
 
       File.open(failed_file, "w") do |f|
         f.write($results.map { |_arch, result| result.filter { |(_,pass)| ! pass }.map {|(atomic,_)| atomic} }.flatten.join("\n"))
@@ -172,22 +174,31 @@ ensure
         puts ""
         puts ""
         
-        retry_out = "#{options[:where]}_retry"
         options[:archs].each { |arch|
             (library, asm_file) = Archs[arch]
             compile(asm_file, library, failed_file, retry_out, arch, unroll=true)
         }
 
 
-        verify_all(options[:archs], retry_out, nil)
+        verify_all(options[:archs], retry_out, options[:limit])
 
         puts ""
         puts "finished heavy verification"
       end
     end
+  elsif (options[:phases].include? 2) && options[:limit]
+    options[:archs].each { |arch|
+      (library, asm_file) = Archs[arch]
+      compile(asm_file, library, failed_file, retry_out, arch, unroll=true)
+    }
+    verify_all(options[:archs], retry_out, options[:limit])
+
+
   end
 
-  if $results.all? { |_arch, result| result.all? { |(_,pass)| pass }} 
+  if ! $results
+    puts "no tests run"
+  elsif $results.all? { |_arch, result| result.all? { |(_,pass)| pass }} 
     puts "no failures found"
   end
 end

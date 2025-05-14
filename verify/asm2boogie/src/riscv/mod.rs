@@ -303,14 +303,14 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
 
             BoogieInstruction::Instr("ldu".to_string(), SideEffect::Global, dst_reg, vec![src_reg, format!("{}bv64", size.mask())])
         }
-        RiscvInstruction::Store { dst, src, .. } => {
+        RiscvInstruction::Store { size, dst, src, .. } => {
             let src_reg = operand_to_boogie(&Operand::Register(src.clone()));
             let dst_reg = operand_to_boogie(&Operand::Memory(dst.clone()));
 
             BoogieInstruction::Instr(
                 "sb".to_string(), SideEffect::Global,
                 DUMMY_REG.to_string(),
-                vec![src_reg, dst_reg],
+                vec![src_reg, dst_reg,format!("{}bv64", size.mask()),],
             )
         }
         RiscvInstruction::LoadReserved {
