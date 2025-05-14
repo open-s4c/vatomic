@@ -10,7 +10,7 @@ assert_match(vsync::atomic<vuint32_t> &v, std::atomic<vuint32_t> &mirror)
 {
     vuint32_t r        = v.load();
     vuint32_t mirror_r = mirror.load();
-    std::cout << "vsync: " << r << " =? mirror "<< mirror_r << std::endl;
+    std::cout << "vsync: " << r << " =? mirror " << mirror_r << std::endl;
     assert(r == mirror_r);
 }
 
@@ -53,6 +53,89 @@ test(void)
     assert(a == b);
     assert_match(var, mirror);
 
+
+    r1 = var.compare_exchange_weak(a, 4);
+    r2 = mirror.compare_exchange_weak(b, 4);
+    assert(r1 == r2);
+    assert(a == b);
+    assert_match(var, mirror);
+
+    r1 = var.compare_exchange_weak(a, 4);
+    r2 = mirror.compare_exchange_weak(b, 4);
+    assert(r1 == r2);
+    assert(a == b);
+    assert_match(var, mirror);
+
+    a = var.fetch_add(10);
+    b = mirror.fetch_add(10);
+    assert(a == b);
+    assert_match(var, mirror);
+
+
+    a = var.fetch_sub(10);
+    b = mirror.fetch_sub(10);
+    assert(a == b);
+    assert_match(var, mirror);
+
+    a = var.fetch_or(0xfffff);
+    b = mirror.fetch_or(0xfffff);
+    assert(a == b);
+    assert_match(var, mirror);
+
+    a = var.fetch_and(0xf0f0f);
+    b = mirror.fetch_and(0xf0f0f);
+    assert(a == b);
+    assert_match(var, mirror);
+
+    a = var.fetch_xor(0xf000f);
+    b = mirror.fetch_xor(0xf000f);
+    assert(a == b);
+    assert_match(var, mirror);
+
+    a = var++;
+    b = mirror++;
+    assert(a == b);
+    assert_match(var, mirror);
+
+    a = ++var;
+    b = ++mirror;
+    assert(a == b);
+    assert_match(var, mirror);
+
+    a = var--;
+    b = mirror--;
+    assert(a == b);
+    assert_match(var, mirror);
+
+    a = --var;
+    b = --mirror;
+    assert(a == b);
+    assert_match(var, mirror);
+
+    var += 3;
+    mirror += 3;
+    assert_match(var, mirror);
+
+    var -= 3;
+    mirror -= 3;
+    assert_match(var, mirror);
+
+
+    var |= 0xffffff;
+    mirror |= 0xffffff;
+    assert_match(var, mirror);
+
+    var &= 0x0fffff;
+    mirror &= 0x0fffff;
+    assert_match(var, mirror);
+
+    var ^= 0x0fCfff;
+    mirror ^= 0x0fCfff;
+    assert_match(var, mirror);
+
+    vuint32_t x = mirror;
+    vuint32_t y = var;
+    assert(x == y);
 }
 
 int
