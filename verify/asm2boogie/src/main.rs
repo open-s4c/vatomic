@@ -79,7 +79,7 @@ impl Arch for ArchSpecifier {
     fn fence_convention(&self) -> FenceConvention {
         match self {
             ArchSpecifier::ArmV8 => FenceConvention::RCsc,
-            ArchSpecifier::RiscV => FenceConvention::TrailingFence,
+            ArchSpecifier::RiscV => FenceConvention::Mixed,
         }
     }
 }

@@ -159,7 +159,7 @@ axiom order_rel == (lambda store, entry, exit: StateIndex, ordering: [StateIndex
     )
 );
 
-datatype SCImplementation { LeadingFence(), TrailingFence(), RCsc() }
+datatype SCImplementation { LeadingFence(), TrailingFence(), Mixed(), RCsc() }
 const sc_impl: SCImplementation;
 
 const order_acq_sc: OrderRelation;
@@ -174,9 +174,11 @@ axiom order_acq_sc == (lambda load, entry, exit: StateIndex, ordering: [StateInd
         true
     else if sc_impl is RCsc then
         // ordered with all previous SC operations
-        is_sc(ordering[load]) &&
-        (forall i: StateIndex ::
-            (i < entry) && is_effect(effects[i]) ==> is_sc(ordering[i]) ==> ppo(i, load, ordering, effects)
+        is_sc(ordering[load])
+    else if sc_impl is Mixed then
+        is_sc(ordering[load]) 
+        || (forall i: StateIndex ::
+            (i < entry) && is_effect(effects[i]) ==> ppo(i, load, ordering, effects)
         )
     else false
 );
@@ -193,9 +195,11 @@ axiom order_rel_sc == (lambda store, entry, exit: StateIndex, ordering: [StateIn
         )
     else if sc_impl is RCsc then
         // ordered with all later SC operations
-        is_sc(ordering[store]) &&
-        (forall i: StateIndex ::
-            (i >= exit) && is_effect(effects[i]) ==> is_sc(ordering[i]) ==> ppo(store, i, ordering, effects)
+        is_sc(ordering[store])
+    else if sc_impl is Mixed then
+        is_sc(ordering[store]) 
+        || (forall i: StateIndex ::
+            (i >= exit) && is_effect(effects[i]) ==> ppo(store, i, ordering, effects)
         )
     else false
 );

@@ -88,6 +88,7 @@ function reads(instr: Instruction) : bool {
 }
 
 
+function returning_load(instr : Instruction) : bool { reads(instr) }
 
 function instruction_mask(instr: Instruction) : bv64 {
     instr->mask
@@ -96,6 +97,11 @@ function instruction_mask(instr: Instruction) : bv64 {
 function writes(instr: Instruction) : bool {
     rmw(instr) || instr is sd || instr is sb
 }
+
+
+procedure assume_requires_execute(instr: Instruction);
+    modifies step, local_monitor, monitor_exclusive, last_store, last_load;
+    ensures (instr is sc ==> local_monitor is exclusive && local_monitor->addr == instr->addr);
 
 procedure execute(instr: Instruction) returns (r : bv64);
     modifies step, local_monitor, monitor_exclusive, last_store, last_load;

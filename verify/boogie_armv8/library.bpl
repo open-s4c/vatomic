@@ -80,44 +80,7 @@ function returning_load(instr : Instruction) : bool {
     || instr is ldadd
 }
 
-/* Prove meta properties about execute, that are used in the proof */
-procedure verify_execute(instr : Instruction) returns (r : bv64)
-    modifies flags, step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
 
-    requires (instr is stx ==> local_monitor is exclusive && local_monitor->addr == instr->addr);
-    requires instr is wfe ==> event_register || monitor_exclusive;
-
-
-    ensures {:msg "load return is correct"} (
-            forall a, v: bv64, vis : bool :: 
-                effects[old(step)] == read(a,v,vis) && returning_load(instr)  ==> 
-                    r == v
-    );
-
-    requires last_load < step;
-    requires last_store < step;
-    ensures {:msg "last_load tracked correctly"} (
-            (is_read(effects[old(step)])) ==
-                (old(step) == last_load)
-    );
-    ensures ( // can define no_writes through last_store 
-            (is_write(effects[old(step)])) ==
-                (old(step) == last_store)
-    );
-    ensures last_load < step;
-    ensures last_store < step;
-
-    requires (forall i, j : StateIndex :: atomic[i, j] ==> i <= j && j < step);
-    ensures (forall i : StateIndex ::
-            atomic[i, old(step)] ==> i == last_load && old(step) == last_store
-        );
-    ensures (forall i, j : StateIndex ::
-            atomic[i, j] ==> i <= j && j < step);
-
-    ensures step == old(step) + 1;
-{
-    call r := execute(instr);
-}
 
 function visible(instr : Instruction) : bool {
     ! (instr is stumax
@@ -164,6 +127,12 @@ function reads(instr: Instruction) : bool {
 function writes(instr: Instruction) : bool {
     rmw(instr) || instr is st
 }
+
+procedure assume_requires_execute(instr: Instruction);
+    modifies flags, step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
+    ensures (instr is stx ==> local_monitor is exclusive && local_monitor->addr == instr->addr);
+    ensures instr is wfe ==> event_register || monitor_exclusive;
+
 
 procedure execute(instr: Instruction) returns (r : bv64);
     modifies flags, step, local_monitor, monitor_exclusive, event_register, last_load, last_store;

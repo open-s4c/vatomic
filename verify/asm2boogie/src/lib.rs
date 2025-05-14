@@ -24,6 +24,7 @@ pub enum FenceConvention {
     RCsc,
     TrailingFence,
     LeadingFence,
+    Mixed,
 }
 
 pub trait Arch {
