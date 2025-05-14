@@ -32,7 +32,7 @@ datatype Instruction {
     sd(src, addr: bv64, mask: bv64),
     sb(src, addr: bv64, mask: bv64),
     lr(acq, rel: bool, addr: bv64, mask: bv64),
-    sc(acq, rel: bool, src, addr: bv64),
+    sc(acq, rel: bool, src, addr: bv64, mask: bv64),
     mv(src: bv64),
     atomic(atom: AtomicType, acq, rel: bool, src, addr: bv64, mask: bv64),
 

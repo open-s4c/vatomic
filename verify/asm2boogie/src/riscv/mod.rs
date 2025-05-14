@@ -348,6 +348,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             BoogieInstruction::Instr("la".to_string(), SideEffect::Global, dst_reg, vec![label.to_string()])
         }
         RiscvInstruction::StoreConditional {
+            size,
             semantics,
             rd,
             rs2,
@@ -370,7 +371,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             BoogieInstruction::Instr(
                 "sc".to_string(), SideEffect::Global,
                 dst_reg,
-                vec![aq.to_string(), rl.to_string(), src_reg, addr_op],
+                vec![aq.to_string(), rl.to_string(), src_reg, addr_op, format!("{}bv64", size.mask())],
             )
         }
         RiscvInstruction::LoadImmidate { register, value } => {
