@@ -295,13 +295,13 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             let dst_reg = register_to_string(dst);
             let src_reg = operand_to_boogie(&Operand::Memory(src.clone()));
 
-            BoogieInstruction::Instr("ld".to_string(), dst_reg, vec![src_reg, size.mask().to_string()])
+            BoogieInstruction::Instr("ld".to_string(), dst_reg, vec![src_reg, format!("{}bv64", size.mask())])
         }
         RiscvInstruction::UnsignedLoad { dst, src, size, .. } => {
             let dst_reg = register_to_string(dst);
             let src_reg = operand_to_boogie(&Operand::Memory(src.clone()));
 
-            BoogieInstruction::Instr("ldu".to_string(), dst_reg, vec![src_reg, size.mask().to_string()])
+            BoogieInstruction::Instr("ldu".to_string(), dst_reg, vec![src_reg, format!("{}bv64", size.mask())])
         }
         RiscvInstruction::Store { dst, src, .. } => {
             let src_reg = operand_to_boogie(&Operand::Register(src.clone()));
@@ -334,7 +334,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             BoogieInstruction::Instr(
                 "lr".to_string(),
                 dst_reg,
-                vec![aq.to_string(), rl.to_string(), src_reg, size.mask().to_string()],
+                vec![aq.to_string(), rl.to_string(), src_reg, format!("{}bv64", size.mask())],
             )
         }
         RiscvInstruction::Call { label } => BoogieInstruction::Instr(
@@ -421,7 +421,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
             BoogieInstruction::Instr(
                 "atomic".to_string(),
                 dst_reg,
-                vec![atomic_op, aq.to_string(), rl.to_string(), src_reg, addr_op, size.mask().to_string()],
+                vec![atomic_op, aq.to_string(), rl.to_string(), src_reg, addr_op, format!("{}bv64", size.mask())],
             )
         }
         RiscvInstruction::ArithmeticRR {
@@ -460,7 +460,7 @@ fn riscv_instruction_to_boogie_direct(instr: &RiscvInstruction) -> BoogieInstruc
         } => {
             let dst_reg = register_to_string(rd);
             let src_reg = register_to_string(rs1);
-            let imm_str = imm.to_string();
+            let imm_str = format!("{}bv64", *imm as u64);
 
             let op_name = match op {
                 ArithmeticOp::Add => "addi",
@@ -534,7 +534,7 @@ fn register_to_string(reg: &Register) -> String {
 fn operand_to_boogie(operand: &Operand) -> String {
     match operand.clone() {
         Operand::Register(reg) => register_to_string(&reg),
-        Operand::Immediate(val) => val.to_string(),
+        Operand::Immediate(val) => format!("{}bv64", val as u64),
         Operand::Memory(op) => {
             if op.offset == 0 {
                 register_to_string(&op.base)

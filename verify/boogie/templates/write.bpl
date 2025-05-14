@@ -1,5 +1,3 @@
-var #registers: int;
-
 /*
     store_order - ordering of store
 */

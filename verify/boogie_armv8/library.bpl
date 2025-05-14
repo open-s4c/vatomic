@@ -211,7 +211,7 @@ procedure execute(instr: Instruction) returns (r : bv64);
         (flags == if instr is cmp
                 then (
                     var diff := bin_sub(instr->opnd1, instr->opnd2);
-                    Flags(slt(diff, 0bv64), diff == 0bv64, sge(diff, 0bv64))
+                    Flags(ult(diff, 0bv64), diff == 0bv64, uge(diff, 0bv64))
                 )
                 else
                     old(flags)

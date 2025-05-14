@@ -1,5 +1,3 @@
-var #registers: int;
-
 /*
     ret         - computation of return value (either ret_old, for normal read/rmw, or the same as op, for ..._get_... rmw)
     load_order  - ordering of load

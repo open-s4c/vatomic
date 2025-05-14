@@ -1,5 +1,3 @@
-var #registers: bv64;
-
 /*
     op          - operation to be performed
 */

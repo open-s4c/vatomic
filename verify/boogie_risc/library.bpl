@@ -19,7 +19,7 @@ datatype AtomicType {
 }
 
 datatype Monitor {
-    exclusive(addr: int),
+    exclusive(addr: bv64),
     open()
 }
 
@@ -27,56 +27,56 @@ var local_monitor: Monitor;
 var monitor_exclusive: bool;
 
 datatype Instruction {
-    ld(addr: int, mask: int),
-    ldu(addr: int, mask: int),
-    sd(src, addr: int),
-    sb(src, addr: int),
-    lr(acq, rel: bool, addr: int, mask: int),
-    sc(acq, rel: bool, src, addr: int),
-    mv(src: int),
-    atomic(atom: AtomicType, acq, rel: bool, src, addr: int, mask: int),
+    ld(addr: bv64, mask: bv64),
+    ldu(addr: bv64, mask: bv64),
+    sd(src, addr: bv64),
+    sb(src, addr: bv64),
+    lr(acq, rel: bool, addr: bv64, mask: bv64),
+    sc(acq, rel: bool, src, addr: bv64),
+    mv(src: bv64),
+    atomic(atom: AtomicType, acq, rel: bool, src, addr: bv64, mask: bv64),
 
-    add(first, second: int),
-    addi(first, second: int),
-    sub(first, second: int),
-    neg(src: int),
+    add(first, second: bv64),
+    addi(first, second: bv64),
+    sub(first, second: bv64),
+    neg(src: bv64),
 
-    andd(first, second: int),
-    orr(first, second: int),
-    and(first, second: int),
-    or(first, second: int),
-    eor(first, second: int),
+    andd(first, second: bv64),
+    orr(first, second: bv64),
+    and(first, second: bv64),
+    or(first, second: bv64),
+    eor(first, second: bv64),
 
-    negw(src: int),
+    negw(src: bv64),
 
-    andi(first, second: int),
-    slli(first, second: int),
-    sll(first, second: int),
-    li(first: int),
-    not(first: int),
+    andi(first, second: bv64),
+    slli(first, second: bv64),
+    sll(first, second: bv64),
+    li(src: bv64),
+    not(src: bv64),
 
 
-    srli(first, second: int),
-    srl(first, second: int),
-    sra(first, second: int),
+    srli(first, second: bv64),
+    srl(first, second: bv64),
+    sra(first, second: bv64),
 
-    sext(src: int),
+    sext(src: bv64),
 
 
     fence(ra, wa, rb, wb: bool)
 }
 
 
-function updated_value(instr: Instruction, read_value : int) : int {
+function updated_value(instr: Instruction, read_value : bv64) : bv64 {
     if instr is sc then instr->src 
-    else if instr->atom is AtomicAdd then instr->src + read_value
+    else if instr->atom is AtomicAdd then bin_add(instr->src, read_value)
     else if instr->atom is AtomicAnd then and[instr->src, read_value]
     else if instr->atom is AtomicMax then max[instr->src, read_value]
     else if instr->atom is AtomicMin then min[instr->src, read_value]
     else if instr->atom is AtomicOr then or[instr->src, read_value]
     else if instr->atom is AtomicXor then xor[instr->src, read_value]
     else if instr->atom is AtomicSwap then instr->src
-    else 0
+    else 0bv64
 }
 
 function rmw(instr: Instruction) : bool {
@@ -89,7 +89,7 @@ function reads(instr: Instruction) : bool {
 
 
 
-function instruction_mask(instr: Instruction) : int {
+function instruction_mask(instr: Instruction) : bv64 {
     instr->mask
 }
 
@@ -97,7 +97,7 @@ function writes(instr: Instruction) : bool {
     rmw(instr) || instr is sd || instr is sb
 }
 
-procedure execute(instr: Instruction) returns (r : int);
+procedure execute(instr: Instruction) returns (r : bv64);
     modifies step, local_monitor, monitor_exclusive, last_store, last_load;
     requires (instr is sc ==> local_monitor is exclusive && local_monitor->addr == instr->addr);
     ensures step == old(step + 1);
@@ -106,20 +106,18 @@ procedure execute(instr: Instruction) returns (r : int);
                     old(local_monitor is exclusive
                         && (local_monitor->addr == instr->addr)
                         && monitor_exclusive);
-        (r == if instr is mv || instr is sext then instr->src
+        (r == if instr is mv || instr is sext || instr is li then instr->src
             else if instr is sc then b2i(!sc_success)
-            else if instr is add || instr is addi then instr->first + instr->second
-            else if instr is sub then instr->first - instr->second
-            else if instr is neg then -instr->first
-            else if instr is andi then bit_and(instr->first, instr->second)
-            else if instr is negw || instr is not then -instr->first-1
+            else if instr is add || instr is addi then bin_add(instr->first, instr->second)
+            else if instr is sub then bin_sub(instr->first, instr->second)
+            else if instr is neg || instr is negw then bin_neg(instr->src)
             else if instr is slli || instr is sll then shift_left(instr->first, instr->second)
 
             /* realistically, sra and srl behave differently - srl on unsigned, sra on signed */
             else if instr is srli || instr is srl || instr is sra then shift_right(instr->first, instr->second)
-            else if instr is li then instr->first
 
-            else if instr is andd || instr is and then bit_and(instr->first, instr->second)
+            else if instr is not then bit_inv(instr->src)
+            else if instr is andd || instr is and || instr is andi then bit_and(instr->first, instr->second)
             else if instr is orr || instr is or then  bit_or(instr->first, instr->second)
             else if instr is eor then  bit_xor(instr->first, instr->second)
             else bit_and(r, instruction_mask(instr)))
@@ -147,11 +145,11 @@ procedure execute(instr: Instruction) returns (r : int);
                         old(local_monitor))
         &&
         (effects[old(step)] == if rmw(instr) || (instr is sc && sc_success)
-            then update(instr->addr, r, true, updated_value(instr, r))
+            then update(instr->addr, r, true, updated_value(instr, r), instruction_mask(instr))
             else if reads(instr)
             then read(instr->addr, r, true)
             else if writes(instr) 
-            then write(instr->addr, instr->src)
+            then write(instr->addr, instr->src, instruction_mask(instr))
             else no_effect())
         &&
         (ordering[old(step)] ==
@@ -184,50 +182,50 @@ procedure execute(instr: Instruction) returns (r : int);
         (atomic[last_load, old(step)] == (rmw(instr) || (instr is sc && sc_success)))
     );
 
-function beq(r1: int, r2:int): bool {
+function beq(r1: bv64, r2:bv64): bool {
     r1 == r2
 }
 
-function bne(r1: int, r2:int): bool {
+function bne(r1: bv64, r2:bv64): bool {
     r1 != r2
 }
 
-function bnez(r: int): bool {
-    r != 0
+function bnez(r: bv64): bool {
+    r != 0bv64
 }
 
 
-function bgt(r1, r2: int): bool {
-    r1 > r2
+function bgt(r1, r2: bv64): bool {
+    sgt(r1, r2)
 }
 
-function bgtu(r1, r2: int): bool {
-    r1 > r2
+function bgtu(r1, r2: bv64): bool {
+    ugt(r1, r2)
 }
 
-function ble(r1, r2: int): bool {
-    r1 <= r2
+function ble(r1, r2: bv64): bool {
+    sle(r1, r2)
 }
 
-function bleu(r1, r2: int): bool {
-    r1 <= r2
+function bleu(r1, r2: bv64): bool {
+    ule(r1, r2)
 }
 
 
-function blt(r1, r2: int): bool {
-    r1 < r2
+function blt(r1, r2: bv64): bool {
+    slt(r1, r2)
 }
 
-function bltu(r1, r2: int): bool {
-    r1 < r2
+function bltu(r1, r2: bv64): bool {
+    ult(r1, r2)
 }
 
-function bge(r1, r2: int): bool {
-    r1 >= r2
+function bge(r1, r2: bv64): bool {
+    sge(r1, r2)
 }
 
-function bgeu(r1, r2: int): bool {
-    r1 >= r2
+function bgeu(r1, r2: bv64): bool {
+    uge(r1, r2)
 }
 
 

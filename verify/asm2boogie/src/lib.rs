@@ -253,7 +253,8 @@ pub fn generate_boogie_file(
     unroll_loop: bool,
 ) -> Result<(), std::io::Error> {
     let func_type = classify_function(&function.name);
-    let templates = get_templates_for_type(func_type);
+    let mut templates = get_templates_for_type(func_type);
+    templates.push("registers.bpl");
 
     let instructions = if unroll_loop { &unroll(&function.instructions ) } else { &function.instructions };
 

@@ -1,5 +1,3 @@
-var #registers: int;
-
 /*
     fence_order - ordering of fence
 */

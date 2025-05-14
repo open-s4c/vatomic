@@ -48,9 +48,9 @@ OptionParser.new do |opts|
 end.parse!
 
 
-def verify(arch, out, atomic, template)
+def verify(arch, out, atomic, templates)
   (library, asm_file) = Archs[arch]
-  `boogie /proverOpt:SOLVER=z3 /proverOpt:LOG_FILE=#{out}/#{atomic}/#{template}_prover.in ../boogie/auxiliary.bpl ../boogie_#{library}/library.bpl #{out}/#{atomic}/#{template}`.strip
+  `boogie /proverOpt:SOLVER=z3 /proverOpt:LOG_FILE=#{out}/#{atomic}/prover.in ../boogie/auxiliary.bpl ../boogie_#{library}/library.bpl #{templates.map{ |template| "#{out}/#{atomic}/#{template}.bpl" }.join " "}`.strip
 end
 
 
@@ -82,27 +82,33 @@ def verify_all(archs, out, limit)
     base_path = File.join(out, arch)
     $results[arch] = Parallel.map(Dir::children(base_path), in_processes: 10) { |atomic|
       if ! limit || limit[:functions].include?(atomic)
-        puts "[begin #{arch}/#{atomic}]"
+        templates = Dir::children(File.join(base_path,atomic))
+          .map { |template| drop_extension(template) }
+          .filter { |template| template != "registers" && (! limit || limit[:properties].include?(template)) }
+        
+        next if templates.empty?
+
+        puts "[begin #{arch}/#{atomic} #{templates}]"
+
         lines = ["=======================", 
-          "verifying #{atomic} on #{arch}",
+        "verifying #{atomic} on #{arch}",
         ]
         local_results = []
-        Dir::children(File.join(base_path,atomic)).each { |template|
-          base_template = drop_extension(template)
-          if ! limit || limit[:properties].include?(base_template)
-            lines << "#{template}:"
-            out = verify(arch, base_path, atomic, template)
-            lines << out
-            pass = /0 errors/ =~ out
-            local_results << [atomic, template, pass]
-            
-            if ! pass
-              lines << "to rerun this test:\n\n    ruby #{__FILE__} -a #{arch} -s #{atomic}:#{base_template}\n"
-            end
 
-            lines << "\n"
-          end
-        }
+    
+        lines << "#{templates}:"
+        out = verify(arch, base_path, atomic, templates + [ "registers" ])
+        
+        lines << out
+        pass = /0 errors/ =~ out
+        local_results << [atomic, pass]
+          
+        if ! pass
+          lines << "to rerun this test:\n\n    ruby #{__FILE__} -a #{arch} -s #{atomic}:#{templates.join ","}\n"
+        end
+
+        lines << "\n"
+
         puts lines
         local_results
       end
@@ -122,14 +128,14 @@ begin
   end
       
 ensure
-  if $results.any? { |result| result.any? { |(_,_,pass)| ! pass }} 
+  if $results.any? { |result| result.any? { |(_,pass)| ! pass }} 
     if /FAILED_/ =~ options[:which]
       puts "to rerun:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{options[:which]}"
     else
       failed_file = "FAILED_#{options[:which]}"
 
       File.open(failed_file, "w") do |f|
-        f.write($results.map { |_arch, result| result.filter { |(_,_,pass)| ! pass }.map {|(atomic,_,_)| atomic} }.flatten.join("\n"))
+        f.write($results.map { |_arch, result| result.filter { |(_,pass)| ! pass }.map {|(atomic,_)| atomic} }.flatten.join("\n"))
       end
       
       puts ""
@@ -164,7 +170,7 @@ ensure
     end
   end
 
-  if $results.all? { |_arch, result| result.all? { |(_,_,pass)| pass }} 
+  if $results.all? { |_arch, result| result.all? { |(_,pass)| pass }} 
     puts "no failures found"
   end
 end
