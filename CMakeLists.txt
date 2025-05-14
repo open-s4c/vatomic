@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(
     vatomic
-    LANGUAGES C
+    LANGUAGES C CXX
     VERSION 2.3.1
     DESCRIPTION "VSync atomics")
 
@@ -36,6 +36,7 @@ if(VATOMIC_DEV)
     # Atomic templating
     add_subdirectory(template)
     add_subdirectory(tmplr)
+    add_subdirectory(cpp)
 
     # Basic format sanitization
     add_custom_target(
