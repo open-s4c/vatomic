@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
 #ifndef VSYNC_ATOMIC_HPP
 #define VSYNC_ATOMIC_HPP
 

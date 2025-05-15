@@ -1,15 +1,22 @@
+/*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
 
 #define _tmpl_mute
 #include <vsync/atomic/tmplr.h>
 #define _tmpl_unmute
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz]]);
+#ifndef VATOMIC_CORE_UPCASE_TY__HPP
+#define VATOMIC_CORE_UPCASE_TY__HPP
+_tmpl_end;
+_tmpl_dl; //--------------------------------------
 _tmpl_begin(=);
 AUTOGEN
 _tmpl_end;
-
-_tmpl_begin(TY = [[u8; u16; u32; u64; sz]]);
+_tmpl_dl; //--------------------------------------
 #include <vsync/atomic.h>
-#ifndef VATOMIC_CORE_UPCASE_TY__HPP
-#define VATOMIC_CORE_UPCASE_TY__HPP
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz]]);
 namespace vsync
 {
 template <> struct atomic<TT> {

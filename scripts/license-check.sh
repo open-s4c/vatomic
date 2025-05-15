@@ -14,9 +14,13 @@ else
     fi
     FILES=$(find $DIR\
         -name '*.h' -o \
+        -name '*.hpp' -o \
         -name '*.c' -o \
+        -name '*.cpp' -o \
         -name '*.c.in' -o \
+        -name '*.cpp.in' -o \
         -name '*.h.in' -o \
+        -name '*.hpp.in' -o \
         -name '*.hs' -o \
         -name '*.bpl' -o \
         -name '*.cmake.in' -o \
