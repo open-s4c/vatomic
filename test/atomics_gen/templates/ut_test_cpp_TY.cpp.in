@@ -15,7 +15,7 @@ _tmpl_map(<MAP_DEC_OP>, --);
 
 _tmpl_map(<MAP_OR_OP>, |);
 _tmpl_map(<MAP_XOR_OP>, ^);
-_tmpl_map(<MAP_AND_OP>, ^);
+_tmpl_map(<MAP_AND_OP>, &);
 
 
 _tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]]);
@@ -144,6 +144,22 @@ test_fetch_OP(void)
 _tmpl_end;
 
 
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], FUN = [[AND; OR; XOR]]);
+void
+test_FUN_overload(void)
+{
+    std::atomic<TT> mirror(0);
+    vsync::atomic<TT> var(0);
+
+    for (TT val : g_values) {
+        mirror <MAP_FUN_OP>= val;
+        var <MAP_FUN_OP>= val;
+        assert_match(var, mirror);
+    }
+}
+_tmpl_end;
+
+
 _tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], FUN = [[INC; DEC]]);
 void
 test_FUN_overload(void)
@@ -183,7 +199,7 @@ int main(void) {
     _tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], OP = [[add; sub; and; or; xor]]);
     test_fetch_OP();
     _tmpl_end;
-    _tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], FUN = [[INC; DEC]]);
+    _tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], FUN = [[INC; DEC; AND; OR; XOR]]);
     test_FUN_overload();
     _tmpl_end;
     return 0;

@@ -216,6 +216,44 @@ test_fetch_xor(void)
 
 
 void
+test_AND_overload(void)
+{
+    std::atomic<vuint32_t> mirror(0);
+    vsync::atomic<vuint32_t> var(0);
+
+    for (vuint32_t val : g_values) {
+        mirror &= val;
+        var &= val;
+        assert_match(var, mirror);
+    }
+}
+void
+test_OR_overload(void)
+{
+    std::atomic<vuint32_t> mirror(0);
+    vsync::atomic<vuint32_t> var(0);
+
+    for (vuint32_t val : g_values) {
+        mirror |= val;
+        var |= val;
+        assert_match(var, mirror);
+    }
+}
+void
+test_XOR_overload(void)
+{
+    std::atomic<vuint32_t> mirror(0);
+    vsync::atomic<vuint32_t> var(0);
+
+    for (vuint32_t val : g_values) {
+        mirror ^= val;
+        var ^= val;
+        assert_match(var, mirror);
+    }
+}
+
+
+void
 test_INC_overload(void)
 {
     std::atomic<vuint32_t> mirror(0);
@@ -281,5 +319,8 @@ main(void)
     test_fetch_xor();
     test_INC_overload();
     test_DEC_overload();
+    test_AND_overload();
+    test_OR_overload();
+    test_XOR_overload();
     return 0;
 }
