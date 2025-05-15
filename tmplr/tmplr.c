@@ -124,7 +124,7 @@
 /* maximum length of a line */
 #define MAX_SLEN 256
 /* maximum number of lines in a block */
-#define MAX_BLEN 100
+#define MAX_BLEN 1000
 /* maximum number of keys */
 #define MAX_KEYS 1024
 /* maximum length of a value */
@@ -690,6 +690,9 @@ void
 process_file(const char *fn)
 {
     FILE *fp = fopen(fn, "r+");
+    if (!fp) {
+        fprintf(stderr, "[ERROR] Could not open %s for reading", fn);
+    }
     assert(fp);
 
     char *line = NULL;
