@@ -51,10 +51,54 @@ test_store(void)
     }
 }
 
+void
+test_exchange(void)
+{
+    std::atomic<vuint8_t> mirror;
+    vsync::atomic<vuint8_t> var;
+    vuint8_t r_var    = 0;
+    vuint8_t r_mirror = 0;
+
+    for (int order = vsync::memory_order_relaxed;
+         order <= vsync::memory_order_seq_cst; order++) {
+        for (vuint8_t val : g_values) {
+            r_mirror =
+                mirror.exchange(val, static_cast<std::memory_order>(order));
+            r_var = var.exchange(val, static_cast<vsync::memory_order>(order));
+            assert_match(var, mirror);
+            assert(r_mirror = r_var);
+        }
+
+        for (vuint8_t val : g_values) {
+            r_mirror = mirror.compare_exchange_strong(
+                val, static_cast<std::memory_order>(order),
+                static_cast<std::memory_order>(order));
+            r_var = var.compare_exchange_strong(
+                val, static_cast<vsync::memory_order>(order),
+                static_cast<vsync::memory_order>(order));
+            assert_match(var, mirror);
+            assert(r_mirror = r_var);
+        }
+
+        for (vuint8_t val : g_values) {
+            r_mirror = mirror.compare_exchange_weak(
+                val, static_cast<std::memory_order>(order),
+                static_cast<std::memory_order>(order));
+            r_var = var.compare_exchange_weak(
+                val, static_cast<vsync::memory_order>(order),
+                static_cast<vsync::memory_order>(order));
+            assert_match(var, mirror);
+            assert(r_mirror = r_var);
+        }
+    }
+}
+
 
 int
 main(void)
 {
     test_init();
+    test_store();
+    test_exchange();
     return 0;
 }
