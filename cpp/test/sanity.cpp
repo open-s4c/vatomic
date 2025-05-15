@@ -2,7 +2,7 @@
 #include <atomic>
 #include <cassert>
 
-#include "../src/atomic.hpp"
+#include <vsync/atomic.hpp>
 
 
 void
