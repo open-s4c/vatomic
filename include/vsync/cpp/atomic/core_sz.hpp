@@ -6,269 +6,270 @@
     #define VATOMIC_CORE_SZ_HPP
 namespace vsync
 {
-template <> struct atomic<vsize_t> {
-    vsize_t load(memory_order order = memory_order_seq_cst) const noexcept
-    {
-        switch (order) {
-            case memory_order_consume:
-            case memory_order_acquire:
-                return vatomicsz_read_acq(&_v);
-            case memory_order_relaxed:
-                return vatomicsz_read_rlx(&_v);
-            case memory_order_release:
-            case memory_order_acq_rel:
-            // TODO: warn about it
-            case memory_order_seq_cst:
-            default:
-                return vatomicsz_read(&_v);
+    template <> struct atomic<vsize_t> {
+        vsize_t load(memory_order order = memory_order_seq_cst) const noexcept
+        {
+            switch (order) {
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return vatomicsz_read_acq(&_v);
+                case memory_order_relaxed:
+                    return vatomicsz_read_rlx(&_v);
+                case memory_order_release:
+                case memory_order_acq_rel:
+                // TODO: warn about it
+                case memory_order_seq_cst:
+                default:
+                    return vatomicsz_read(&_v);
+            }
         }
-    }
-    void store(vsize_t v, memory_order order = memory_order_seq_cst) noexcept
-    {
-        switch (order) {
-            case memory_order_release:
-                vatomicsz_write_rel(&_v, v);
-                break;
-            case memory_order_relaxed:
-                vatomicsz_write_rlx(&_v, v);
-                break;
-            case memory_order_acquire:
-            case memory_order_acq_rel:
-            case memory_order_consume:
-            // TODO: warn about it
-            case memory_order_seq_cst:
-            default:
-                return vatomicsz_write(&_v, v);
+        void store(vsize_t v,
+                   memory_order order = memory_order_seq_cst) noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    vatomicsz_write_rel(&_v, v);
+                    break;
+                case memory_order_relaxed:
+                    vatomicsz_write_rlx(&_v, v);
+                    break;
+                case memory_order_acquire:
+                case memory_order_acq_rel:
+                case memory_order_consume:
+                // TODO: warn about it
+                case memory_order_seq_cst:
+                default:
+                    return vatomicsz_write(&_v, v);
+            }
         }
-    }
 
-    atomic()
-    {
-        vatomicsz_init(&_v, 0);
-    }
-    atomic(vsize_t v)
-    {
-        vatomicsz_init(&_v, v);
-    }
-
-    atomic(const atomic &)                     = delete;
-    atomic &operator=(const atomic &)          = delete;
-    atomic &operator=(const atomic &) volatile = delete;
-
-    vsize_t operator=(vsize_t v) noexcept
-    {
-        store(v);
-        return v;
-    }
-
-    operator vsize_t() const noexcept
-    {
-        return load();
-    }
-
-    vsize_t exchange(vsize_t v,
-                     memory_order order = memory_order_seq_cst) noexcept
-    {
-        switch (order) {
-            case memory_order_release:
-                return vatomicsz_xchg_rel(&_v, v);
-            case memory_order_relaxed:
-                return vatomicsz_xchg_rlx(&_v, v);
-            case memory_order_consume:
-            case memory_order_acquire:
-                return vatomicsz_xchg_acq(&_v, v);
-            case memory_order_acq_rel:
-            case memory_order_seq_cst:
-            default:
-                return vatomicsz_xchg(&_v, v);
+        atomic()
+        {
+            vatomicsz_init(&_v, 0);
         }
-    }
-
-    vsize_t compare_exchange_strong(
-        vsize_t &expected, vsize_t desired,
-        memory_order order   = memory_order_seq_cst,
-        memory_order failure = memory_order_seq_cst) noexcept
-    {
-        vsize_t old = 0;
-        switch (order) {
-            case memory_order_release:
-                old = vatomicsz_cmpxchg_rel(&_v, expected, desired);
-                break;
-            case memory_order_relaxed:
-                old = vatomicsz_cmpxchg_rlx(&_v, expected, desired);
-                break;
-            case memory_order_consume:
-            case memory_order_acquire:
-                old = vatomicsz_cmpxchg_acq(&_v, expected, desired);
-                break;
-            case memory_order_acq_rel:
-            case memory_order_seq_cst:
-            default:
-                old = vatomicsz_cmpxchg(&_v, expected, desired);
-                break;
+        atomic(vsize_t v)
+        {
+            vatomicsz_init(&_v, v);
         }
-        if (old == expected) {
+
+        atomic(const atomic &)                     = delete;
+        atomic &operator=(const atomic &)          = delete;
+        atomic &operator=(const atomic &) volatile = delete;
+
+        vsize_t operator=(vsize_t v) noexcept
+        {
+            store(v);
+            return v;
+        }
+
+        operator vsize_t() const noexcept
+        {
+            return load();
+        }
+
+        vsize_t exchange(vsize_t v,
+                         memory_order order = memory_order_seq_cst) noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return vatomicsz_xchg_rel(&_v, v);
+                case memory_order_relaxed:
+                    return vatomicsz_xchg_rlx(&_v, v);
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return vatomicsz_xchg_acq(&_v, v);
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return vatomicsz_xchg(&_v, v);
+            }
+        }
+
+        vsize_t compare_exchange_strong(
+            vsize_t &expected, vsize_t desired,
+            memory_order order   = memory_order_seq_cst,
+            memory_order failure = memory_order_seq_cst) noexcept
+        {
+            vsize_t old = 0;
+            switch (order) {
+                case memory_order_release:
+                    old = vatomicsz_cmpxchg_rel(&_v, expected, desired);
+                    break;
+                case memory_order_relaxed:
+                    old = vatomicsz_cmpxchg_rlx(&_v, expected, desired);
+                    break;
+                case memory_order_consume:
+                case memory_order_acquire:
+                    old = vatomicsz_cmpxchg_acq(&_v, expected, desired);
+                    break;
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    old = vatomicsz_cmpxchg(&_v, expected, desired);
+                    break;
+            }
+            if (old == expected) {
+                return true;
+            } else {
+                expected = old;
+                return false;
+            }
+        }
+
+        vsize_t compare_exchange_weak(
+            vsize_t &expected, vsize_t desired,
+            memory_order order   = memory_order_seq_cst,
+            memory_order failure = memory_order_seq_cst) noexcept
+        {
+            return compare_exchange_strong(expected, desired, order, failure);
+        }
+
+
+        vsize_t fetch_add(vsize_t v,
+                          memory_order order = memory_order_seq_cst) noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return vatomicsz_get_add_rel(&_v, v);
+                case memory_order_relaxed:
+                    return vatomicsz_get_add_rlx(&_v, v);
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return vatomicsz_get_add_acq(&_v, v);
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return vatomicsz_get_add(&_v, v);
+            }
+        }
+
+
+        vsize_t operator+=(vsize_t v) noexcept
+        {
+            return fetch_add(v);
+        }
+
+        vsize_t operator++(int) noexcept
+        {
+            return vatomicsz_get_inc(&_v);
+        }
+
+        vsize_t operator++() noexcept
+        {
+            return vatomicsz_inc_get(&_v);
+        }
+
+        vsize_t fetch_sub(vsize_t v,
+                          memory_order order = memory_order_seq_cst) noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return vatomicsz_get_sub_rel(&_v, v);
+                case memory_order_relaxed:
+                    return vatomicsz_get_sub_rlx(&_v, v);
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return vatomicsz_get_sub_acq(&_v, v);
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return vatomicsz_get_sub(&_v, v);
+            }
+        }
+
+        vsize_t operator-=(vsize_t v) noexcept
+        {
+            return fetch_sub(v);
+        }
+
+        vsize_t operator--(int) noexcept
+        {
+            return vatomicsz_get_dec(&_v);
+        }
+
+        vsize_t operator--() noexcept
+        {
+            return vatomicsz_dec_get(&_v);
+        }
+
+        vsize_t fetch_and(vsize_t v,
+                          memory_order order = memory_order_seq_cst) noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return vatomicsz_get_and_rel(&_v, v);
+                case memory_order_relaxed:
+                    return vatomicsz_get_and_rlx(&_v, v);
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return vatomicsz_get_and_acq(&_v, v);
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return vatomicsz_get_and(&_v, v);
+            }
+        }
+
+        vsize_t operator&=(vsize_t v) noexcept
+        {
+            return fetch_and(v);
+        }
+
+        vsize_t fetch_or(vsize_t v,
+                         memory_order order = memory_order_seq_cst) noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return vatomicsz_get_or_rel(&_v, v);
+                case memory_order_relaxed:
+                    return vatomicsz_get_or_rlx(&_v, v);
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return vatomicsz_get_or_acq(&_v, v);
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return vatomicsz_get_or(&_v, v);
+            }
+        }
+
+        vsize_t operator|=(vsize_t v) noexcept
+        {
+            return fetch_or(v);
+        }
+
+        vsize_t fetch_xor(vsize_t v,
+                          memory_order order = memory_order_seq_cst) noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return vatomicsz_get_xor_rel(&_v, v);
+                case memory_order_relaxed:
+                    return vatomicsz_get_xor_rlx(&_v, v);
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return vatomicsz_get_xor_acq(&_v, v);
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return vatomicsz_get_xor(&_v, v);
+            }
+        }
+
+        vsize_t operator^=(vsize_t v) noexcept
+        {
+            return fetch_xor(v);
+        }
+
+
+        bool is_lock_free() const noexcept
+        {
             return true;
-        } else {
-            expected = old;
-            return false;
         }
-    }
 
-    vsize_t
-    compare_exchange_weak(vsize_t &expected, vsize_t desired,
-                          memory_order order   = memory_order_seq_cst,
-                          memory_order failure = memory_order_seq_cst) noexcept
-    {
-        return compare_exchange_strong(expected, desired, order, failure);
-    }
-
-
-    vsize_t fetch_add(vsize_t v,
-                      memory_order order = memory_order_seq_cst) noexcept
-    {
-        switch (order) {
-            case memory_order_release:
-                return vatomicsz_get_add_rel(&_v, v);
-            case memory_order_relaxed:
-                return vatomicsz_get_add_rlx(&_v, v);
-            case memory_order_consume:
-            case memory_order_acquire:
-                return vatomicsz_get_add_acq(&_v, v);
-            case memory_order_acq_rel:
-            case memory_order_seq_cst:
-            default:
-                return vatomicsz_get_add(&_v, v);
-        }
-    }
-
-
-    vsize_t operator+=(vsize_t v) noexcept
-    {
-        return fetch_add(v);
-    }
-
-    vsize_t operator++(int) noexcept
-    {
-        return vatomicsz_get_inc(&_v);
-    }
-
-    vsize_t operator++() noexcept
-    {
-        return vatomicsz_inc_get(&_v);
-    }
-
-    vsize_t fetch_sub(vsize_t v,
-                      memory_order order = memory_order_seq_cst) noexcept
-    {
-        switch (order) {
-            case memory_order_release:
-                return vatomicsz_get_sub_rel(&_v, v);
-            case memory_order_relaxed:
-                return vatomicsz_get_sub_rlx(&_v, v);
-            case memory_order_consume:
-            case memory_order_acquire:
-                return vatomicsz_get_sub_acq(&_v, v);
-            case memory_order_acq_rel:
-            case memory_order_seq_cst:
-            default:
-                return vatomicsz_get_sub(&_v, v);
-        }
-    }
-
-    vsize_t operator-=(vsize_t v) noexcept
-    {
-        return fetch_sub(v);
-    }
-
-    vsize_t operator--(int) noexcept
-    {
-        return vatomicsz_get_dec(&_v);
-    }
-
-    vsize_t operator--() noexcept
-    {
-        return vatomicsz_dec_get(&_v);
-    }
-
-    vsize_t fetch_and(vsize_t v,
-                      memory_order order = memory_order_seq_cst) noexcept
-    {
-        switch (order) {
-            case memory_order_release:
-                return vatomicsz_get_and_rel(&_v, v);
-            case memory_order_relaxed:
-                return vatomicsz_get_and_rlx(&_v, v);
-            case memory_order_consume:
-            case memory_order_acquire:
-                return vatomicsz_get_and_acq(&_v, v);
-            case memory_order_acq_rel:
-            case memory_order_seq_cst:
-            default:
-                return vatomicsz_get_and(&_v, v);
-        }
-    }
-
-    vsize_t operator&=(vsize_t v) noexcept
-    {
-        return fetch_and(v);
-    }
-
-    vsize_t fetch_or(vsize_t v,
-                     memory_order order = memory_order_seq_cst) noexcept
-    {
-        switch (order) {
-            case memory_order_release:
-                return vatomicsz_get_or_rel(&_v, v);
-            case memory_order_relaxed:
-                return vatomicsz_get_or_rlx(&_v, v);
-            case memory_order_consume:
-            case memory_order_acquire:
-                return vatomicsz_get_or_acq(&_v, v);
-            case memory_order_acq_rel:
-            case memory_order_seq_cst:
-            default:
-                return vatomicsz_get_or(&_v, v);
-        }
-    }
-
-    vsize_t operator|=(vsize_t v) noexcept
-    {
-        return fetch_or(v);
-    }
-
-    vsize_t fetch_xor(vsize_t v,
-                      memory_order order = memory_order_seq_cst) noexcept
-    {
-        switch (order) {
-            case memory_order_release:
-                return vatomicsz_get_xor_rel(&_v, v);
-            case memory_order_relaxed:
-                return vatomicsz_get_xor_rlx(&_v, v);
-            case memory_order_consume:
-            case memory_order_acquire:
-                return vatomicsz_get_xor_acq(&_v, v);
-            case memory_order_acq_rel:
-            case memory_order_seq_cst:
-            default:
-                return vatomicsz_get_xor(&_v, v);
-        }
-    }
-
-    vsize_t operator^=(vsize_t v) noexcept
-    {
-        return fetch_xor(v);
-    }
-
-
-    bool is_lock_free() const noexcept
-    {
-        return true;
-    }
-
-  private:
-    vatomicsz_t _v;
-};
+      private:
+        vatomicsz_t _v;
+    };
 }; // namespace vsync
 
 #endif
