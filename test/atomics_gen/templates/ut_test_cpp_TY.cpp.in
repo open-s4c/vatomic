@@ -2,8 +2,19 @@
 #include <iostream>
 #include <atomic>
 #include <cassert>
+#include <vector>
 
-_tmpl_begin(TY = [[u8; u16; u32; u64; ptr]]);
+_tmpl_map(MAP_VALS_u8, (VUINT8_MAX/2), VUINT8_MAX);
+_tmpl_map(MAP_VALS_u16, VUINT8_MAX, VUINT16_MAX);
+_tmpl_map(MAP_VALS_u32, VUINT8_MAX, VUINT16_MAX, VUINT32_MAX);
+_tmpl_map(MAP_VALS_u64, VUINT8_MAX, VUINT16_MAX, VUINT32_MAX, VUINT64_MAX);
+_tmpl_map(MAP_VALS_sz,  VUINT8_MAX, VUINT16_MAX, VUINT32_MAX, VSIZE_MAX);
+
+
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]]);
+
+std::vector<TT> g_values = {0, MAP_VALS_TY};
+
 void
 assert_match(vsync::atomic<TT> &var, std::atomic<TT> &mirror)
 {
@@ -30,6 +41,24 @@ test_init(void)
         assert_match(var, mirror);
     }
 }
+
+void
+test_store(void)
+{
+    std::atomic<TT> mirror;
+    vsync::atomic<TT> var;
+
+    for (int order = vsync::memory_order_relaxed;
+         order <= vsync::memory_order_seq_cst; order++) {
+        for (TT val : g_values) {
+            mirror.store(val, static_cast<std::memory_order>(order));
+            var.store(val, static_cast<vsync::memory_order>(order));
+            assert_match(var, mirror);
+        }
+    }
+}
+
+
 _tmpl_end;
 
 int main(void) {

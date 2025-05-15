@@ -2,6 +2,10 @@
 #include <iostream>
 #include <atomic>
 #include <cassert>
+#include <vector>
+
+
+std::vector<vuint16_t> g_values = {0, VUINT8_MAX, VUINT16_MAX};
 
 void
 assert_match(vsync::atomic<vuint16_t> &var, std::atomic<vuint16_t> &mirror)
@@ -30,6 +34,23 @@ test_init(void)
         assert_match(var, mirror);
     }
 }
+
+void
+test_store(void)
+{
+    std::atomic<vuint16_t> mirror;
+    vsync::atomic<vuint16_t> var;
+
+    for (int order = vsync::memory_order_relaxed;
+         order <= vsync::memory_order_seq_cst; order++) {
+        for (vuint16_t val : g_values) {
+            mirror.store(val, static_cast<std::memory_order>(order));
+            var.store(val, static_cast<vsync::memory_order>(order));
+            assert_match(var, mirror);
+        }
+    }
+}
+
 
 int
 main(void)
