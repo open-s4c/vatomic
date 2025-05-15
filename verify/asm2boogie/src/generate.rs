@@ -36,13 +36,19 @@ pub fn boogie_to_string(instructions: &[BoogieInstruction]) -> String {
                 ));
             }
             BoogieInstruction::Branch(target, condition) => {
-                if target.is_empty() {
-                    code.push_str(&format!("    assume false;\n"));
-                } else if condition == "true" {
+                if condition == "true" {
                     /* this special case is required to make the control flow explicit to boogie, which otherwise makes an incorrect CFG that may be irreducible. */
-                    code.push_str(&format!("    goto {};\n", &target.join(","),));
+                    if target.is_empty() {
+                        code.push_str(&format!("    assume false; return;\n"));
+                    } else {
+                        code.push_str(&format!("    goto {};\n", &target.join(","),));
+                    }
                 } else {
-                    code.push_str(&format!("    if ({}) {{ goto {}; }}\n", condition, &target.join(","),));
+                    if target.is_empty() {
+                        code.push_str(&format!("    assume (! {});\n", condition));
+                    } else {
+                        code.push_str(&format!("    if ({}) {{ goto {}; }}\n", condition, &target.join(","),));
+                    }
                 }
             }
             BoogieInstruction::Return => {

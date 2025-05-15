@@ -132,6 +132,43 @@ fn find_exit_name(count: &mut usize, labels: &HashSet<String>) -> String {
     }
 }
 
+fn insert_loop_fallthrough_back_edges(code: &mut Vec<BoogieInstruction>) {
+    let loops = collect_loops(code);
+    let graph = cfg(code);
+    let mut fallthrough_back_edges = vec![];
+
+
+    for the_loop in loops.into_iter() {
+    
+        let loop_headers : HashSet<_> = the_loop.iter().copied().filter(|&i| 
+                graph.edges_directed(i, petgraph::Direction::Incoming).any(|edge|
+                    ! the_loop.contains(&edge.source()))).collect();
+
+        for j in the_loop {
+            if loop_headers.contains(&(j+1)) {
+
+                let mut may_fallthrough = true;
+
+                let BoogieInstruction::Label(label) = &code[j+1] else { panic!("loop headers must be labels"); };
+
+                if let BoogieInstruction::Branch(targets, condition) = &code[j] {
+                    may_fallthrough = ! targets.contains(label) && condition != "true";
+                }
+
+                if may_fallthrough {
+                    fallthrough_back_edges.push((j, label.clone()));
+                }
+            }
+        }
+    }
+
+    fallthrough_back_edges.sort_by(|(j1,_),(j2,_)| j2.cmp(j1));
+
+    for (j,label) in fallthrough_back_edges {
+        code.insert(j+1, BoogieInstruction::Branch(vec![label], "true".to_string()));
+    }
+}
+
 fn insert_loop_exit_labels(code: &mut Vec<BoogieInstruction>) {
     let mut graph = cfg(code);
     let mut loop_exits = Vec::new();
@@ -229,12 +266,13 @@ fn duplicate_loops(code: &mut Vec<BoogieInstruction>) {
                 targets.iter().flat_map(|label| {
                     let target = labels[label];
                     if loop_headers.contains(&target) {
-                        vec![transform_label(label, loop_id, LOOP_FORCED_ITER_SUFFIX)].into_iter()
+                        // back loops are blocked off
+                        vec![].into_iter()
                     } else if the_loop.contains(&target) {
                         vec![transform_label(label, loop_id, LOOP_FINAL_ITER_SUFFIX)].into_iter()
                     } else {
-                        // loop exits are blocked off -- empty goto will become assume false
-                        vec![].into_iter()
+                        // loop exits are kept
+                        vec![label.clone()].into_iter()
                     }
                 }).collect()
             }));
@@ -249,7 +287,7 @@ fn duplicate_loops(code: &mut Vec<BoogieInstruction>) {
             }
         }
         
-        // third step: transform incoming & internal edges to point to the new forced loop
+        // third step: transform incoming & internal edges to point to the new forced/final loop
         for i in loop_headers.iter().copied() {
             let BoogieInstruction::Label(my_label) = code[i].clone() else { panic!("loop header has entry edge but no label, this should be impossible.") };
             for edge in graph.edges_directed(i, petgraph::Direction::Incoming) {
@@ -261,8 +299,12 @@ fn duplicate_loops(code: &mut Vec<BoogieInstruction>) {
                         let same_label = label == &my_label; 
                         if same_label {
                             new_targets.push(transform_label(label, loop_id, LOOP_FORCED_ITER_SUFFIX));
+
+                            if ! the_loop.contains(&j) {  // back branches are not kept
+                                new_targets.push(transform_label(label, loop_id, LOOP_FINAL_ITER_SUFFIX));
+                            }
                         } 
-                        if ! same_label || ! the_loop.contains(&j) { // back branches are not kept
+                        if ! same_label {
                             new_targets.push(label.clone());
                         }
                     }
@@ -296,8 +338,9 @@ fn transformed<F : Fn(&String) -> String, G : Fn(&[String]) -> Vec<String>>(inst
 pub fn unroll(code: &[BoogieInstruction]) -> Vec<BoogieInstruction> {
     
     let mut changed_code = code.into();
+    insert_loop_fallthrough_back_edges(&mut changed_code);
     insert_loop_exit_labels(&mut changed_code);
-
+    
     duplicate_loops(&mut changed_code);
 
 
