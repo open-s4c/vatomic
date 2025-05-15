@@ -12,6 +12,18 @@ foreach(test IN ITEMS ${TESTS})
     # add the executable
     add_executable(${TEST} ${test})
     # link libs
+    target_link_libraries(${TEST} vatomic)
+    # add test
+    v_add_bin_test(NAME ${TEST} COMMAND ${TEST})
+endforeach()
+
+
+file(GLOB TESTS *test*.cpp)
+foreach(test IN ITEMS ${TESTS})
+    get_filename_component(TEST ${test} NAME_WE)
+    # add the executable
+    add_executable(${TEST} ${test})
+    # link libs
     target_link_libraries(${TEST} vatomic pthread)
     # add test
     v_add_bin_test(NAME ${TEST} COMMAND ${TEST})
