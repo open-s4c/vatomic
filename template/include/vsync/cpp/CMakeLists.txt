@@ -1,12 +1,10 @@
-# Copyright (C) Huawei Technologies Co., Ltd. . All rights reserved.
+# Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # SPDX-License-Identifier: MIT
 
 set(TYPES u8 u16 u32 u64 sz)
-set(TARGETS stdatomic)
+set(TARGETS core)
 foreach(TARGET ${TARGETS})
-
     set(TMPL ${TARGET}_TY.hpp)
-    message("${TARGET} ==> ${TMPL}")
     foreach(TY ${TYPES})
         string(REPLACE TY ${TY} OUT ${TMPL})
         add_custom_target(
