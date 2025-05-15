@@ -22,13 +22,7 @@ assert_match(vsync::atomic<vuint16_t> &var, std::atomic<vuint16_t> &mirror)
 void
 test_init(void)
 {
-    {
-        std::atomic<vuint16_t> mirror;
-        vsync::atomic<vuint16_t> var;
-        assert_match(var, mirror);
-    }
-    {
-        vuint16_t val = 255;
+    for (vuint16_t val : g_values) {
         std::atomic<vuint16_t> mirror(val);
         vsync::atomic<vuint16_t> var(val);
         assert_match(var, mirror);
@@ -38,8 +32,8 @@ test_init(void)
 void
 test_store(void)
 {
-    std::atomic<vuint16_t> mirror;
-    vsync::atomic<vuint16_t> var;
+    std::atomic<vuint16_t> mirror(0);
+    vsync::atomic<vuint16_t> var(0);
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
@@ -54,8 +48,8 @@ test_store(void)
 void
 test_exchange(void)
 {
-    std::atomic<vuint16_t> mirror;
-    vsync::atomic<vuint16_t> var;
+    std::atomic<vuint16_t> mirror(0);
+    vsync::atomic<vuint16_t> var(0);
     vuint16_t r_var    = 0;
     vuint16_t r_mirror = 0;
 
@@ -66,29 +60,54 @@ test_exchange(void)
                 mirror.exchange(val, static_cast<std::memory_order>(order));
             r_var = var.exchange(val, static_cast<vsync::memory_order>(order));
             assert_match(var, mirror);
-            assert(r_mirror = r_var);
+            assert(r_mirror == r_var);
+        }
+    }
+}
+
+void
+test_compare_exchange(void)
+{
+    std::atomic<vuint16_t> mirror(0);
+    vsync::atomic<vuint16_t> var(0);
+
+    bool r_var    = false;
+    bool r_mirror = false;
+
+    vuint16_t v_var    = 0;
+    vuint16_t v_mirror = 0;
+
+    const vsize_t repeat = 3;
+
+    for (int order = vsync::memory_order_relaxed;
+         order <= vsync::memory_order_seq_cst; order++) {
+        for (vuint16_t val : g_values) {
+            v_var = v_mirror = val;
+            for (vsize_t i = 0; i < repeat; i++) {
+                r_mirror = mirror.compare_exchange_strong(
+                    v_var, static_cast<std::memory_order>(order),
+                    static_cast<std::memory_order>(order));
+                r_var = var.compare_exchange_strong(
+                    v_mirror, static_cast<vsync::memory_order>(order),
+                    static_cast<vsync::memory_order>(order));
+                assert(r_mirror == r_var);
+                assert(v_var == v_mirror);
+            }
         }
 
         for (vuint16_t val : g_values) {
-            r_mirror = mirror.compare_exchange_strong(
-                val, static_cast<std::memory_order>(order),
-                static_cast<std::memory_order>(order));
-            r_var = var.compare_exchange_strong(
-                val, static_cast<vsync::memory_order>(order),
-                static_cast<vsync::memory_order>(order));
-            assert_match(var, mirror);
-            assert(r_mirror = r_var);
-        }
-
-        for (vuint16_t val : g_values) {
-            r_mirror = mirror.compare_exchange_weak(
-                val, static_cast<std::memory_order>(order),
-                static_cast<std::memory_order>(order));
-            r_var = var.compare_exchange_weak(
-                val, static_cast<vsync::memory_order>(order),
-                static_cast<vsync::memory_order>(order));
-            assert_match(var, mirror);
-            assert(r_mirror = r_var);
+            v_var = v_mirror = val;
+            for (vsize_t i = 0; i < repeat; i++) {
+                r_mirror = mirror.compare_exchange_weak(
+                    v_var, static_cast<std::memory_order>(order),
+                    static_cast<std::memory_order>(order));
+                r_var = var.compare_exchange_weak(
+                    v_mirror, static_cast<vsync::memory_order>(order),
+                    static_cast<vsync::memory_order>(order));
+                assert_match(var, mirror);
+                assert(r_mirror == r_var);
+                assert(v_var == v_mirror);
+            }
         }
     }
 }
@@ -100,5 +119,6 @@ main(void)
     test_init();
     test_store();
     test_exchange();
+    test_compare_exchange();
     return 0;
 }
