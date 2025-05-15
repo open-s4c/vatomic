@@ -1,8 +1,12 @@
+#include <vsync/atomic.hpp>
 #include <iostream>
+#include <atomic>
+#include <cassert>
+
 
 int
 main(void)
 {
-    std::cout << "Hello, World!";
+    test_init();
     return 0;
 }

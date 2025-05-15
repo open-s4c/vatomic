@@ -1,8 +1,39 @@
+#include <vsync/atomic.hpp>
 #include <iostream>
+#include <atomic>
+#include <cassert>
+
+void
+assert_match(vsync::atomic<vuint16_t> &var, std::atomic<vuint16_t> &mirror)
+{
+    vuint16_t v_var    = var.load();
+    vuint16_t v_mirror = mirror.load();
+    if (v_var != v_mirror) {
+        std::cerr << "[assert_match] vsync::atomic " << v_var
+                  << " =? std::atomic " << v_mirror << std::endl;
+    }
+    assert(v_var == v_mirror);
+}
+
+void
+test_init(void)
+{
+    {
+        std::atomic<vuint16_t> mirror;
+        vsync::atomic<vuint16_t> var;
+        assert_match(var, mirror);
+    }
+    {
+        vuint16_t val = 255;
+        std::atomic<vuint16_t> mirror(val);
+        vsync::atomic<vuint16_t> var(val);
+        assert_match(var, mirror);
+    }
+}
 
 int
 main(void)
 {
-    std::cout << "Hello, World!";
+    test_init();
     return 0;
 }

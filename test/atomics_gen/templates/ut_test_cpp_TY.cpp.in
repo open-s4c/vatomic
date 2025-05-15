@@ -1,6 +1,38 @@
+#include <vsync/atomic.hpp>
 #include <iostream>
+#include <atomic>
+#include <cassert>
+
+_tmpl_begin(TY = [[u8; u16; u32; u64; ptr]]);
+void
+assert_match(vsync::atomic<TT> &var, std::atomic<TT> &mirror)
+{
+    TT v_var        = var.load();
+    TT v_mirror     = mirror.load();
+    if (v_var != v_mirror) {
+        std::cerr << "[assert_match] vsync::atomic " << v_var << " =? std::atomic " << v_mirror << std::endl;
+    }
+    assert(v_var == v_mirror);
+}
+
+void
+test_init(void)
+{
+    {
+        std::atomic<TT> mirror;
+        vsync::atomic<TT> var;
+        assert_match(var, mirror);
+    }
+    {
+        TT val = 255;
+        std::atomic<TT> mirror(val);
+        vsync::atomic<TT> var(val);
+        assert_match(var, mirror);
+    }
+}
+_tmpl_end;
 
 int main(void) {
-    std::cout<< "Hello, World!";
+    test_init();
     return 0;
 }
