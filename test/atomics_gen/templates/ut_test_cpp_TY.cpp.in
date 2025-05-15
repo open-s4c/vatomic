@@ -93,6 +93,7 @@ test_compare_exchange(void)
             for(vsize_t i = 0; i < repeat; i++) {
                 r_mirror = mirror.compare_exchange_strong(v_var, static_cast<std::memory_order>(order), static_cast<std::memory_order>(order));
                 r_var = var.compare_exchange_strong(v_mirror, static_cast<vsync::memory_order>(order), static_cast<vsync::memory_order>(order));
+                assert_match(var, mirror);
                 assert(r_mirror == r_var);
                 assert(v_var == v_mirror);
             }
@@ -110,13 +111,40 @@ test_compare_exchange(void)
         }
     }
 }
-
 _tmpl_end;
+
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], OP = [[add; sub; and; or; xor]]);
+void
+test_fetch_OP(void)
+{
+    std::atomic<TT> mirror(0);
+    vsync::atomic<TT> var(0);
+
+    TT r_var = 0;
+    TT r_mirror = 0;
+
+    for (int order = vsync::memory_order_relaxed;
+         order <= vsync::memory_order_seq_cst; order++) {
+
+        for (TT val : g_values) {
+            r_mirror = mirror.fetch_OP(val, static_cast<std::memory_order>(order));
+            r_var = var.fetch_OP(val, static_cast<vsync::memory_order>(order));
+            assert_match(var, mirror);
+            assert(r_mirror == r_var);
+        }
+    }
+}
+_tmpl_end;
+
+
 
 int main(void) {
     test_init();
     test_store();
     test_exchange();
     test_compare_exchange();
+    _tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], OP = [[add; sub; and; or; xor]]);
+    test_fetch_OP();
+    _tmpl_end;
     return 0;
 }

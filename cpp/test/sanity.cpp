@@ -71,7 +71,6 @@ test(void)
     assert(a == b);
     assert_match(var, mirror);
 
-
     a = var.fetch_sub(10);
     b = mirror.fetch_sub(10);
     assert(a == b);
