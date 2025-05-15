@@ -10,6 +10,13 @@ _tmpl_map(MAP_VALS_u32, VUINT8_MAX, VUINT16_MAX, VUINT32_MAX);
 _tmpl_map(MAP_VALS_u64, VUINT8_MAX, VUINT16_MAX, VUINT32_MAX, VUINT64_MAX);
 _tmpl_map(MAP_VALS_sz,  VUINT8_MAX, VUINT16_MAX, VUINT32_MAX, VSIZE_MAX);
 
+_tmpl_map(<MAP_INC_OP>, ++);
+_tmpl_map(<MAP_DEC_OP>, --);
+
+_tmpl_map(<MAP_OR_OP>, |);
+_tmpl_map(<MAP_XOR_OP>, ^);
+_tmpl_map(<MAP_AND_OP>, ^);
+
 
 _tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]]);
 
@@ -137,6 +144,36 @@ test_fetch_OP(void)
 _tmpl_end;
 
 
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], FUN = [[INC; DEC]]);
+void
+test_FUN_overload(void)
+{
+    std::atomic<TT> mirror(0);
+    vsync::atomic<TT> var(0);
+
+    TT r_var = 0;
+    TT r_mirror = 0;
+
+    for (TT val : g_values) {
+        mirror = var = val;
+        r_mirror = mirror<MAP_FUN_OP>;
+        r_var = var<MAP_FUN_OP>;
+        assert_match(var, mirror);
+        assert(r_mirror == r_var);
+    }
+
+    for (TT val : g_values) {
+        mirror = var = val;
+        r_mirror = <MAP_FUN_OP>mirror;
+        r_var = <MAP_FUN_OP>var;
+        assert_match(var, mirror);
+        assert(r_mirror == r_var);
+    }
+
+}
+_tmpl_end;
+
+
 
 int main(void) {
     test_init();
@@ -145,6 +182,9 @@ int main(void) {
     test_compare_exchange();
     _tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], OP = [[add; sub; and; or; xor]]);
     test_fetch_OP();
+    _tmpl_end;
+    _tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], FUN = [[INC; DEC]]);
+    test_FUN_overload();
     _tmpl_end;
     return 0;
 }

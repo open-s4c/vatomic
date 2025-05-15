@@ -215,6 +215,58 @@ test_fetch_xor(void)
 }
 
 
+void
+test_INC_overload(void)
+{
+    std::atomic<vuint32_t> mirror(0);
+    vsync::atomic<vuint32_t> var(0);
+
+    vuint32_t r_var    = 0;
+    vuint32_t r_mirror = 0;
+
+    for (vuint32_t val : g_values) {
+        mirror = var = val;
+        r_mirror     = mirror++;
+        r_var        = var++;
+        assert_match(var, mirror);
+        assert(r_mirror == r_var);
+    }
+
+    for (vuint32_t val : g_values) {
+        mirror = var = val;
+        r_mirror     = ++mirror;
+        r_var        = ++var;
+        assert_match(var, mirror);
+        assert(r_mirror == r_var);
+    }
+}
+void
+test_DEC_overload(void)
+{
+    std::atomic<vuint32_t> mirror(0);
+    vsync::atomic<vuint32_t> var(0);
+
+    vuint32_t r_var    = 0;
+    vuint32_t r_mirror = 0;
+
+    for (vuint32_t val : g_values) {
+        mirror = var = val;
+        r_mirror     = mirror--;
+        r_var        = var--;
+        assert_match(var, mirror);
+        assert(r_mirror == r_var);
+    }
+
+    for (vuint32_t val : g_values) {
+        mirror = var = val;
+        r_mirror     = --mirror;
+        r_var        = --var;
+        assert_match(var, mirror);
+        assert(r_mirror == r_var);
+    }
+}
+
+
 int
 main(void)
 {
@@ -227,5 +279,7 @@ main(void)
     test_fetch_and();
     test_fetch_or();
     test_fetch_xor();
+    test_INC_overload();
+    test_DEC_overload();
     return 0;
 }
