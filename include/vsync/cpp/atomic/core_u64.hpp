@@ -88,7 +88,7 @@ namespace vsync
             }
         }
 
-        vuint64_t compare_exchange_strong(
+        bool compare_exchange_strong(
             vuint64_t &expected, vuint64_t desired,
             memory_order order   = memory_order_seq_cst,
             memory_order failure = memory_order_seq_cst) noexcept

@@ -88,7 +88,7 @@ namespace vsync
             }
         }
 
-        vsize_t compare_exchange_strong(
+        bool compare_exchange_strong(
             vsize_t &expected, vsize_t desired,
             memory_order order   = memory_order_seq_cst,
             memory_order failure = memory_order_seq_cst) noexcept

@@ -97,7 +97,7 @@ template <> struct atomic<TT> {
         }
     }
 
-    TT compare_exchange_strong(
+    bool compare_exchange_strong(
         TT &expected, TT desired,
         memory_order order   = memory_order_seq_cst,
         memory_order failure = memory_order_seq_cst) noexcept
