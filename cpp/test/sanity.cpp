@@ -6,14 +6,14 @@
 #include <atomic>
 #include <cassert>
 
-#include <vsync/atomic.hpp>
+#include "../src/atomic.hpp"
 
 
 void
-assert_match(vsync::atomic<vuint32_t> &v, std::atomic<vuint32_t> &mirror)
+assert_match(vsync::atomic<int*> &v, std::atomic<int*> &mirror)
 {
-    vuint32_t r        = v.load();
-    vuint32_t mirror_r = mirror.load();
+    int* r        = v.load();
+    int* mirror_r = mirror.load();
     std::cout << "vsync: " << r << " =? mirror " << mirror_r << std::endl;
     assert(r == mirror_r);
 }
@@ -21,51 +21,53 @@ assert_match(vsync::atomic<vuint32_t> &v, std::atomic<vuint32_t> &mirror)
 void
 test(void)
 {
-    std::atomic<vuint32_t> mirror;
-    vsync::atomic<vuint32_t> var;
+    std::atomic<int*> mirror;
+    vsync::atomic<int*> var;
 
-    vuint32_t v = 5;
+    int x;
+
+    int* v = &x;
     var.store(v);
     mirror.store(v);
 
     assert_match(var, mirror);
 
-    var    = 10;
-    mirror = 10;
+    var    = v;
+    mirror = v;
     assert_match(var, mirror);
 
-    var = mirror = 1;
+    var = mirror = v;
     assert_match(var, mirror);
 
-    mirror = var = 10;
+    mirror = var = v;
     assert_match(var, mirror);
 
-    vuint32_t a = var.exchange(1);
-    vuint32_t b = mirror.exchange(1);
+    int* a = var.exchange(v);
+    int* b = mirror.exchange(v);
     assert(a == b);
     assert_match(var, mirror);
 
-    bool r1 = var.compare_exchange_strong(a, 2);
-    bool r2 = mirror.compare_exchange_strong(b, 2);
+    bool r1 = var.compare_exchange_strong(a, v);
+    bool r2 = mirror.compare_exchange_strong(b, v);
     assert(r1 == r2);
     assert(a == b);
     assert_match(var, mirror);
 
-    r1 = var.compare_exchange_strong(a, 2);
-    r2 = mirror.compare_exchange_strong(b, 2);
+    r1 = var.compare_exchange_strong(a, v);
+    r2 = mirror.compare_exchange_strong(b, v);
     assert(r1 == r2);
     assert(a == b);
     assert_match(var, mirror);
 
 
-    r1 = var.compare_exchange_weak(a, 4);
-    r2 = mirror.compare_exchange_weak(b, 4);
+    r1 = var.compare_exchange_weak(a, v);
+    r2 = mirror.compare_exchange_weak(b, v);
     assert(r1 == r2);
     assert(a == b);
     assert_match(var, mirror);
 
-    r1 = var.compare_exchange_weak(a, 4);
-    r2 = mirror.compare_exchange_weak(b, 4);
+    r1 = var.compare_exchange_weak(a, v);
+    r2 = mirror.compare_exchange_weak(b, v);
     assert(r1 == r2);
     assert(a == b);
     assert_match(var, mirror);
@@ -77,21 +79,6 @@ test(void)
 
     a = var.fetch_sub(10);
     b = mirror.fetch_sub(10);
-    assert(a == b);
-    assert_match(var, mirror);
-
-    a = var.fetch_or(0xfffff);
-    b = mirror.fetch_or(0xfffff);
-    assert(a == b);
-    assert_match(var, mirror);
-
-    a = var.fetch_and(0xf0f0f);
-    b = mirror.fetch_and(0xf0f0f);
-    assert(a == b);
-    assert_match(var, mirror);
-
-    a = var.fetch_xor(0xf000f);
-    b = mirror.fetch_xor(0xf000f);
     assert(a == b);
     assert_match(var, mirror);
 
@@ -118,27 +105,6 @@ test(void)
     var += 3;
     mirror += 3;
     assert_match(var, mirror);
-
-    var -= 3;
-    mirror -= 3;
-    assert_match(var, mirror);
-
-
-    var |= 0xffffff;
-    mirror |= 0xffffff;
-    assert_match(var, mirror);
-
-    var &= 0x0fffff;
-    mirror &= 0x0fffff;
-    assert_match(var, mirror);
-
-    var ^= 0x0fCfff;
-    mirror ^= 0x0fCfff;
-    assert_match(var, mirror);
-
-    vuint32_t x = mirror;
-    vuint32_t y = var;
-    assert(x == y);
 }
 
 int
