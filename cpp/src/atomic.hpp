@@ -222,7 +222,7 @@ namespace vsync
                 std::cout << " expected  " << expected << std::endl;
                 desired = expected + v;
                 std::cout << " desired  " << desired << std::endl;
-                old     = static_cast<PTR *>(
+                old = static_cast<PTR *>(
                     vatomicptr_cmpxchg(&_v, expected, desired));
             } while (old != expected);
 

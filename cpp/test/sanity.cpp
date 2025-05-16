@@ -10,10 +10,10 @@
 
 
 void
-assert_match(vsync::atomic<int*> &v, std::atomic<int*> &mirror)
+assert_match(vsync::atomic<int *> &v, std::atomic<int *> &mirror)
 {
-    int* r        = v.load();
-    int* mirror_r = mirror.load();
+    int *r        = v.load();
+    int *mirror_r = mirror.load();
     std::cout << "vsync: " << r << " =? mirror " << mirror_r << std::endl;
     assert(r == mirror_r);
 }
@@ -21,12 +21,12 @@ assert_match(vsync::atomic<int*> &v, std::atomic<int*> &mirror)
 void
 test(void)
 {
-    std::atomic<int*> mirror;
-    vsync::atomic<int*> var;
+    std::atomic<int *> mirror;
+    vsync::atomic<int *> var;
 
     int x;
 
-    int* v = &x;
+    int *v = &x;
     var.store(v);
     mirror.store(v);
 
@@ -42,8 +42,8 @@ test(void)
     mirror = var = v;
     assert_match(var, mirror);
 
-    int* a = var.exchange(v);
-    int* b = mirror.exchange(v);
+    int *a = var.exchange(v);
+    int *b = mirror.exchange(v);
     assert(a == b);
     assert_match(var, mirror);
 
