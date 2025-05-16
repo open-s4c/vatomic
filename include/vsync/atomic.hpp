@@ -23,4 +23,5 @@ namespace vsync
 #include "cpp/atomic/core_u16.hpp"
 #include "cpp/atomic/core_u32.hpp"
 #include "cpp/atomic/core_u64.hpp"
+#include "cpp/atomic/core_ptr.hpp"
 #endif
