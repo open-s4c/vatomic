@@ -205,8 +205,8 @@ namespace vsync
 
             do {
                 expected = old;
-                desired = expected + v;
-                old = static_cast<PTR *>(
+                desired  = expected + v;
+                old      = static_cast<PTR *>(
                     vatomicptr_cmpxchg(&_v, expected, desired));
             } while (old != expected);
 
@@ -268,5 +268,5 @@ namespace vsync
         }
     };
 
-};
+}; // namespace vsync
 #endif
