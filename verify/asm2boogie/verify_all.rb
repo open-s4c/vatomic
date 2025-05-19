@@ -62,7 +62,7 @@ end
 
 
 def compile(asm_file, library, functions_path, out, arch, unroll = false)
-  `cargo run -- --input data/#{asm_file} --functions #{functions_path} --templates ../boogie/templates/ --directory #{out}/#{arch} --arch #{arch} #{ unroll ? "--unroll" : nil }`
+  `echo $(cargo run -- --input data/#{asm_file} --functions #{functions_path} --templates ../boogie/templates/ --directory #{out}/#{arch} --arch #{arch} #{ unroll ? "--unroll" : nil })`
 end
 
 retry_out = "#{options[:where]}_retry"
@@ -147,7 +147,8 @@ require 'pp'
 require 'parallel'
 begin
   if options[:phases].include? 1
-    verify_all(options[:archs], options[:extract] && options[:which], options[:where], options[:limit], 1)
+    puts "verifying all in #{options[:which]} matching #{options[:limit] || "*"}"
+    verify_all(options[:archs], options[:where], options[:extract] && options[:which], options[:limit], 1)
     puts ""
     puts "finished simple verification"
     puts ""
