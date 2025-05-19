@@ -12,8 +12,14 @@
 int g_v[10] = {0};
 
 typedef int custom_type_t;
+
+#define ARR_LEN 10U
+custom_type_t g_arr[ARR_LEN] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
 std::vector<custom_type_t *> g_values = {&g_v[0], &g_v[1]};
 std::vector<ptrdiff_t> g_offsets      = {0x1, 0xF, 0x2};
+
+
 
 void
 assert_match(vsync::atomic<custom_type_t *> &var,
@@ -167,24 +173,35 @@ test_fetch_sub(void)
 void
 test_INC_overload(void)
 {
-    std::atomic<custom_type_t *> mirror(0);
-    vsync::atomic<custom_type_t *> var(0);
+    std::atomic<custom_type_t *> mirror(&g_arr[0]);
+    vsync::atomic<custom_type_t *> var(&g_arr[0]);
 
     custom_type_t *r_var    = 0;
     custom_type_t *r_mirror = 0;
 
-    for (auto val : g_values) {
-        mirror = var = val;
+    for(size_t i = 0; i < ARR_LEN; i++) {
+        assert(*mirror == g_arr[i]);
+        assert(*var == g_arr[i]);
         r_mirror     = mirror++;
         r_var        = var++;
+        assert(*r_mirror == g_arr[i]);
+        assert(*r_var == g_arr[i]);
         assert_match(var, mirror);
         assert(r_mirror == r_var);
     }
 
-    for (auto val : g_values) {
-        mirror = var = val;
+    mirror = var = &g_arr[0];
+
+    for(size_t i = 0; i < ARR_LEN; i++) {
+        assert(*mirror == g_arr[i]);
+        assert(*var == g_arr[i]);
         r_mirror     = ++mirror;
         r_var        = ++var;
+
+        if(i < ARR_LEN) {
+            assert(*mirror == g_arr[i+1]);
+            assert(*var == g_arr[i+1]);
+        }
         assert_match(var, mirror);
         assert(r_mirror == r_var);
     }
@@ -192,24 +209,35 @@ test_INC_overload(void)
 void
 test_DEC_overload(void)
 {
-    std::atomic<custom_type_t *> mirror(0);
-    vsync::atomic<custom_type_t *> var(0);
+    std::atomic<custom_type_t *> mirror(&g_arr[ARR_LEN-1]);
+    vsync::atomic<custom_type_t *> var(&g_arr[ARR_LEN-1]);
 
     custom_type_t *r_var    = 0;
     custom_type_t *r_mirror = 0;
 
-    for (auto val : g_values) {
-        mirror = var = val;
+    for(size_t i = ARR_LEN; i < ARR_LEN; i--) {
+        assert(*mirror == g_arr[i]);
+        assert(*var == g_arr[i]);
         r_mirror     = mirror--;
         r_var        = var--;
+        assert(*r_mirror == g_arr[i]);
+        assert(*r_var == g_arr[i]);
         assert_match(var, mirror);
         assert(r_mirror == r_var);
     }
 
-    for (auto val : g_values) {
-        mirror = var = val;
+    mirror = var = &g_arr[ARR_LEN-1];
+
+    for(size_t i = ARR_LEN; i < ARR_LEN; i--) {
+        assert(*mirror == g_arr[i]);
+        assert(*var == g_arr[i]);
         r_mirror     = --mirror;
         r_var        = --var;
+
+        if(i > 0) {
+            assert(*mirror == g_arr[i-1]);
+            assert(*var == g_arr[i-1]);
+        }
         assert_match(var, mirror);
         assert(r_mirror == r_var);
     }
