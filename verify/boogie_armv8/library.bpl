@@ -135,6 +135,7 @@ procedure assume_requires_execute(instr: Instruction);
 
 
 procedure execute_local(instr: Instruction) returns (r : bv64);
+    modifies flags;
     ensures
         (r == if instr is mov then instr->src
             else if instr is add then bin_add(instr->first, instr->second)
@@ -145,10 +146,18 @@ procedure execute_local(instr: Instruction) returns (r : bv64);
             else if instr is mvn  then bit_inv(instr->src)
             else if instr is neg  then bin_neg(instr->src)
             else if instr is csel then if instr->cond then instr->src1 else instr->src2
-            else r);
+            else r)
+        &&
+        (flags == if instr is cmp
+                then (
+                    Flags(ult(instr->opnd1, instr->opnd2), instr->opnd1 == instr->opnd2, uge(instr->opnd1, instr->opnd2))
+                )
+                else
+                    old(flags)
+                );
 
 procedure execute(instr: Instruction) returns (r : bv64);
-    modifies flags, step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
+    modifies step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
     ensures step == old(step + 1);
     ensures {:msg "state"} (
         var stx_success, cas_success :=
@@ -180,15 +189,6 @@ procedure execute(instr: Instruction) returns (r : bv64);
                             || instr is wfe
                         then open()
                         else old(local_monitor))
-        &&
-        (flags == if instr is cmp
-                then (
-                    var diff := bin_sub(instr->opnd1, instr->opnd2);
-                    Flags(ult(diff, 0bv64), diff == 0bv64, uge(diff, 0bv64))
-                )
-                else
-                    old(flags)
-                )
         &&
         (effects[old(step)] == 
                         if rmw(instr)

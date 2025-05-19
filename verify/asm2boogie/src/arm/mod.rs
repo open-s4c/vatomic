@@ -349,7 +349,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             let src_reg = operand_to_boogie(src);
 
             BoogieInstruction::Instr(
-                op_name.to_string(), SideEffect::Local,
+                op_name.to_string(), SideEffect::Global,
                 dest_reg,
                 vec![attrs.release.to_string(), src_reg, format!("{}bv64", attrs.size.mask()), addr_reg],
             )
