@@ -129,7 +129,7 @@ function writes(instr: Instruction) : bool {
 }
 
 procedure assume_requires_execute(instr: Instruction);
-    modifies flags, step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
+    modifies step, local_monitor, monitor_exclusive, event_register, last_load, last_store;
     ensures (instr is stx ==> local_monitor is exclusive && local_monitor->addr == instr->addr);
     ensures instr is wfe ==> event_register || monitor_exclusive;
 
