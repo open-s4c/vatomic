@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Huawei Technologies Co., Ltd. . All rights reserved.
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
 #include <vsync/atomic.hpp>
@@ -129,8 +129,8 @@ test_fetch_add(void)
     std::atomic<custom_type_t *> mirror(0);
     vsync::atomic<custom_type_t *> var(0);
 
-    custom_type_t * r_var    = 0;
-    custom_type_t * r_mirror = 0;
+    custom_type_t *r_var    = 0;
+    custom_type_t *r_mirror = 0;
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
@@ -149,8 +149,8 @@ test_fetch_sub(void)
     std::atomic<custom_type_t *> mirror(0);
     vsync::atomic<custom_type_t *> var(0);
 
-    custom_type_t * r_var    = 0;
-    custom_type_t * r_mirror = 0;
+    custom_type_t *r_var    = 0;
+    custom_type_t *r_mirror = 0;
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
