@@ -11,14 +11,16 @@
 
 int g_v[10] = {0};
 
-
-std::vector<void *> g_values = {0, nullptr, &g_v};
+typedef int custom_type_t;
+std::vector<custom_type_t *> g_values = {&g_v[0], &g_v[1]};
+std::vector<ptrdiff_t> g_offsets      = {0x1, 0xF, 0x2};
 
 void
-assert_match(vsync::atomic<void *> &var, std::atomic<void *> &mirror)
+assert_match(vsync::atomic<custom_type_t *> &var,
+             std::atomic<custom_type_t *> &mirror)
 {
-    void *v_var    = var.load();
-    void *v_mirror = mirror.load();
+    custom_type_t *v_var    = var.load();
+    custom_type_t *v_mirror = mirror.load();
     if (v_var != v_mirror) {
         std::cerr << "[assert_match] vsync::atomic " << v_var
                   << " =? std::atomic " << v_mirror << std::endl;
@@ -29,9 +31,9 @@ assert_match(vsync::atomic<void *> &var, std::atomic<void *> &mirror)
 void
 test_init(void)
 {
-    for (void *val : g_values) {
-        std::atomic<void *> mirror(val);
-        vsync::atomic<void *> var(val);
+    for (auto val : g_values) {
+        std::atomic<custom_type_t *> mirror(val);
+        vsync::atomic<custom_type_t *> var(val);
         assert_match(var, mirror);
     }
 }
@@ -39,12 +41,12 @@ test_init(void)
 void
 test_store(void)
 {
-    std::atomic<void *> mirror(0);
-    vsync::atomic<void *> var(0);
+    std::atomic<custom_type_t *> mirror(0);
+    vsync::atomic<custom_type_t *> var(0);
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
-        for (void *val : g_values) {
+        for (auto val : g_values) {
             mirror.store(val, static_cast<std::memory_order>(order));
             var.store(val, static_cast<vsync::memory_order>(order));
             assert_match(var, mirror);
@@ -55,14 +57,14 @@ test_store(void)
 void
 test_exchange(void)
 {
-    std::atomic<void *> mirror(0);
-    vsync::atomic<void *> var(0);
-    void *r_var    = 0;
-    void *r_mirror = 0;
+    std::atomic<custom_type_t *> mirror(0);
+    vsync::atomic<custom_type_t *> var(0);
+    custom_type_t *r_var    = 0;
+    custom_type_t *r_mirror = 0;
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
-        for (void *val : g_values) {
+        for (auto val : g_values) {
             r_mirror =
                 mirror.exchange(val, static_cast<std::memory_order>(order));
             r_var = var.exchange(val, static_cast<vsync::memory_order>(order));
@@ -75,27 +77,28 @@ test_exchange(void)
 void
 test_compare_exchange(void)
 {
-    std::atomic<void *> mirror(0);
-    vsync::atomic<void *> var(0);
+    std::atomic<custom_type_t *> mirror(nullptr);
+    vsync::atomic<custom_type_t *> var(nullptr);
 
     bool r_var    = false;
     bool r_mirror = false;
 
-    void *v_var    = 0;
-    void *v_mirror = 0;
+    custom_type_t *v_var    = nullptr;
+    custom_type_t *v_mirror = nullptr;
 
     const vsize_t repeat = 3;
 
+
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
-        for (void *val : g_values) {
+        for (auto val : g_values) {
             v_var = v_mirror = val;
             for (vsize_t i = 0; i < repeat; i++) {
                 r_mirror = mirror.compare_exchange_strong(
-                    v_var, static_cast<std::memory_order>(order),
+                    v_var, v_var, static_cast<std::memory_order>(order),
                     static_cast<std::memory_order>(order));
                 r_var = var.compare_exchange_strong(
-                    v_mirror, static_cast<vsync::memory_order>(order),
+                    v_mirror, v_mirror, static_cast<vsync::memory_order>(order),
                     static_cast<vsync::memory_order>(order));
                 assert_match(var, mirror);
                 assert(r_mirror == r_var);
@@ -103,14 +106,14 @@ test_compare_exchange(void)
             }
         }
 
-        for (void *val : g_values) {
+        for (auto val : g_values) {
             v_var = v_mirror = val;
             for (vsize_t i = 0; i < repeat; i++) {
                 r_mirror = mirror.compare_exchange_weak(
-                    v_var, static_cast<std::memory_order>(order),
+                    v_var, v_var, static_cast<std::memory_order>(order),
                     static_cast<std::memory_order>(order));
                 r_var = var.compare_exchange_weak(
-                    v_mirror, static_cast<vsync::memory_order>(order),
+                    v_mirror, v_var, static_cast<vsync::memory_order>(order),
                     static_cast<vsync::memory_order>(order));
                 assert_match(var, mirror);
                 assert(r_mirror == r_var);
@@ -120,17 +123,57 @@ test_compare_exchange(void)
     }
 }
 
+void
+test_fetch_add(void)
+{
+    std::atomic<custom_type_t *> mirror(0);
+    vsync::atomic<custom_type_t *> var(0);
+
+    custom_type_t * r_var    = 0;
+    custom_type_t * r_mirror = 0;
+
+    for (int order = vsync::memory_order_relaxed;
+         order <= vsync::memory_order_seq_cst; order++) {
+        for (ptrdiff_t val : g_offsets) {
+            r_mirror =
+                mirror.fetch_add(val, static_cast<std::memory_order>(order));
+            r_var = var.fetch_add(val, static_cast<vsync::memory_order>(order));
+            assert_match(var, mirror);
+            assert(r_mirror == r_var);
+        }
+    }
+}
+void
+test_fetch_sub(void)
+{
+    std::atomic<custom_type_t *> mirror(0);
+    vsync::atomic<custom_type_t *> var(0);
+
+    custom_type_t * r_var    = 0;
+    custom_type_t * r_mirror = 0;
+
+    for (int order = vsync::memory_order_relaxed;
+         order <= vsync::memory_order_seq_cst; order++) {
+        for (ptrdiff_t val : g_offsets) {
+            r_mirror =
+                mirror.fetch_sub(val, static_cast<std::memory_order>(order));
+            r_var = var.fetch_sub(val, static_cast<vsync::memory_order>(order));
+            assert_match(var, mirror);
+            assert(r_mirror == r_var);
+        }
+    }
+}
 
 void
 test_INC_overload(void)
 {
-    std::atomic<void *> mirror(0);
-    vsync::atomic<void *> var(0);
+    std::atomic<custom_type_t *> mirror(0);
+    vsync::atomic<custom_type_t *> var(0);
 
-    void *r_var    = 0;
-    void *r_mirror = 0;
+    custom_type_t *r_var    = 0;
+    custom_type_t *r_mirror = 0;
 
-    for (void *val : g_values) {
+    for (auto val : g_values) {
         mirror = var = val;
         r_mirror     = mirror++;
         r_var        = var++;
@@ -138,7 +181,7 @@ test_INC_overload(void)
         assert(r_mirror == r_var);
     }
 
-    for (void *val : g_values) {
+    for (auto val : g_values) {
         mirror = var = val;
         r_mirror     = ++mirror;
         r_var        = ++var;
@@ -149,13 +192,13 @@ test_INC_overload(void)
 void
 test_DEC_overload(void)
 {
-    std::atomic<void *> mirror(0);
-    vsync::atomic<void *> var(0);
+    std::atomic<custom_type_t *> mirror(0);
+    vsync::atomic<custom_type_t *> var(0);
 
-    void *r_var    = 0;
-    void *r_mirror = 0;
+    custom_type_t *r_var    = 0;
+    custom_type_t *r_mirror = 0;
 
-    for (void *val : g_values) {
+    for (auto val : g_values) {
         mirror = var = val;
         r_mirror     = mirror--;
         r_var        = var--;
@@ -163,7 +206,7 @@ test_DEC_overload(void)
         assert(r_mirror == r_var);
     }
 
-    for (void *val : g_values) {
+    for (auto val : g_values) {
         mirror = var = val;
         r_mirror     = --mirror;
         r_var        = --var;
@@ -180,5 +223,9 @@ main(void)
     test_store();
     test_exchange();
     test_compare_exchange();
+    test_fetch_add();
+    test_fetch_sub();
+    test_INC_overload();
+    test_DEC_overload();
     return 0;
 }
