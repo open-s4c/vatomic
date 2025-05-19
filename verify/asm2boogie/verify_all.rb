@@ -22,6 +22,7 @@ OptionParser.new do |opts|
       puts "only verifying #{funcs} : #{ops}" 
     else
       options[:which] = v
+      options[:which_failed] = v
     end
   end
 
@@ -69,7 +70,6 @@ if options[:extract]
     options[:archs].each { |arch|
         (library, asm_file) = Archs[arch]
         compile(asm_file, library, options[:which], options[:where], arch)
-        compile(asm_file, library, options[:which], retry_out, arch, unroll=true)
     }
 end
 
@@ -78,7 +78,14 @@ def drop_extension(path)
 end
 
 
-def verify_all(archs, out, limit, phase)
+def verify_all(archs, out, which, limit, phase)
+
+  if which
+    archs.each { |arch|
+        (library, asm_file) = Archs[arch]
+        compile(asm_file, library, which, out, arch, unroll=phase==2)
+    }
+  end
 
   $results = {}
   archs.each { |arch|   
@@ -140,7 +147,7 @@ require 'pp'
 require 'parallel'
 begin
   if options[:phases].include? 1
-    verify_all(options[:archs], options[:where], options[:limit], 1)
+    verify_all(options[:archs], options[:extract] && options[:which], options[:where], options[:limit], 1)
     puts ""
     puts "finished simple verification"
     puts ""
@@ -148,6 +155,7 @@ begin
       
 ensure
   failed_file = "FAILED_#{options[:which]}"
+  options[:which_failed] ||= failed_file
 
   if $results && $results.any? { |result| result.any? { |(_,pass)| ! pass }} 
     if /FAILED_/ =~ options[:which]
@@ -175,14 +183,14 @@ ensure
         puts ""
         puts ""
         
-        verify_all(options[:archs], retry_out, options[:limit], 2)
+        verify_all(options[:archs], retry_out, options[:extract] && failed_file, options[:limit], 2)
 
         puts ""
         puts "finished heavy verification"
       end
     end
-  elsif (options[:phases].include? 2) && options[:limit]
-    verify_all(options[:archs], retry_out, options[:limit], 2)
+  elsif (options[:phases].include? 2)
+    verify_all(options[:archs], retry_out, options[:extract] && options[:which_failed], options[:limit], 2)
 
 
   end
