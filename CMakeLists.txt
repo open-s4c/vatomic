@@ -36,7 +36,6 @@ if(VATOMIC_DEV)
     # Atomic templating
     add_subdirectory(template)
     add_subdirectory(tmplr)
-    add_subdirectory(cpp)
 
     # Basic format sanitization
     add_custom_target(
