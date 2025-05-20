@@ -20,6 +20,19 @@ _tmpl_begin(TY = [[u8; u16; u32; u64; sz]]);
 namespace vsync
 {
 template <> struct atomic<TT> {
+    atomic(const atomic &)                     = delete;
+    atomic &operator=(const atomic &)          = delete;
+    atomic &operator=(const atomic &) volatile = delete;
+
+    atomic()
+    {
+        __vatomic_init(&_v, 0);
+    }
+    atomic(TT v)
+    {
+        __vatomic_init(&_v, v);
+    }
+
     TT load(memory_order order = memory_order_seq_cst) const noexcept
     {
         switch (order) {
@@ -30,7 +43,6 @@ template <> struct atomic<TT> {
                 return __vatomic_read_rlx(&_v);
             case memory_order_release:
             case memory_order_acq_rel:
-            // TODO: warn about it
             case memory_order_seq_cst:
             default:
                 return __vatomic_read(&_v);
@@ -48,25 +60,11 @@ template <> struct atomic<TT> {
             case memory_order_acquire:
             case memory_order_acq_rel:
             case memory_order_consume:
-            // TODO: warn about it
             case memory_order_seq_cst:
             default:
                 return __vatomic_write(&_v, v);
         }
     }
-
-    atomic()
-    {
-        __vatomic_init(&_v, 0);
-    }
-    atomic(TT v)
-    {
-        __vatomic_init(&_v, v);
-    }
-
-    atomic(const atomic &)                     = delete;
-    atomic &operator=(const atomic &)          = delete;
-    atomic &operator=(const atomic &) volatile = delete;
 
     TT operator=(TT v) noexcept
     {

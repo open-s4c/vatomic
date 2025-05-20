@@ -10,6 +10,19 @@
 namespace vsync
 {
     template <> struct atomic<vuint8_t> {
+        atomic(const atomic &)                     = delete;
+        atomic &operator=(const atomic &)          = delete;
+        atomic &operator=(const atomic &) volatile = delete;
+
+        atomic()
+        {
+            vatomic8_init(&_v, 0);
+        }
+        atomic(vuint8_t v)
+        {
+            vatomic8_init(&_v, v);
+        }
+
         vuint8_t load(memory_order order = memory_order_seq_cst) const noexcept
         {
             switch (order) {
@@ -20,7 +33,6 @@ namespace vsync
                     return vatomic8_read_rlx(&_v);
                 case memory_order_release:
                 case memory_order_acq_rel:
-                // TODO: warn about it
                 case memory_order_seq_cst:
                 default:
                     return vatomic8_read(&_v);
@@ -39,25 +51,11 @@ namespace vsync
                 case memory_order_acquire:
                 case memory_order_acq_rel:
                 case memory_order_consume:
-                // TODO: warn about it
                 case memory_order_seq_cst:
                 default:
                     return vatomic8_write(&_v, v);
             }
         }
-
-        atomic()
-        {
-            vatomic8_init(&_v, 0);
-        }
-        atomic(vuint8_t v)
-        {
-            vatomic8_init(&_v, v);
-        }
-
-        atomic(const atomic &)                     = delete;
-        atomic &operator=(const atomic &)          = delete;
-        atomic &operator=(const atomic &) volatile = delete;
 
         vuint8_t operator=(vuint8_t v) noexcept
         {
