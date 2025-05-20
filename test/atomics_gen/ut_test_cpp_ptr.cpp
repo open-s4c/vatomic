@@ -197,7 +197,7 @@ test_INC_overload(void)
         r_mirror = ++mirror;
         r_var    = ++var;
 
-        if (i < ARR_LEN) {
+        if (i < (ARR_LEN - 1)) {
             assert(*mirror == g_arr[i + 1]);
             assert(*var == g_arr[i + 1]);
         }
