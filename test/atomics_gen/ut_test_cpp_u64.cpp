@@ -82,18 +82,17 @@ test_compare_exchange(void)
     vuint64_t v_var    = 0;
     vuint64_t v_mirror = 0;
 
-    const vsize_t repeat = 3;
+    constexpr vsize_t repeat = 3;
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
         for (vuint64_t val : g_values) {
-            v_var = v_mirror = val;
             for (vsize_t i = 0; i < repeat; i++) {
                 r_mirror = mirror.compare_exchange_strong(
-                    v_var, static_cast<std::memory_order>(order),
+                    v_var, val, static_cast<std::memory_order>(order),
                     static_cast<std::memory_order>(order));
                 r_var = var.compare_exchange_strong(
-                    v_mirror, static_cast<vsync::memory_order>(order),
+                    v_mirror, val, static_cast<vsync::memory_order>(order),
                     static_cast<vsync::memory_order>(order));
                 assert_match(var, mirror);
                 assert(r_mirror == r_var);
@@ -102,13 +101,12 @@ test_compare_exchange(void)
         }
 
         for (vuint64_t val : g_values) {
-            v_var = v_mirror = val;
             for (vsize_t i = 0; i < repeat; i++) {
                 r_mirror = mirror.compare_exchange_weak(
-                    v_var, static_cast<std::memory_order>(order),
+                    v_var, val, static_cast<std::memory_order>(order),
                     static_cast<std::memory_order>(order));
                 r_var = var.compare_exchange_weak(
-                    v_mirror, static_cast<vsync::memory_order>(order),
+                    v_mirror, val, static_cast<vsync::memory_order>(order),
                     static_cast<vsync::memory_order>(order));
                 assert_match(var, mirror);
                 assert(r_mirror == r_var);
