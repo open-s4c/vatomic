@@ -6,6 +6,8 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/templates)
     add_subdirectory(templates)
 endif()
 
+set(CMAKE_CXX_STANDARD 17)
+
 file(GLOB TESTS *test*.c*)
 foreach(test IN ITEMS ${TESTS})
     get_filename_component(TEST ${test} NAME_WE)
