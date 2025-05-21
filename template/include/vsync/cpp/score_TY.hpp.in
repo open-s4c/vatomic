@@ -1,10 +1,48 @@
 /*
- * Copyright (C) Huawei Technologies Co., Ltd. . All rights reserved.
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
+#define _tmpl_mute
+#include <vsync/atomic/tmplr.h>
+#define _tmpl_unmute
+_tmpl_map(MAP_MIRROR_s8, vuint8_t);
+_tmpl_map(MAP_MIRROR_s16, vuint16_t);
+_tmpl_map(MAP_MIRROR_s32, vuint32_t);
+_tmpl_map(MAP_MIRROR_s64, vuint64_t);
 _tmpl_begin(TY = [[s8; s16; s32; s64;]]);
+extern "C" {
+    #include <vsync/atomic.h>
+}
 namespace vsync
 {
+    template <> struct atomic<TT> {
+        atomic(const atomic &)                     = delete;
+        atomic &operator=(const atomic &)          = delete;
+        atomic &operator=(const atomic &) volatile = delete;
+        atomic() : _a()
+        {
 
+        }
+        atomic(TT v) : _a(static_cast<MAP_MIRROR_TY>(v))
+        {
+        }
+
+        TT load(memory_order order = memory_order_seq_cst) const noexcept
+        {
+            return _a.load(order);
+        }
+        void store(TT v, memory_order order = memory_order_seq_cst) noexcept
+        {
+            _a.store(static_cast<MAP_MIRROR_TY>(v), order);
+        }
+
+        TT exchange(TT v, memory_order order = memory_order_seq_cst) noexcept
+        {
+            return static_cast<TT>(_a.exchange(static_cast<MAP_MIRROR_TY>(v), order));
+        }
+
+        private:
+           vsync::atomic<MAP_MIRROR_TY> _a;
+    };
 }
 _tmpl_end;

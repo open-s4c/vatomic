@@ -46,4 +46,7 @@ main(void)
 
     TestAtomics<unsigned short, 0, 0xfff, VUINT16_MAX> _short;
     _short.test_all();
+
+    TestAtomics<signed char, 0, 0xf, 127> _char;
+    _char.test_all();
 }
