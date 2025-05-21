@@ -242,7 +242,48 @@ test_DEC_overload(void)
     }
 }
 
+constexpr vsize_t len = 10;
+typedef struct student_s {
+    vuint64_t id;
+    char name[10];
+} student_t;
 
+void test_ptr_arithmetic(void) {
+    student_t students[len] = {};
+    vsync::atomic<student_t *> var(&students[0]);
+    std::atomic<student_t *> mirror(&students[0]);
+
+    constexpr ptrdiff_t offset = 3;
+    var.fetch_add(offset);
+    mirror.fetch_add(offset);
+    assert(var == mirror);
+    assert(var == &students[offset]);
+
+    var.fetch_sub(offset);
+    mirror.fetch_sub(offset);
+    assert(var == mirror);
+    assert(var == &students[0]);
+
+    var++;
+    mirror++;
+    assert(var == mirror);
+    assert(var == &students[1]);
+
+    ++var;
+    ++mirror;
+    assert(var == mirror);
+    assert(var == &students[2]);
+
+    var--;
+    mirror--;
+    assert(var == mirror);
+    assert(var == &students[1]);
+
+    --var;
+    --mirror;
+    assert(var == mirror);
+    assert(var == &students[0]);
+}
 int
 main(void)
 {
@@ -254,5 +295,6 @@ main(void)
     test_fetch_sub();
     test_INC_overload();
     test_DEC_overload();
+    test_ptr_arithmetic();
     return 0;
 }
