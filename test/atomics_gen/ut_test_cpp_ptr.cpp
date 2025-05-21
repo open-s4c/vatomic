@@ -248,10 +248,11 @@ typedef struct student_s {
     char name[10];
 } student_t;
 
+template<typename SubjectType>
 void test_ptr_arithmetic(void) {
-    student_t students[len] = {};
-    vsync::atomic<student_t *> var(&students[0]);
-    std::atomic<student_t *> mirror(&students[0]);
+    SubjectType students[len] = {};
+    vsync::atomic<SubjectType *> var(&students[0]);
+    std::atomic<SubjectType *> mirror(&students[0]);
 
     constexpr ptrdiff_t offset = 3;
     var.fetch_add(offset);
@@ -295,6 +296,9 @@ main(void)
     test_fetch_sub();
     test_INC_overload();
     test_DEC_overload();
-    test_ptr_arithmetic();
+    test_ptr_arithmetic<student_t>();
+    test_ptr_arithmetic<char>();
+    test_ptr_arithmetic<vuint16_t>();
+    test_ptr_arithmetic<vuint64_t>();
     return 0;
 }
