@@ -6,7 +6,7 @@
 #define _tmpl_mute
 #include <vsync/atomic/tmplr.h>
 #define _tmpl_unmute
-_tmpl_begin(TY = [[u8; u16; u32; u64; sz]]);
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]]);
 #ifndef VATOMIC_CORE_UPCASE_TY__HPP
 #define VATOMIC_CORE_UPCASE_TY__HPP
 _tmpl_end;
@@ -15,40 +15,67 @@ _tmpl_begin(=);
 AUTOGEN
 _tmpl_end;
 _tmpl_dl; //--------------------------------------
-#include <vsync/atomic.h>
-_tmpl_begin(TY = [[u8; u16; u32; u64; sz]]);
+extern "C" {
+    #include <vsync/atomic.h>
+}
+_tmpl_map(MAP_TMPL_T_ptr, PTR *);
+_tmpl_map(MAP_TMPL_N_ptr, typename PTR);
+_tmpl_map(MAP_CAST_ptr, static_cast<PTR *>);
+_tmpl_map(MAP_INIT_ptr, nullptr);
+_tmpl_map(MAP_TMPL_T_u8, TT);
+_tmpl_map(MAP_TMPL_N_u8, );
+_tmpl_map(MAP_INIT_u8, 0U);
+_tmpl_map(MAP_CAST_u8, );
+_tmpl_map(MAP_TMPL_T_u16, TT);
+_tmpl_map(MAP_TMPL_N_u16, );
+_tmpl_map(MAP_INIT_u16, 0U);
+_tmpl_map(MAP_CAST_u16, );
+_tmpl_map(MAP_TMPL_T_u32, TT);
+_tmpl_map(MAP_TMPL_N_u32, );
+_tmpl_map(MAP_CAST_u32, );
+_tmpl_map(MAP_INIT_u32, 0U);
+_tmpl_map(MAP_TMPL_T_u64, TT);
+_tmpl_map(MAP_TMPL_N_u64, );
+_tmpl_map(MAP_CAST_u64, );
+_tmpl_map(MAP_INIT_u64, 0U);
+_tmpl_map(MAP_TMPL_T_sz, TT);
+_tmpl_map(MAP_TMPL_N_sz, );
+_tmpl_map(MAP_CAST_sz, );
+_tmpl_map(MAP_INIT_sz, 0U);
+
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]]);
 namespace vsync
 {
-template <> struct atomic<TT> {
+template <MAP_TMPL_N_TY> struct atomic<MAP_TMPL_T_TY> {
     atomic(const atomic &)                     = delete;
     atomic &operator=(const atomic &)          = delete;
     atomic &operator=(const atomic &) volatile = delete;
 
     atomic()
     {
-        __vatomic_init(&_v, 0);
+        __vatomic_init(&_v, MAP_INIT_TY);
     }
-    atomic(TT v)
+    atomic(MAP_TMPL_T_TY v)
     {
         __vatomic_init(&_v, v);
     }
 
-    TT load(memory_order order = memory_order_seq_cst) const noexcept
+    MAP_TMPL_T_TY load(memory_order order = memory_order_seq_cst) const noexcept
     {
         switch (order) {
             case memory_order_consume:
             case memory_order_acquire:
-                return __vatomic_read_acq(&_v);
+                return MAP_CAST_TY(__vatomic_read_acq(&_v));
             case memory_order_relaxed:
-                return __vatomic_read_rlx(&_v);
+                return MAP_CAST_TY(__vatomic_read_rlx(&_v));
             case memory_order_release:
             case memory_order_acq_rel:
             case memory_order_seq_cst:
             default:
-                return __vatomic_read(&_v);
+                return MAP_CAST_TY(__vatomic_read(&_v));
         }
     }
-    void store(TT v, memory_order order = memory_order_seq_cst) noexcept
+    void store(MAP_TMPL_T_TY v, memory_order order = memory_order_seq_cst) noexcept
     {
         switch (order) {
             case memory_order_release:
@@ -66,56 +93,56 @@ template <> struct atomic<TT> {
         }
     }
 
-    TT operator=(TT v) noexcept
+    MAP_TMPL_T_TY operator=(MAP_TMPL_T_TY v) noexcept
     {
         store(v);
         return v;
     }
 
-    operator TT() const noexcept
+    operator MAP_TMPL_T_TY() const noexcept
     {
         return load();
     }
 
-    TT exchange(TT v,
+    MAP_TMPL_T_TY exchange(MAP_TMPL_T_TY v,
                        memory_order order = memory_order_seq_cst) noexcept
     {
         switch (order) {
             case memory_order_release:
-                return __vatomic_xchg_rel(&_v, v);
+                return MAP_CAST_TY(__vatomic_xchg_rel(&_v, v));
             case memory_order_relaxed:
-                return __vatomic_xchg_rlx(&_v, v);
+                return MAP_CAST_TY(__vatomic_xchg_rlx(&_v, v));
             case memory_order_consume:
             case memory_order_acquire:
-                return __vatomic_xchg_acq(&_v, v);
+                return MAP_CAST_TY(__vatomic_xchg_acq(&_v, v));
             case memory_order_acq_rel:
             case memory_order_seq_cst:
             default:
-                return __vatomic_xchg(&_v, v);
+                return MAP_CAST_TY(__vatomic_xchg(&_v, v));
         }
     }
 
     bool compare_exchange_strong(
-        TT &expected, TT desired,
+        MAP_TMPL_T_TY &expected, MAP_TMPL_T_TY desired,
         memory_order order   = memory_order_seq_cst,
         memory_order failure = memory_order_seq_cst) noexcept
     {
-        TT old = 0;
+        MAP_TMPL_T_TY old = 0;
         switch (order) {
             case memory_order_release:
-                old = __vatomic_cmpxchg_rel(&_v, expected, desired);
+                old = MAP_CAST_TY(__vatomic_cmpxchg_rel(&_v, expected, desired));
                 break;
             case memory_order_relaxed:
-                old = __vatomic_cmpxchg_rlx(&_v, expected, desired);
+                old = MAP_CAST_TY(__vatomic_cmpxchg_rlx(&_v, expected, desired));
                 break;
             case memory_order_consume:
             case memory_order_acquire:
-                old = __vatomic_cmpxchg_acq(&_v, expected, desired);
+                old = MAP_CAST_TY(__vatomic_cmpxchg_acq(&_v, expected, desired));
                 break;
             case memory_order_acq_rel:
             case memory_order_seq_cst:
             default:
-                old = __vatomic_cmpxchg(&_v, expected, desired);
+                old = MAP_CAST_TY(__vatomic_cmpxchg(&_v, expected, desired));
                 break;
         }
         if (old == expected) {
@@ -125,45 +152,43 @@ template <> struct atomic<TT> {
             return false;
         }
     }
-
-    TT
-    compare_exchange_weak(TT &expected, TT desired,
+    bool
+    compare_exchange_weak(MAP_TMPL_T_TY &expected, MAP_TMPL_T_TY desired,
                           memory_order order   = memory_order_seq_cst,
                           memory_order failure = memory_order_seq_cst) noexcept
     {
         return compare_exchange_strong(expected, desired, order, failure);
     }
 
-
+_tmpl_end;
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz]]);
     TT fetch_add(TT v,
                         memory_order order = memory_order_seq_cst) noexcept
     {
         switch (order) {
             case memory_order_release:
-                return __vatomic_get_add_rel(&_v, v);
+                return MAP_CAST_TY(__vatomic_get_add_rel(&_v, v));
             case memory_order_relaxed:
-                return __vatomic_get_add_rlx(&_v, v);
+                return MAP_CAST_TY(__vatomic_get_add_rlx(&_v, v));
             case memory_order_consume:
             case memory_order_acquire:
-                return __vatomic_get_add_acq(&_v, v);
+                return MAP_CAST_TY(__vatomic_get_add_acq(&_v, v));
             case memory_order_acq_rel:
             case memory_order_seq_cst:
             default:
-                return __vatomic_get_add(&_v, v);
+                return MAP_CAST_TY(__vatomic_get_add(&_v, v));
         }
     }
-
-
     TT operator+=(TT v) noexcept
     {
         return fetch_add(v);
     }
-
+    // v++
     TT operator++(int) noexcept
     {
         return __vatomic_get_inc(&_v);
     }
-
+    // ++v
     TT operator++() noexcept
     {
         return __vatomic_inc_get(&_v);
@@ -186,17 +211,16 @@ template <> struct atomic<TT> {
                 return __vatomic_get_sub(&_v, v);
         }
     }
-
     TT operator-=(TT v) noexcept
     {
         return fetch_sub(v);
     }
-
+    // v--
     TT operator--(int) noexcept
     {
         return __vatomic_get_dec(&_v);
     }
-
+    // --v
     TT operator--() noexcept
     {
         return __vatomic_dec_get(&_v);
@@ -270,8 +294,78 @@ template <> struct atomic<TT> {
     {
         return fetch_xor(v);
     }
+_tmpl_end;
+_tmpl_begin(TY = [[ptr]]);
+        MAP_TMPL_T_TY fetch_add(ptrdiff_t v,
+                       memory_order order = memory_order_seq_cst) noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return add_rel(v, true);
+                case memory_order_relaxed:
+                    return add_rlx(v, true);
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return add_acq(v, true);
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return add(v, true);
+            }
+        }
+        MAP_TMPL_T_TY operator+=(ptrdiff_t v) noexcept
+        {
+            return add(v, true);
+        }
+        // ptr++
+        MAP_TMPL_T_TY operator++(int) noexcept
+        {
+            return add(1, true);
+        }
+        // ++ptr
+        MAP_TMPL_T_TY operator++() noexcept
+        {
+            return add(1, false);
+        }
 
+        MAP_TMPL_T_TY fetch_sub(ptrdiff_t v,
+                       memory_order order = memory_order_seq_cst) noexcept
+        {
+            return fetch_add(-v, order);
+        }
 
+        MAP_TMPL_T_TY operator-=(ptrdiff_t v) noexcept
+        {
+            return add(-v, true);
+        }
+        // ptr--
+        MAP_TMPL_T_TY operator--(int) noexcept
+        {
+            return add(-1, true);
+        }
+        // --ptr
+        MAP_TMPL_T_TY operator--() noexcept
+        {
+            return add(-1, false);
+        }
+_tmpl_end;
+_tmpl_begin(TY = [[ptr]], MO = [[seq; acq; rel; rlx]]);
+inline MAP_TMPL_T_TY add_MS(ptrdiff_t v, bool return_old)
+{
+    MAP_TMPL_T_TY old      = nullptr;
+    MAP_TMPL_T_TY expected = nullptr;
+    MAP_TMPL_T_TY desired  = nullptr;
+    old = MAP_CAST_TY(vatomicptr_read(&_v));
+    do {
+        expected = old;
+        desired  = expected + v;
+        old      = MAP_CAST_TY(
+            __vatomic_cmpxchg_MS(&_v, expected, desired));
+    } while (old != expected);
+    return return_old ? old : desired;
+}
+_tmpl_end;
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]]);
     bool is_lock_free() const noexcept
     {
         return true;

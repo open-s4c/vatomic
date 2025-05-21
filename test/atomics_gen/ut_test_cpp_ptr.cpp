@@ -248,8 +248,10 @@ typedef struct student_s {
     char name[10];
 } student_t;
 
-template<typename SubjectType>
-void test_ptr_arithmetic(void) {
+template <typename SubjectType>
+void
+test_ptr_arithmetic(void)
+{
     SubjectType students[len] = {};
     vsync::atomic<SubjectType *> var(&students[0]);
     std::atomic<SubjectType *> mirror(&students[0]);

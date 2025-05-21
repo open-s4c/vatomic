@@ -1,7 +1,7 @@
 # Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # SPDX-License-Identifier: MIT
 
-set(TYPES u8 u16 u32 u64 sz)
+set(TYPES u8 u16 u32 u64 sz ptr)
 set(TARGETS core)
 foreach(TARGET ${TARGETS})
     set(TMPL ${TARGET}_TY.hpp)
