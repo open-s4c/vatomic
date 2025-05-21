@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
 #include <vsync/atomic.hpp>
 #include <atomic>
 #include <cassert>
@@ -42,6 +46,4 @@ main(void)
 
     TestAtomics<unsigned short, 0, 0xfff, VUINT16_MAX> _short;
     _short.test_all();
-
-
 }

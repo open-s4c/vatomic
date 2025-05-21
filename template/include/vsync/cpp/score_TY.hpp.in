@@ -1,0 +1,10 @@
+/*
+ * Copyright (C) Huawei Technologies Co., Ltd. . All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
+_tmpl_begin(TY = [[s8; s16; s32; s64;]]);
+namespace vsync
+{
+
+}
+_tmpl_end;
