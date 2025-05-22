@@ -5,6 +5,10 @@
 #ifndef VSYNC_ATOMIC_HPP
 #define VSYNC_ATOMIC_HPP
 
+#include <cassert>
+extern "C" {
+#include <vsync/atomic.h>
+}
 namespace vsync
 {
     typedef enum memory_order {
@@ -17,6 +21,27 @@ namespace vsync
     } memory_order;
 
     template <typename T> struct atomic;
+
+    void atomic_thread_fence(vsync::memory_order order) {
+        switch(order) {
+            case memory_order_consume:
+            case memory_order_acquire:
+                vatomic_fence_acq();
+                break;
+            case memory_order_relaxed:
+                vatomic_fence_rlx();
+                break;
+            case memory_order_release:
+                vatomic_fence_rel();
+                break;
+            case memory_order_acq_rel:
+            case memory_order_seq_cst:
+                vatomic_fence();
+                break;
+            default:
+                assert(0 && "Order is not supported");
+        }
+    }
 } // namespace vsync
 
 #include "cpp/atomic/core_u8.hpp"

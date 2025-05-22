@@ -306,6 +306,14 @@ test_DEC_overload(void)
     }
 }
 
+void
+ut_fences()
+{
+    for (int order = vsync::memory_order_relaxed;
+         order <= vsync::memory_order_seq_cst; order++) {
+        vsync::atomic_thread_fence(static_cast<vsync::memory_order>(order));
+    }
+}
 
 int
 main(void)
