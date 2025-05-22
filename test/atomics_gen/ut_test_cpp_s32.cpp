@@ -9,7 +9,7 @@
 #include <vector>
 
 
-std::vector<vint32_t> g_values = {0, MAP_VALS_s32};
+std::vector<vint32_t> g_values = {0, VINT8_MAX, VINT16_MAX, VINT32_MAX};
 
 void
 assert_match(vsync::atomic<vint32_t> &var, std::atomic<vint32_t> &mirror)

@@ -9,7 +9,7 @@
 #include <vector>
 
 
-std::vector<vuint16_t> g_values = {0, VINT8_MAX, VINT16_MAX};
+std::vector<vuint16_t> g_values = {0, VUINT8_MAX, VUINT16_MAX};
 
 void
 assert_match(vsync::atomic<vuint16_t> &var, std::atomic<vuint16_t> &mirror)

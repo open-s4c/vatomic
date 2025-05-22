@@ -9,8 +9,8 @@
 #include <vector>
 
 
-std::vector<vuint64_t> g_values = {0, VINT8_MAX, VINT16_MAX, VINT32_MAX,
-                                   VINT64_MAX};
+std::vector<vuint64_t> g_values = {0, VUINT8_MAX, VUINT16_MAX, VUINT32_MAX,
+                                   VUINT64_MAX};
 
 void
 assert_match(vsync::atomic<vuint64_t> &var, std::atomic<vuint64_t> &mirror)

@@ -20,7 +20,6 @@ namespace vsync
 } // namespace vsync
 
 #include "cpp/atomic/core_u8.hpp"
-#include "cpp/atomic/score_s8.hpp"
 #include "cpp/atomic/core_u16.hpp"
 #include "cpp/atomic/core_u32.hpp"
 #if defined(__APPLE__)
@@ -28,4 +27,8 @@ namespace vsync
 #endif
 #include "cpp/atomic/core_u64.hpp"
 #include "cpp/atomic/core_ptr.hpp"
+#include "cpp/atomic/score_s8.hpp"
+#include "cpp/atomic/score_s16.hpp"
+#include "cpp/atomic/score_s32.hpp"
+#include "cpp/atomic/score_s64.hpp"
 #endif
