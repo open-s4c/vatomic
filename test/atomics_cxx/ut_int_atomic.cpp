@@ -5,7 +5,8 @@
 #include <limits>
 #include <typeinfo>
 #include <iostream>
-
+#include <ranges>
+/* Success criteria is to match the behavior of std::atomic */
 template <typename TT> struct TestAtomics {
     void ut_rw()
     {
@@ -14,61 +15,221 @@ template <typename TT> struct TestAtomics {
             subject = v;
             assert(mirror == subject);
         }
-    }
 
+        for (int order = vsync::memory_order_relaxed;
+             order <= vsync::memory_order_seq_cst; order++) {
+            for (TT v : vals) {
+                mirror.store(v, static_cast<std::memory_order>(order));
+                subject.store(v, static_cast<vsync::memory_order>(order));
+                assert(mirror.load(static_cast<std::memory_order>(order)) ==
+                       subject.load(static_cast<vsync::memory_order>(order)));
+            }
+        }
+    }
     void ut_xchg()
     {
-        for (TT v : vals) {
-            TT mirror_r  = mirror.exchange(v);
-            TT subject_r = subject.exchange(v);
-            assert(mirror_r == subject_r);
-            assert(mirror == subject);
+        for (int order = vsync::memory_order_relaxed;
+             order <= vsync::memory_order_seq_cst; order++) {
+            for (TT v : vals) {
+                TT mirror_r =
+                    mirror.exchange(v, static_cast<std::memory_order>(order));
+                TT subject_r = subject.exchange(
+                    v, static_cast<vsync::memory_order>(order));
+                assert(mirror_r == subject_r);
+                assert(mirror == subject);
+            }
         }
     }
+    void ut_cmpxchg()
+    {
+        constexpr vsize_t repeat = 3;
+        bool r_var               = false;
+        bool r_mirror            = false;
+        TT v_var                 = 0;
+        TT v_mirror              = 0;
 
-    void ut_dec() {
+        for (int order = vsync::memory_order_relaxed;
+             order <= vsync::memory_order_seq_cst; order++) {
+            for (TT val : vals) {
+                for (vsize_t i = 0; i < repeat; i++) {
+                    r_mirror = mirror.compare_exchange_strong(
+                        v_var, val, static_cast<std::memory_order>(order),
+                        static_cast<std::memory_order>(order));
+                    r_var = subject.compare_exchange_strong(
+                        v_mirror, val, static_cast<vsync::memory_order>(order),
+                        static_cast<vsync::memory_order>(order));
+                    assert(subject == mirror);
+                    assert(r_mirror == r_var);
+                    assert(v_var == v_mirror);
+                }
+            }
+
+            for (TT val : vals) {
+                for (vsize_t i = 0; i < repeat; i++) {
+                    r_mirror = mirror.compare_exchange_weak(
+                        v_var, val, static_cast<std::memory_order>(order),
+                        static_cast<std::memory_order>(order));
+                    r_var = subject.compare_exchange_weak(
+                        v_mirror, val, static_cast<vsync::memory_order>(order),
+                        static_cast<vsync::memory_order>(order));
+                    assert(subject == mirror);
+                    assert(r_mirror == r_var);
+                    assert(v_var == v_mirror);
+                }
+            }
+        }
+    }
+    void ut_dec()
+    {
         TT r_var    = 0;
         TT r_mirror = 0;
 
         for (TT val : vals) {
             mirror = subject = val;
-            r_mirror     = mirror--;
-            r_var        = subject--;
+            r_mirror         = mirror--;
+            r_var            = subject--;
             assert(mirror == subject);
             assert(r_mirror == r_var);
         }
 
         for (TT val : vals) {
             mirror = subject = val;
-            r_mirror     = --mirror;
-            r_var        = --subject;
+            r_mirror         = --mirror;
+            r_var            = --subject;
             assert(mirror == subject);
             assert(r_mirror == r_var);
         }
     }
-
-    void ut_inc() {
+    void ut_inc()
+    {
         TT r_var    = 0;
         TT r_mirror = 0;
 
         for (TT val : vals) {
             mirror = subject = val;
-            r_mirror     = mirror++;
-            r_var        = subject++;
+            r_mirror         = mirror++;
+            r_var            = subject++;
             assert(mirror == subject);
             assert(r_mirror == r_var);
         }
 
         for (TT val : vals) {
             mirror = subject = val;
-            r_mirror     = ++mirror;
-            r_var        = ++subject;
+            r_mirror         = ++mirror;
+            r_var            = ++subject;
             assert(mirror == subject);
             assert(r_mirror == r_var);
         }
     }
+    void ut_fetch_xor()
+    {
+        TT r_var    = 0;
+        TT r_mirror = 0;
 
-    void ut_bitwise() {
+        for (int order = vsync::memory_order_relaxed;
+             order <= vsync::memory_order_seq_cst; order++) {
+            subject = mirror = max;
+            for (TT val : vals) {
+                r_mirror = mirror.fetch_xor(
+                    val, static_cast<std::memory_order>(order));
+                r_var = subject.fetch_xor(
+                    val, static_cast<vsync::memory_order>(order));
+                assert(subject == mirror);
+                assert(r_mirror == r_var);
+            }
+        }
+    }
+    void ut_fetch_or()
+    {
+        TT r_var    = 0;
+        TT r_mirror = 0;
+
+        for (int order = vsync::memory_order_relaxed;
+             order <= vsync::memory_order_seq_cst; order++) {
+            subject = mirror = min;
+            for (TT val : vals) {
+                r_mirror =
+                    mirror.fetch_or(val, static_cast<std::memory_order>(order));
+                r_var = subject.fetch_or(
+                    val, static_cast<vsync::memory_order>(order));
+                assert(subject == mirror);
+                assert(r_mirror == r_var);
+            }
+        }
+    }
+    void ut_fetch_and()
+    {
+        TT r_var    = 0;
+        TT r_mirror = 0;
+
+        for (int order = vsync::memory_order_relaxed;
+             order <= vsync::memory_order_seq_cst; order++) {
+            subject = mirror = max;
+            // TODO: reverse vals start from end and go to begin
+            for (TT val : vals) {
+                r_mirror = mirror.fetch_and(
+                    val, static_cast<std::memory_order>(order));
+                r_var = subject.fetch_and(
+                    val, static_cast<vsync::memory_order>(order));
+                assert(subject == mirror);
+                assert(r_mirror == r_var);
+            }
+        }
+    }
+    void ut_add_overload() {
+        mirror = subject = min;
+        for(TT v: vals) {
+            mirror+= v;
+            subject+= v;
+            assert(mirror == subject);
+        }
+    }
+    void ut_sub_overload() {
+        mirror = subject = max;
+        for(TT v: vals) {
+            mirror-= v;
+            subject-= v;
+            assert(mirror == subject);
+        }
+    }
+    void ut_fetch_add()
+    {
+        TT r_var    = 0;
+        TT r_mirror = 0;
+
+        for (int order = vsync::memory_order_relaxed;
+             order <= vsync::memory_order_seq_cst; order++) {
+                mirror = subject = min;
+            for (TT val : vals) {
+                r_mirror = mirror.fetch_add(
+                    val, static_cast<std::memory_order>(order));
+                r_var = subject.fetch_add(
+                    val, static_cast<vsync::memory_order>(order));
+                assert(subject == mirror);
+                assert(r_mirror == r_var);
+            }
+        }
+    }
+    void ut_fetch_sub()
+    {
+        TT r_var    = 0;
+        TT r_mirror = 0;
+
+        for (int order = vsync::memory_order_relaxed;
+             order <= vsync::memory_order_seq_cst; order++) {
+            mirror = subject = max;
+            for (TT val : vals) {
+                r_mirror = mirror.fetch_sub(
+                    val, static_cast<std::memory_order>(order));
+                r_var = subject.fetch_sub(
+                    val, static_cast<vsync::memory_order>(order));
+                assert(subject == mirror);
+                assert(r_mirror == r_var);
+            }
+        }
+    }
+    void ut_bitwise()
+    {
         mirror = subject = max;
         for (TT val : vals) {
             mirror ^= val;
@@ -88,26 +249,39 @@ template <typename TT> struct TestAtomics {
     static void run_tests()
     {
         static TestAtomics<TT> ins;
-        std::cout<<"Testing type [" << typeid(TT).name() << "] Max = " << max << " Min = " << min << " with size = " << sizeof(TT) << "byte(s)" << std::endl;
+        std::cout << "Testing type [" << typeid(TT).name() << "] Max = " << max
+                  << " Min = " << min << " with size = " << sizeof(TT)
+                  << "byte(s)" << std::endl;
+
+        assert(ins.mirror == ins.subject);
         ins.ut_rw();
-        ins.ut_dec();
         ins.ut_xchg();
         ins.ut_inc();
+        ins.ut_fetch_add();
+        ins.ut_add_overload();
+        ins.ut_dec();
+        ins.ut_fetch_sub();
+        ins.ut_sub_overload();
+        ins.ut_fetch_xor();
+        ins.ut_fetch_or();
+        ins.ut_fetch_and();
         ins.ut_bitwise();
+        ins.ut_cmpxchg();
+        assert(ins.mirror == ins.subject);
     }
 
     static constexpr TT max = std::numeric_limits<TT>::max();
     static constexpr TT min = std::numeric_limits<TT>::min();
-    private:
-        std::vector<TT> vals = {min, (max/4), (max/2), max};
-        std::atomic<TT> mirror;
-        vsync::atomic<TT> subject;
+
+  private:
+    std::vector<TT> vals = {min, (max / 4), (max / 2), max};
+    std::atomic<TT> mirror;
+    vsync::atomic<TT> subject;
 };
 
 int
 main(void)
 {
-
     /* Run with all c++ primitive types*/
     TestAtomics<signed char>::run_tests();
     TestAtomics<unsigned char>::run_tests();
@@ -128,12 +302,14 @@ main(void)
     TestAtomics<signed long int>::run_tests();
     TestAtomics<unsigned long>::run_tests();
     TestAtomics<unsigned long int>::run_tests();
-    //TODO: TestAtomics<long long>::run_tests();
-    //TODO: TestAtomics<long long int>::run_tests();
-    //TODO: TestAtomics<signed long long>::run_tests();
-    //TODO: TestAtomics<signed long long int>::run_tests();
-    //TODO: TestAtomics<unsigned long long>::run_tests();
-    //TODO: TestAtomics<unsigned long long int>::run_tests();
+    // TODO: TestAtomics<long long>::run_tests();
+    // TODO: TestAtomics<long long int>::run_tests();
+    // TODO: TestAtomics<signed long long>::run_tests();
+    // TODO: TestAtomics<signed long long int>::run_tests();
+    // TODO: TestAtomics<unsigned long long>::run_tests();
+    // TODO: TestAtomics<unsigned long long int>::run_tests();
+    TestAtomics<size_t>::run_tests();
+    // TODO: TestAtomics<bool>::run_tests();
 
     /* Run with all vatomic types*/
     TestAtomics<vint8_t>::run_tests();
@@ -143,11 +319,6 @@ main(void)
     TestAtomics<vuint8_t>::run_tests();
     TestAtomics<vuint16_t>::run_tests();
     TestAtomics<vuint32_t>::run_tests();
-
     TestAtomics<vsize_t>::run_tests();
-    TestAtomics<size_t>::run_tests();
-
     // TODO: TestAtomics<vbool_t>::run_tests();
-    // TODO: TestAtomics<bool>::run_tests();
-
 }
