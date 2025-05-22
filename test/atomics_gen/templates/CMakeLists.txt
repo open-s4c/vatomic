@@ -5,7 +5,6 @@ add_custom_target(vatomic-test-generate)
 file(GLOB TEMPLATES *TY*.in)
 set(GEN_TEST_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-set(ut_test_cpp_TY_TYPES u8 u16 u32 u64 s8 s16 s32 s64 sz)
 set(ut_test_TY_TYPES u8 u16 u32 u64 sz ptr)
 set(ut_test_await_TY_TYPES u32 u64 ptr)
 set(mt_test_await_TY_TYPES u32 u64 ptr)

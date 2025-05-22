@@ -22,8 +22,9 @@ namespace vsync
 
     template <typename T> struct atomic;
 
-    void atomic_thread_fence(vsync::memory_order order) {
-        switch(order) {
+    void atomic_thread_fence(vsync::memory_order order)
+    {
+        switch (order) {
             case memory_order_consume:
             case memory_order_acquire:
                 vatomic_fence_acq();

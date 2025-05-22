@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
 #include <vsync/atomic.hpp>
 #include <atomic>
 #include <vector>
@@ -176,19 +180,21 @@ template <typename TT> struct TestAtomics {
             }
         }
     }
-    void ut_add_overload() {
+    void ut_add_overload()
+    {
         mirror = subject = min;
-        for(TT v: vals) {
-            mirror+= v;
-            subject+= v;
+        for (TT v : vals) {
+            mirror += v;
+            subject += v;
             assert(mirror == subject);
         }
     }
-    void ut_sub_overload() {
+    void ut_sub_overload()
+    {
         mirror = subject = max;
-        for(TT v: vals) {
-            mirror-= v;
-            subject-= v;
+        for (TT v : vals) {
+            mirror -= v;
+            subject -= v;
             assert(mirror == subject);
         }
     }
@@ -199,7 +205,7 @@ template <typename TT> struct TestAtomics {
 
         for (int order = vsync::memory_order_relaxed;
              order <= vsync::memory_order_seq_cst; order++) {
-                mirror = subject = min;
+            mirror = subject = min;
             for (TT val : vals) {
                 r_mirror = mirror.fetch_add(
                     val, static_cast<std::memory_order>(order));
