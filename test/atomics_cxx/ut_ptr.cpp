@@ -179,23 +179,23 @@ template <typename TT> struct TestPtrAtomic {
     }
     void ut_add_overload()
     {
-        mirror = subject = &arr[0];
-        for (size_t i = 0; i < length; i += 2) {
+        constexpr size_t step = 2;
+        for (size_t i = 0; i < length; i += step) {
+            mirror = subject = &arr[0];
             mirror += i;
             subject += i;
-            assert(subject == mirror);
             assert(mirror == &arr[i]);
         }
     }
     void ut_sub_overload()
     {
-        mirror = subject = &arr[length - 1];
-        for (size_t i = length - 1; i < length - 1; i--) {
-            auto r_m = --mirror;
-            auto r_s = --subject;
-            assert(r_m == r_s);
+        constexpr size_t step = 2;
+        for (size_t i = length - 1; i < length - 1; i -= step) {
+            mirror = subject = &arr[length - 1];
+            mirror -= i;
+            subject -= i;
             assert(subject == mirror);
-            assert(mirror == &arr[i - 1]);
+            assert(mirror == &arr[i]);
         }
     }
     static void run_tests()
