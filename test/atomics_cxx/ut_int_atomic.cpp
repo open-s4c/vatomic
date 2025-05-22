@@ -68,6 +68,23 @@ template <typename TT> struct TestAtomics {
         }
     }
 
+    void ut_bitwise() {
+        mirror = subject = max;
+        for (TT val : vals) {
+            mirror ^= val;
+            subject ^= val;
+            assert(mirror == subject);
+
+            mirror |= val;
+            subject |= val;
+            assert(mirror == subject);
+
+            mirror &= val;
+            subject &= val;
+            assert(mirror == subject);
+        }
+    }
+
     static void run_tests()
     {
         static TestAtomics<TT> ins;
@@ -76,6 +93,7 @@ template <typename TT> struct TestAtomics {
         ins.ut_dec();
         ins.ut_xchg();
         ins.ut_inc();
+        ins.ut_bitwise();
     }
 
     static constexpr TT max = std::numeric_limits<TT>::max();
