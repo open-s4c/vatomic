@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * Copyright (C) Huawei Technologies Co., Ltd. . All rights reserved.
  * SPDX-License-Identifier: MIT
  */
 #include <vsync/atomic.hpp>
@@ -9,13 +9,13 @@
 #include <vector>
 
 
-std::vector<vuint16_t> g_values = {0, VINT8_MAX, VINT16_MAX};
+std::vector<MAP_T_s64> g_values = {0, MAP_VALS_s64};
 
 void
-assert_match(vsync::atomic<vuint16_t> &var, std::atomic<vuint16_t> &mirror)
+assert_match(vsync::atomic<MAP_T_s64> &var, std::atomic<MAP_T_s64> &mirror)
 {
-    vuint16_t v_var    = var.load();
-    vuint16_t v_mirror = mirror.load();
+    MAP_T_s64 v_var    = var.load();
+    MAP_T_s64 v_mirror = mirror.load();
     if (v_var != v_mirror) {
         std::cerr << "[assert_match] vsync::atomic " << v_var
                   << " =? std::atomic " << v_mirror << std::endl;
@@ -26,9 +26,9 @@ assert_match(vsync::atomic<vuint16_t> &var, std::atomic<vuint16_t> &mirror)
 void
 test_init(void)
 {
-    for (vuint16_t val : g_values) {
-        std::atomic<vuint16_t> mirror(val);
-        vsync::atomic<vuint16_t> var(val);
+    for (MAP_T_s64 val : g_values) {
+        std::atomic<MAP_T_s64> mirror(val);
+        vsync::atomic<MAP_T_s64> var(val);
         assert_match(var, mirror);
     }
 }
@@ -36,12 +36,12 @@ test_init(void)
 void
 test_store(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
-        for (vuint16_t val : g_values) {
+        for (MAP_T_s64 val : g_values) {
             mirror.store(val, static_cast<std::memory_order>(order));
             var.store(val, static_cast<vsync::memory_order>(order));
             assert_match(var, mirror);
@@ -52,14 +52,14 @@ test_store(void)
 void
 test_exchange(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
-    vuint16_t r_var    = 0;
-    vuint16_t r_mirror = 0;
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
+    MAP_T_s64 r_var    = 0;
+    MAP_T_s64 r_mirror = 0;
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
-        for (vuint16_t val : g_values) {
+        for (MAP_T_s64 val : g_values) {
             r_mirror =
                 mirror.exchange(val, static_cast<std::memory_order>(order));
             r_var = var.exchange(val, static_cast<vsync::memory_order>(order));
@@ -72,20 +72,20 @@ test_exchange(void)
 void
 test_compare_exchange(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
     bool r_var    = false;
     bool r_mirror = false;
 
-    vuint16_t v_var    = 0;
-    vuint16_t v_mirror = 0;
+    MAP_T_s64 v_var    = 0;
+    MAP_T_s64 v_mirror = 0;
 
     constexpr vsize_t repeat = 3;
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
-        for (vuint16_t val : g_values) {
+        for (MAP_T_s64 val : g_values) {
             for (vsize_t i = 0; i < repeat; i++) {
                 r_mirror = mirror.compare_exchange_strong(
                     v_var, val, static_cast<std::memory_order>(order),
@@ -99,7 +99,7 @@ test_compare_exchange(void)
             }
         }
 
-        for (vuint16_t val : g_values) {
+        for (MAP_T_s64 val : g_values) {
             for (vsize_t i = 0; i < repeat; i++) {
                 r_mirror = mirror.compare_exchange_weak(
                     v_var, val, static_cast<std::memory_order>(order),
@@ -118,15 +118,15 @@ test_compare_exchange(void)
 void
 test_fetch_add(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
-    vuint16_t r_var    = 0;
-    vuint16_t r_mirror = 0;
+    MAP_T_s64 r_var    = 0;
+    MAP_T_s64 r_mirror = 0;
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
-        for (vuint16_t val : g_values) {
+        for (MAP_T_s64 val : g_values) {
             r_mirror =
                 mirror.fetch_add(val, static_cast<std::memory_order>(order));
             r_var = var.fetch_add(val, static_cast<vsync::memory_order>(order));
@@ -138,15 +138,15 @@ test_fetch_add(void)
 void
 test_fetch_sub(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
-    vuint16_t r_var    = 0;
-    vuint16_t r_mirror = 0;
+    MAP_T_s64 r_var    = 0;
+    MAP_T_s64 r_mirror = 0;
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
-        for (vuint16_t val : g_values) {
+        for (MAP_T_s64 val : g_values) {
             r_mirror =
                 mirror.fetch_sub(val, static_cast<std::memory_order>(order));
             r_var = var.fetch_sub(val, static_cast<vsync::memory_order>(order));
@@ -158,15 +158,15 @@ test_fetch_sub(void)
 void
 test_fetch_and(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
-    vuint16_t r_var    = 0;
-    vuint16_t r_mirror = 0;
+    MAP_T_s64 r_var    = 0;
+    MAP_T_s64 r_mirror = 0;
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
-        for (vuint16_t val : g_values) {
+        for (MAP_T_s64 val : g_values) {
             r_mirror =
                 mirror.fetch_and(val, static_cast<std::memory_order>(order));
             r_var = var.fetch_and(val, static_cast<vsync::memory_order>(order));
@@ -178,15 +178,15 @@ test_fetch_and(void)
 void
 test_fetch_or(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
-    vuint16_t r_var    = 0;
-    vuint16_t r_mirror = 0;
+    MAP_T_s64 r_var    = 0;
+    MAP_T_s64 r_mirror = 0;
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
-        for (vuint16_t val : g_values) {
+        for (MAP_T_s64 val : g_values) {
             r_mirror =
                 mirror.fetch_or(val, static_cast<std::memory_order>(order));
             r_var = var.fetch_or(val, static_cast<vsync::memory_order>(order));
@@ -198,15 +198,15 @@ test_fetch_or(void)
 void
 test_fetch_xor(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
-    vuint16_t r_var    = 0;
-    vuint16_t r_mirror = 0;
+    MAP_T_s64 r_var    = 0;
+    MAP_T_s64 r_mirror = 0;
 
     for (int order = vsync::memory_order_relaxed;
          order <= vsync::memory_order_seq_cst; order++) {
-        for (vuint16_t val : g_values) {
+        for (MAP_T_s64 val : g_values) {
             r_mirror =
                 mirror.fetch_xor(val, static_cast<std::memory_order>(order));
             r_var = var.fetch_xor(val, static_cast<vsync::memory_order>(order));
@@ -220,10 +220,10 @@ test_fetch_xor(void)
 void
 test_AND_overload(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
-    for (vuint16_t val : g_values) {
+    for (MAP_T_s64 val : g_values) {
         mirror &= val;
         var &= val;
         assert_match(var, mirror);
@@ -232,10 +232,10 @@ test_AND_overload(void)
 void
 test_OR_overload(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
-    for (vuint16_t val : g_values) {
+    for (MAP_T_s64 val : g_values) {
         mirror |= val;
         var |= val;
         assert_match(var, mirror);
@@ -244,10 +244,10 @@ test_OR_overload(void)
 void
 test_XOR_overload(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
-    for (vuint16_t val : g_values) {
+    for (MAP_T_s64 val : g_values) {
         mirror ^= val;
         var ^= val;
         assert_match(var, mirror);
@@ -258,13 +258,13 @@ test_XOR_overload(void)
 void
 test_INC_overload(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
-    vuint16_t r_var    = 0;
-    vuint16_t r_mirror = 0;
+    MAP_T_s64 r_var    = 0;
+    MAP_T_s64 r_mirror = 0;
 
-    for (vuint16_t val : g_values) {
+    for (MAP_T_s64 val : g_values) {
         mirror = var = val;
         r_mirror     = mirror++;
         r_var        = var++;
@@ -272,7 +272,7 @@ test_INC_overload(void)
         assert(r_mirror == r_var);
     }
 
-    for (vuint16_t val : g_values) {
+    for (MAP_T_s64 val : g_values) {
         mirror = var = val;
         r_mirror     = ++mirror;
         r_var        = ++var;
@@ -283,13 +283,13 @@ test_INC_overload(void)
 void
 test_DEC_overload(void)
 {
-    std::atomic<vuint16_t> mirror(0);
-    vsync::atomic<vuint16_t> var(0);
+    std::atomic<MAP_T_s64> mirror(0);
+    vsync::atomic<MAP_T_s64> var(0);
 
-    vuint16_t r_var    = 0;
-    vuint16_t r_mirror = 0;
+    MAP_T_s64 r_var    = 0;
+    MAP_T_s64 r_mirror = 0;
 
-    for (vuint16_t val : g_values) {
+    for (MAP_T_s64 val : g_values) {
         mirror = var = val;
         r_mirror     = mirror--;
         r_var        = var--;
@@ -297,7 +297,7 @@ test_DEC_overload(void)
         assert(r_mirror == r_var);
     }
 
-    for (vuint16_t val : g_values) {
+    for (MAP_T_s64 val : g_values) {
         mirror = var = val;
         r_mirror     = --mirror;
         r_var        = --var;

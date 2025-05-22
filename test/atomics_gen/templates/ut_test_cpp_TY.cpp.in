@@ -13,6 +13,10 @@ _tmpl_map(MAP_VALS_u16, VUINT8_MAX, VUINT16_MAX);
 _tmpl_map(MAP_VALS_u32, VUINT8_MAX, VUINT16_MAX, VUINT32_MAX);
 _tmpl_map(MAP_VALS_u64, VUINT8_MAX, VUINT16_MAX, VUINT32_MAX, VUINT64_MAX);
 _tmpl_map(MAP_VALS_sz,  VUINT8_MAX, VUINT16_MAX, VUINT32_MAX, VSIZE_MAX);
+_tmpl_map(MAP_VALS_u8, (VINT8_MAX/2), VINT8_MAX);
+_tmpl_map(MAP_VALS_u16, VINT8_MAX, VINT16_MAX);
+_tmpl_map(MAP_VALS_u32, VINT8_MAX, VINT16_MAX, VINT32_MAX);
+_tmpl_map(MAP_VALS_u64, VINT8_MAX, VINT16_MAX, VINT32_MAX, VINT64_MAX);
 
 _tmpl_map(<MAP_INC_OP>, ++);
 _tmpl_map(<MAP_DEC_OP>, --);
@@ -22,7 +26,7 @@ _tmpl_map(<MAP_XOR_OP>, ^);
 _tmpl_map(<MAP_AND_OP>, &);
 
 
-_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]]);
+_tmpl_begin(TY = [[u8; u16; u32; u64; s8; s16; s32; s64; sz; ptr]]);
 
 std::vector<TT> g_values = {0, MAP_VALS_TY};
 
@@ -122,7 +126,7 @@ test_compare_exchange(void)
 }
 _tmpl_end;
 
-_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], OP = [[add; sub; and; or; xor]]);
+_tmpl_begin(TY = [[u8; u16; u32; u64; s8; s16; s32; s64; sz; ptr]], OP = [[add; sub; and; or; xor]]);
 void
 test_fetch_OP(void)
 {
@@ -146,7 +150,7 @@ test_fetch_OP(void)
 _tmpl_end;
 
 
-_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], FUN = [[AND; OR; XOR]]);
+_tmpl_begin(TY = [[u8; u16; u32; u64; s8; s16; s32; s64; sz; ptr]], FUN = [[AND; OR; XOR]]);
 void
 test_FUN_overload(void)
 {
@@ -162,7 +166,7 @@ test_FUN_overload(void)
 _tmpl_end;
 
 
-_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], FUN = [[INC; DEC]]);
+_tmpl_begin(TY = [[u8; u16; u32; u64; s8; s16; s32; s64; sz; ptr]], FUN = [[INC; DEC]]);
 void
 test_FUN_overload(void)
 {
@@ -198,10 +202,10 @@ int main(void) {
     test_store();
     test_exchange();
     test_compare_exchange();
-    _tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], OP = [[add; sub; and; or; xor]]);
+    _tmpl_begin(TY = [[u8; u16; u32; u64; s8; s16; s32; s64; sz; ptr]], OP = [[add; sub; and; or; xor]]);
     test_fetch_OP();
     _tmpl_end;
-    _tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]], FUN = [[INC; DEC; AND; OR; XOR]]);
+    _tmpl_begin(TY = [[u8; u16; u32; u64; s8; s16; s32; s64; sz; ptr]], FUN = [[INC; DEC; AND; OR; XOR]]);
     test_FUN_overload();
     _tmpl_end;
     return 0;
