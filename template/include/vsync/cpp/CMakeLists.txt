@@ -18,7 +18,3 @@ foreach(TARGET ${TARGETS})
         add_dependencies(vatomic-generate ${OUT})
     endforeach()
 endforeach()
-
-
-
-
