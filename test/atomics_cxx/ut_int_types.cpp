@@ -302,14 +302,14 @@ main(void)
     TestAtomics<signed int>::run_tests();
     TestAtomics<unsigned>::run_tests();
     TestAtomics<unsigned int>::run_tests();
-    #if !defined(__APPLE__)
-        TestAtomics<long>::run_tests();
-        TestAtomics<long int>::run_tests();
-        TestAtomics<signed long>::run_tests();
-        TestAtomics<signed long int>::run_tests();
-        TestAtomics<unsigned long>::run_tests();
-        TestAtomics<unsigned long int>::run_tests();
-    #endif
+#if !defined(__APPLE__)
+    TestAtomics<long>::run_tests();
+    TestAtomics<long int>::run_tests();
+    TestAtomics<signed long>::run_tests();
+    TestAtomics<signed long int>::run_tests();
+    TestAtomics<unsigned long>::run_tests();
+    TestAtomics<unsigned long int>::run_tests();
+#endif
     // TODO: TestAtomics<long long>::run_tests();
     // TODO: TestAtomics<long long int>::run_tests();
     // TODO: TestAtomics<signed long long>::run_tests();
