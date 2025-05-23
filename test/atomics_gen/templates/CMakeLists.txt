@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 add_custom_target(vatomic-test-generate)
 
-file(GLOB TEMPLATES *TY*.in)
+file(GLOB TEMPLATES *TY.c.in)
 set(GEN_TEST_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 set(ut_test_TY_TYPES u8 u16 u32 u64 sz ptr)
@@ -12,13 +12,8 @@ set(mt_test_rmw_TY_TYPES u32 u64 sz ptr)
 
 foreach(TEMPLATE_FILE IN ITEMS ${TEMPLATES})
     get_filename_component(TEMPLATE_NAME ${TEMPLATE_FILE} NAME_WE)
-    if(${TEMPLATE_FILE} MATCHES ".*cpp.*")
-        set(EXT cpp)
-    else()
-        set(EXT c)
-    endif()
     foreach(TY ${${TEMPLATE_NAME}_TYPES})
-        string(REPLACE TY ${TY} TEST_FILE ${TEMPLATE_NAME}.${EXT})
+        string(REPLACE TY ${TY} TEST_FILE ${TEMPLATE_NAME}.c)
         add_custom_target(
             ${TEST_FILE}
             COMMAND
