@@ -14,8 +14,11 @@
 
 template <typename TT, size_t N, size_t IT> class MT_Test
 {
+#if defined(__APPLE__)
+    using time_point = int64_t;
+#else
     using time_point = std::chrono::_V2::system_clock::time_point;
-    using millisec   = std::chrono::milliseconds;
+#endif
 
 
   public:
@@ -133,8 +136,13 @@ template <typename TT, size_t N, size_t IT> class MT_Test
 
     inline int64_t diff(time_point start, time_point end)
     {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+        auto duration = end - start;
+#if defined(__APPLE__)
+        return duration;
+#else
+        return std::chrono::duration_cast<std::chrono::milliseconds>(duration)
             .count();
+#endif
     }
     int64_t test(std::function<void(void)> f)
     {
@@ -153,7 +161,11 @@ template <typename TT, size_t N, size_t IT> class MT_Test
 
     inline time_point now()
     {
+#if defined(__APPLE__)
+        return 0;
+#else
         return std::chrono::high_resolution_clock::now();
+#endif
     }
     time_point launch(std::vector<std::thread> &threads,
                       std::function<void(void)> f)
