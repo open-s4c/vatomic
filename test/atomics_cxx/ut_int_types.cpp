@@ -9,7 +9,7 @@
 #include <limits>
 #include <typeinfo>
 #include <iostream>
-#include <ranges>
+
 /* Success criteria is to match the behavior of std::atomic */
 template <typename TT> struct TestAtomics {
     void ut_rw()
