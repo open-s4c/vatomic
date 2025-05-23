@@ -302,7 +302,7 @@ main(void)
     TestAtomics<signed int>::run_tests();
     TestAtomics<unsigned>::run_tests();
     TestAtomics<unsigned int>::run_tests();
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) || defined(__ARM_ARCH)
     TestAtomics<long>::run_tests();
     TestAtomics<long int>::run_tests();
     TestAtomics<signed long>::run_tests();
