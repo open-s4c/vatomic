@@ -1,7 +1,7 @@
 # Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # SPDX-License-Identifier: MIT
 project(vatomic_cpp LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 # ##############################################################################
 # compilation with C++
 # ##############################################################################
@@ -12,5 +12,6 @@ foreach(TEST ${TESTS})
     get_filename_component(TEST_NAME ${TEST} NAME_WE)
     add_executable(${TEST_NAME} ${TEST})
     target_link_libraries(${TEST_NAME} vatomic)
+    target_compile_options(${TEST_NAME} PUBLIC -O2)
     v_add_bin_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
