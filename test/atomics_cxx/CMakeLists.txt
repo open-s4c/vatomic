@@ -1,6 +1,7 @@
 # Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # SPDX-License-Identifier: MIT
 project(vatomic_cpp LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
 # ##############################################################################
 # compilation with C++
 # ##############################################################################
