@@ -131,6 +131,11 @@ template <typename TT, size_t N, size_t IT> class MT_Test
         assert(mirror == (init_val - (OP_COUNT * step)));
     }
 
+    inline int64_t diff(time_point start, time_point end)
+    {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+            .count();
+    }
     int64_t test(std::function<void(void)> f)
     {
         std::barrier barrier{N};
@@ -142,16 +147,18 @@ template <typename TT, size_t N, size_t IT> class MT_Test
             }
         });
         auto end   = join(threads);
-        return std::chrono::duration_cast<std::chrono::milliseconds>(end -
-                                                                     start)
-            .count();
+        return diff(start, end);
     }
 
 
+    inline time_point now()
+    {
+        return std::chrono::high_resolution_clock::now();
+    }
     time_point launch(std::vector<std::thread> &threads,
                       std::function<void(void)> f)
     {
-        auto start = std::chrono::high_resolution_clock::now();
+        auto start = now();
         for (size_t i = 0; i < N; i++) {
             threads.push_back(std::thread(f));
         }
@@ -162,7 +169,7 @@ template <typename TT, size_t N, size_t IT> class MT_Test
         for (auto &t : threads) {
             t.join();
         }
-        return std::chrono::high_resolution_clock::now();
+        return now();
     }
     std::atomic<TT> subject;
     vsync::atomic<TT> mirror;
