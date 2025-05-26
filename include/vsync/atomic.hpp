@@ -53,8 +53,8 @@ namespace vsync
 #endif
 #include "cpp/atomic/core_u64.hpp"
 #include "cpp/atomic/core_ptr.hpp"
-#include "cpp/atomic/score_s8.hpp"
-#include "cpp/atomic/score_s16.hpp"
-#include "cpp/atomic/score_s32.hpp"
-#include "cpp/atomic/score_s64.hpp"
+#include "cpp/atomic/core_s8.hpp"
+#include "cpp/atomic/core_s16.hpp"
+#include "cpp/atomic/core_s32.hpp"
+#include "cpp/atomic/core_s64.hpp"
 #endif

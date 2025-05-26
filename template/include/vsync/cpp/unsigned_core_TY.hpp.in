@@ -2,7 +2,6 @@
  * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
-
 #define _tmpl_mute
 #include <vsync/atomic/tmplr.h>
 #define _tmpl_unmute
