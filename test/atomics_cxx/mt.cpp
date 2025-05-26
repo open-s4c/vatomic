@@ -9,7 +9,9 @@
 #include <chrono>
 #include <atomic>
 #include <limits>
+#if !defined(__ARM_ARCH)
 #include <barrier>
+#endif
 #include <vector>
 
 template <typename TT, size_t N, size_t IT> class MT_Test
@@ -146,10 +148,14 @@ template <typename TT, size_t N, size_t IT> class MT_Test
     }
     int64_t test(std::function<void(void)> f)
     {
+        #if !defined(__ARM_ARCH)
         std::barrier barrier{N};
+        #endif
         std::vector<std::thread> threads;
         auto start = launch(threads, [&] {
-            barrier.arrive_and_wait();
+            #if !defined(__ARM_ARCH)
+                barrier.arrive_and_wait();
+            #endif
             for (auto i = 0; i < IT; i++) {
                 f();
             }
