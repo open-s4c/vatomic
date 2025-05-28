@@ -10,7 +10,7 @@
 #include <atomic>
 #include <limits>
 #if !defined(__ARM_ARCH)
-#include <barrier>
+    #include <barrier>
 #endif
 #include <vector>
 
@@ -148,19 +148,19 @@ template <typename TT, size_t N, size_t IT> class MT_Test
     }
     int64_t test(std::function<void(void)> f)
     {
-        #if !defined(__ARM_ARCH)
+#if !defined(__ARM_ARCH)
         std::barrier barrier{N};
-        #endif
+#endif
         std::vector<std::thread> threads;
         auto start = launch(threads, [&] {
-            #if !defined(__ARM_ARCH)
-                barrier.arrive_and_wait();
-            #endif
+#if !defined(__ARM_ARCH)
+            barrier.arrive_and_wait();
+#endif
             for (auto i = 0; i < IT; i++) {
                 f();
             }
         });
-        auto end   = join(threads);
+        auto end = join(threads);
         return diff(start, end);
     }
 
