@@ -9,6 +9,7 @@
 #include <limits>
 #include <typeinfo>
 #include <iostream>
+#include <type_traits>
 
 /* Success criteria is to match the behavior of std::atomic */
 template <typename TT> struct TestAtomics {
@@ -83,7 +84,13 @@ template <typename TT> struct TestAtomics {
             }
         }
     }
-    void ut_dec()
+
+    /* We deactivate arithmetic test for bool, since those functions are not
+     * defined for it*/
+    template <typename T = TT>
+    /* enable only if the type is not bool */
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    ut_dec()
     {
         TT r_var    = 0;
         TT r_mirror = 0;
@@ -104,7 +111,9 @@ template <typename TT> struct TestAtomics {
             assert(r_mirror == r_var);
         }
     }
-    void ut_inc()
+    template <typename T = TT>
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    ut_inc()
     {
         TT r_var    = 0;
         TT r_mirror = 0;
@@ -125,7 +134,9 @@ template <typename TT> struct TestAtomics {
             assert(r_mirror == r_var);
         }
     }
-    void ut_fetch_xor()
+    template <typename T = TT>
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    ut_fetch_xor()
     {
         TT r_var    = 0;
         TT r_mirror = 0;
@@ -143,7 +154,9 @@ template <typename TT> struct TestAtomics {
             }
         }
     }
-    void ut_fetch_or()
+    template <typename T = TT>
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    ut_fetch_or()
     {
         TT r_var    = 0;
         TT r_mirror = 0;
@@ -161,7 +174,9 @@ template <typename TT> struct TestAtomics {
             }
         }
     }
-    void ut_fetch_and()
+    template <typename T = TT>
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    ut_fetch_and()
     {
         TT r_var    = 0;
         TT r_mirror = 0;
@@ -180,7 +195,9 @@ template <typename TT> struct TestAtomics {
             }
         }
     }
-    void ut_add_overload()
+    template <typename T = TT>
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    ut_add_overload()
     {
         mirror = subject = min;
         for (TT v : vals) {
@@ -189,7 +206,9 @@ template <typename TT> struct TestAtomics {
             assert(mirror == subject);
         }
     }
-    void ut_sub_overload()
+    template <typename T = TT>
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    ut_sub_overload()
     {
         mirror = subject = max;
         for (TT v : vals) {
@@ -198,7 +217,9 @@ template <typename TT> struct TestAtomics {
             assert(mirror == subject);
         }
     }
-    void ut_fetch_add()
+    template <typename T = TT>
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    ut_fetch_add()
     {
         TT r_var    = 0;
         TT r_mirror = 0;
@@ -216,7 +237,9 @@ template <typename TT> struct TestAtomics {
             }
         }
     }
-    void ut_fetch_sub()
+    template <typename T = TT>
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    ut_fetch_sub()
     {
         TT r_var    = 0;
         TT r_mirror = 0;
@@ -234,7 +257,9 @@ template <typename TT> struct TestAtomics {
             }
         }
     }
-    void ut_bitwise()
+    template <typename T = TT>
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    ut_bitwise()
     {
         mirror = subject = max;
         for (TT val : vals) {
@@ -252,16 +277,12 @@ template <typename TT> struct TestAtomics {
         }
     }
 
-    static void run_tests()
+    template <typename T = TT>
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    run_arithmetic(TestAtomics<TT> &ins)
     {
-        static TestAtomics<TT> ins;
-        std::cout << "Testing type [" << typeid(TT).name() << "] Max = " << max
-                  << " Min = " << min << " with size = " << sizeof(TT)
-                  << "byte(s)" << std::endl;
-
-        assert(ins.mirror == ins.subject);
-        ins.ut_rw();
-        ins.ut_xchg();
+        std::cout << "Arithmetic tests are active for the given type."
+                  << std::endl;
         ins.ut_inc();
         ins.ut_fetch_add();
         ins.ut_add_overload();
@@ -272,7 +293,21 @@ template <typename TT> struct TestAtomics {
         ins.ut_fetch_or();
         ins.ut_fetch_and();
         ins.ut_bitwise();
+    }
+    static void run_tests()
+    {
+        static TestAtomics<TT> ins;
+        std::cout << "Testing type [" << typeid(TT).name() << "] Max = " << max
+                  << " Min = " << min << " with size = " << sizeof(TT)
+                  << "byte(s)" << std::endl;
+
+        assert(ins.mirror == ins.subject);
+        ins.ut_rw();
+        ins.ut_xchg();
         ins.ut_cmpxchg();
+        if constexpr (!std::is_same_v<TT, bool>) {
+            ins.run_arithmetic(ins);
+        }
         assert(ins.mirror == ins.subject);
     }
 
@@ -317,7 +352,7 @@ main(void)
     // TODO: TestAtomics<unsigned long long>::run_tests();
     // TODO: TestAtomics<unsigned long long int>::run_tests();
     TestAtomics<size_t>::run_tests();
-    // TODO: TestAtomics<bool>::run_tests();
+    TestAtomics<bool>::run_tests();
 
     /* Run with all vatomic types*/
     TestAtomics<vint8_t>::run_tests();
@@ -328,5 +363,5 @@ main(void)
     TestAtomics<vuint16_t>::run_tests();
     TestAtomics<vuint32_t>::run_tests();
     TestAtomics<vsize_t>::run_tests();
-    // TODO: TestAtomics<vbool_t>::run_tests();
+    TestAtomics<vbool_t>::run_tests();
 }
