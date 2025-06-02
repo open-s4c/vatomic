@@ -30,14 +30,14 @@ namespace vsync
             switch (order) {
                 case memory_order_consume:
                 case memory_order_acquire:
-                    return vbool_t(vatomic8_read_acq(&_v));
+                    return static_cast<vbool_t>(vatomic8_read_acq(&_v));
                 case memory_order_relaxed:
-                    return vbool_t(vatomic8_read_rlx(&_v));
+                    return static_cast<vbool_t>(vatomic8_read_rlx(&_v));
                 case memory_order_release:
                 case memory_order_acq_rel:
                 case memory_order_seq_cst:
                 default:
-                    return vbool_t(vatomic8_read(&_v));
+                    return static_cast<vbool_t>(vatomic8_read(&_v));
             }
         }
         void store(vbool_t v,
@@ -75,16 +75,16 @@ namespace vsync
         {
             switch (order) {
                 case memory_order_release:
-                    return vbool_t(vatomic8_xchg_rel(&_v, v));
+                    return static_cast<vbool_t>(vatomic8_xchg_rel(&_v, v));
                 case memory_order_relaxed:
-                    return vbool_t(vatomic8_xchg_rlx(&_v, v));
+                    return static_cast<vbool_t>(vatomic8_xchg_rlx(&_v, v));
                 case memory_order_consume:
                 case memory_order_acquire:
-                    return vbool_t(vatomic8_xchg_acq(&_v, v));
+                    return static_cast<vbool_t>(vatomic8_xchg_acq(&_v, v));
                 case memory_order_acq_rel:
                 case memory_order_seq_cst:
                 default:
-                    return vbool_t(vatomic8_xchg(&_v, v));
+                    return static_cast<vbool_t>(vatomic8_xchg(&_v, v));
             }
         }
 
@@ -96,19 +96,23 @@ namespace vsync
             vbool_t old = 0;
             switch (order) {
                 case memory_order_release:
-                    old = vbool_t(vatomic8_cmpxchg_rel(&_v, expected, desired));
+                    old = static_cast<vbool_t>(
+                        vatomic8_cmpxchg_rel(&_v, expected, desired));
                     break;
                 case memory_order_relaxed:
-                    old = vbool_t(vatomic8_cmpxchg_rlx(&_v, expected, desired));
+                    old = static_cast<vbool_t>(
+                        vatomic8_cmpxchg_rlx(&_v, expected, desired));
                     break;
                 case memory_order_consume:
                 case memory_order_acquire:
-                    old = vbool_t(vatomic8_cmpxchg_acq(&_v, expected, desired));
+                    old = static_cast<vbool_t>(
+                        vatomic8_cmpxchg_acq(&_v, expected, desired));
                     break;
                 case memory_order_acq_rel:
                 case memory_order_seq_cst:
                 default:
-                    old = vbool_t(vatomic8_cmpxchg(&_v, expected, desired));
+                    old = static_cast<vbool_t>(
+                        vatomic8_cmpxchg(&_v, expected, desired));
                     break;
             }
             if (old == expected) {

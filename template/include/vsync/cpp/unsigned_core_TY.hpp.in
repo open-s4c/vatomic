@@ -30,7 +30,7 @@ _tmpl_dl; //--------------------------------------
 _tmpl_map(MAP_TMPL_T_bool, TT);
 _tmpl_map(MAP_TMPL_N_bool, );
 _tmpl_map(MAP_INIT_bool, false);
-_tmpl_map(MAP_CAST_bool, vbool_t);
+_tmpl_map(MAP_CAST_bool, static_cast<vbool_t>);
 _tmpl_dl; //--------------------------------------
 _tmpl_map(MAP_TMPL_T_u16, TT);
 _tmpl_map(MAP_TMPL_N_u16, );
