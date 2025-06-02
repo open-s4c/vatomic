@@ -85,8 +85,8 @@ template <typename TT> struct TestAtomics {
         }
     }
 
-    /* We deactivate arithmetic test for bool, since those functions are not
-     * defined for it*/
+    /* We do not add arithmetic tests for bool, since arithmetic functions are
+     * not defined for it */
     template <typename T = TT>
     /* enable only if the type is not bool */
     typename std::enable_if<false == std::is_same<T, bool>::value>::type
