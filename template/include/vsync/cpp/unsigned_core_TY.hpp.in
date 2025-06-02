@@ -5,7 +5,7 @@
 #define _tmpl_mute
 #include <vsync/atomic/tmplr.h>
 #define _tmpl_unmute
-_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]]);
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz; bool; ptr]]);
 #ifndef VATOMIC_CORE_UPCASE_TY__HPP
 #define VATOMIC_CORE_UPCASE_TY__HPP
 _tmpl_end;
@@ -21,28 +21,39 @@ _tmpl_map(MAP_TMPL_T_ptr, PTR *);
 _tmpl_map(MAP_TMPL_N_ptr, typename PTR);
 _tmpl_map(MAP_CAST_ptr, static_cast<PTR *>);
 _tmpl_map(MAP_INIT_ptr, nullptr);
+_tmpl_dl; //--------------------------------------
 _tmpl_map(MAP_TMPL_T_u8, TT);
 _tmpl_map(MAP_TMPL_N_u8, );
 _tmpl_map(MAP_INIT_u8, 0U);
 _tmpl_map(MAP_CAST_u8, );
+_tmpl_dl; //--------------------------------------
+_tmpl_map(MAP_TMPL_T_bool, TT);
+_tmpl_map(MAP_TMPL_N_bool, );
+_tmpl_map(MAP_INIT_bool, false);
+_tmpl_map(MAP_CAST_bool, vbool_t);
+_tmpl_dl; //--------------------------------------
 _tmpl_map(MAP_TMPL_T_u16, TT);
 _tmpl_map(MAP_TMPL_N_u16, );
 _tmpl_map(MAP_INIT_u16, 0U);
 _tmpl_map(MAP_CAST_u16, );
+_tmpl_dl; //--------------------------------------
 _tmpl_map(MAP_TMPL_T_u32, TT);
 _tmpl_map(MAP_TMPL_N_u32, );
 _tmpl_map(MAP_CAST_u32, );
 _tmpl_map(MAP_INIT_u32, 0U);
+_tmpl_dl; //--------------------------------------
 _tmpl_map(MAP_TMPL_T_u64, TT);
 _tmpl_map(MAP_TMPL_N_u64, );
 _tmpl_map(MAP_CAST_u64, );
 _tmpl_map(MAP_INIT_u64, 0U);
+_tmpl_dl; //--------------------------------------
 _tmpl_map(MAP_TMPL_T_sz, TT);
 _tmpl_map(MAP_TMPL_N_sz, );
 _tmpl_map(MAP_CAST_sz, );
 _tmpl_map(MAP_INIT_sz, 0U);
+_tmpl_dl; //--------------------------------------
 
-_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]]);
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz; bool; ptr]]);
 namespace vsync
 {
 template <MAP_TMPL_N_TY> struct atomic<MAP_TMPL_T_TY> {
@@ -364,7 +375,7 @@ inline MAP_TMPL_T_TY add_MS(ptrdiff_t v, bool return_old)
     return return_old ? old : desired;
 }
 _tmpl_end;
-_tmpl_begin(TY = [[u8; u16; u32; u64; sz; ptr]]);
+_tmpl_begin(TY = [[u8; u16; u32; u64; sz; bool; ptr]]);
     bool is_lock_free() const noexcept
     {
         return true;

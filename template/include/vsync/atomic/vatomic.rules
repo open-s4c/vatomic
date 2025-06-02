@@ -1,7 +1,8 @@
-_tmpl_dl ***********************************************************************
+vatomic8_u_tmpl_dl ***********************************************************************
 _tmpl_dl *** Prefix mappings
 _tmpl_dl ***********************************************************************
 _tmpl_map(MAP_P_u8,  vatomic8);
+_tmpl_map(MAP_P_bool,  vatomic8);
 _tmpl_map(MAP_P_u16, vatomic16);
 _tmpl_map(MAP_P_u32, vatomic32);
 _tmpl_map(MAP_P_u64, vatomic64);
@@ -17,6 +18,7 @@ _tmpl_dl ***********************************************************************
 _tmpl_dl *** Plain type mappings
 _tmpl_dl ***********************************************************************
 _tmpl_map(MAP_T_u8, vuint8_t);
+_tmpl_map(MAP_T_bool, vbool_t);
 _tmpl_map(MAP_T_u16, vuint16_t);
 _tmpl_map(MAP_T_u32, vuint32_t);
 _tmpl_map(MAP_T_u64, vuint64_t);
@@ -32,6 +34,7 @@ _tmpl_dl ***********************************************************************
 _tmpl_dl *** Atomic mappings ***
 _tmpl_dl ***********************************************************************
 _tmpl_map(MAP_A_u8,  <PP>_t);
+_tmpl_map(MAP_A_bool,  <PP>_t);
 _tmpl_map(MAP_A_u16, <PP>_t);
 _tmpl_map(MAP_A_u32, <PP>_t);
 _tmpl_map(MAP_A_u64, <PP>_t);
@@ -55,6 +58,7 @@ _tmpl_dl *** Memory ordering extensive
 _tmpl_dl ***********************************************************************
 _tmpl_map(MAP_E_va_seq, mo);
 _tmpl_map(MAP_E_u8, MAP_E);
+_tmpl_map(MAP_E_bool, MAP_E);
 _tmpl_map(MAP_E_u16, MAP_E);
 _tmpl_map(MAP_E_u32, MAP_E);
 _tmpl_map(MAP_E_u64, MAP_E);

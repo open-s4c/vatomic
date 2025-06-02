@@ -46,6 +46,7 @@ namespace vsync
 } // namespace vsync
 
 #include "cpp/atomic/core_u8.hpp"
+#include "cpp/atomic/core_bool.hpp"
 #include "cpp/atomic/core_u16.hpp"
 #include "cpp/atomic/core_u32.hpp"
 #if defined(__APPLE__)
