@@ -1,7 +1,14 @@
 # Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # SPDX-License-Identifier: MIT
 
-set(unsigned_core_TYPES u8 u16 u32 u64 sz ptr bool)
+set(unsigned_core_TYPES
+    u8
+    u16
+    u32
+    u64
+    sz
+    ptr
+    bool)
 set(signed_core_TYPES s8 s16 s32 s64)
 set(TARGETS signed_core unsigned_core)
 foreach(TARGET ${TARGETS})
