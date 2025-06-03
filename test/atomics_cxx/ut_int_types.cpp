@@ -12,7 +12,16 @@
 #include <type_traits>
 
 /* Success criteria is to match the behavior of std::atomic */
-template <typename TT> struct TestAtomics {
+template <typename TT, bool IsVolatile> struct TestAtomics {
+    /* we define the subject(vsync::atomic), and the mirror(std::atomic) with
+     * volatile qualifier or not based on template parameter IsVolatile*/
+    using SubjectType =
+        typename std::conditional<IsVolatile, volatile vsync::atomic<TT>,
+                                  vsync::atomic<TT>>::type;
+    using MirrorType =
+        typename std::conditional<IsVolatile, volatile std::atomic<TT>,
+                                  std::atomic<TT>>::type;
+
     void ut_rw()
     {
         for (TT v : vals) {
@@ -279,7 +288,7 @@ template <typename TT> struct TestAtomics {
 
     template <typename T = TT>
     typename std::enable_if<false == std::is_same<T, bool>::value>::type
-    run_arithmetic(TestAtomics<TT> &ins)
+    run_arithmetic(TestAtomics<TT, IsVolatile> &ins)
     {
         std::cout << "Arithmetic tests are active for the given type."
                   << std::endl;
@@ -296,7 +305,7 @@ template <typename TT> struct TestAtomics {
     }
     static void run_tests()
     {
-        static TestAtomics<TT> ins;
+        static TestAtomics<TT, IsVolatile> ins;
         std::cout << "Testing type [" << typeid(TT).name() << "] Max = " << max
                   << " Min = " << min << " with size = " << sizeof(TT)
                   << "byte(s)" << std::endl;
@@ -316,34 +325,35 @@ template <typename TT> struct TestAtomics {
 
   private:
     std::vector<TT> vals = {min, (max / 4), (max / 2), max};
-    std::atomic<TT> mirror;
-    vsync::atomic<TT> subject;
+    MirrorType mirror;
+    SubjectType subject;
 };
 
 int
 main(void)
 {
     /* Run with all c++ primitive types*/
-    TestAtomics<signed char>::run_tests();
-    TestAtomics<unsigned char>::run_tests();
-    TestAtomics<short>::run_tests();
-    TestAtomics<short int>::run_tests();
-    TestAtomics<signed short>::run_tests();
-    TestAtomics<signed short int>::run_tests();
-    TestAtomics<unsigned short>::run_tests();
-    TestAtomics<unsigned short int>::run_tests();
-    TestAtomics<int>::run_tests();
-    TestAtomics<signed>::run_tests();
-    TestAtomics<signed int>::run_tests();
-    TestAtomics<unsigned>::run_tests();
-    TestAtomics<unsigned int>::run_tests();
+    TestAtomics<signed char, false>::run_tests();
+    TestAtomics<signed char, true>::run_tests();
+    TestAtomics<unsigned char, false>::run_tests();
+    TestAtomics<short, false>::run_tests();
+    TestAtomics<short int, false>::run_tests();
+    TestAtomics<signed short, false>::run_tests();
+    TestAtomics<signed short int, false>::run_tests();
+    TestAtomics<unsigned short, false>::run_tests();
+    TestAtomics<unsigned short int, false>::run_tests();
+    TestAtomics<int, false>::run_tests();
+    TestAtomics<signed, false>::run_tests();
+    TestAtomics<signed int, false>::run_tests();
+    TestAtomics<unsigned, false>::run_tests();
+    TestAtomics<unsigned int, false>::run_tests();
 #if !(defined(__APPLE__) || defined(__ARM_ARCH))
-    TestAtomics<long>::run_tests();
-    TestAtomics<long int>::run_tests();
-    TestAtomics<signed long>::run_tests();
-    TestAtomics<signed long int>::run_tests();
-    TestAtomics<unsigned long>::run_tests();
-    TestAtomics<unsigned long int>::run_tests();
+    TestAtomics<long, false>::run_tests();
+    TestAtomics<long int, false>::run_tests();
+    TestAtomics<signed long, false>::run_tests();
+    TestAtomics<signed long int, false>::run_tests();
+    TestAtomics<unsigned long, false>::run_tests();
+    TestAtomics<unsigned long int, false>::run_tests();
 #endif
     // TODO: TestAtomics<long long>::run_tests();
     // TODO: TestAtomics<long long int>::run_tests();
@@ -351,17 +361,28 @@ main(void)
     // TODO: TestAtomics<signed long long int>::run_tests();
     // TODO: TestAtomics<unsigned long long>::run_tests();
     // TODO: TestAtomics<unsigned long long int>::run_tests();
-    TestAtomics<size_t>::run_tests();
-    TestAtomics<bool>::run_tests();
+    TestAtomics<size_t, false>::run_tests();
+    TestAtomics<bool, false>::run_tests();
 
     /* Run with all vatomic types*/
-    TestAtomics<vint8_t>::run_tests();
-    TestAtomics<vint16_t>::run_tests();
-    TestAtomics<vint32_t>::run_tests();
-    TestAtomics<vint64_t>::run_tests();
-    TestAtomics<vuint8_t>::run_tests();
-    TestAtomics<vuint16_t>::run_tests();
-    TestAtomics<vuint32_t>::run_tests();
-    TestAtomics<vsize_t>::run_tests();
-    TestAtomics<vbool_t>::run_tests();
+    TestAtomics<vint8_t, false>::run_tests();
+    TestAtomics<vint16_t, false>::run_tests();
+    TestAtomics<vint32_t, false>::run_tests();
+    TestAtomics<vint64_t, false>::run_tests();
+    TestAtomics<vuint8_t, false>::run_tests();
+    TestAtomics<vuint16_t, false>::run_tests();
+    TestAtomics<vuint32_t, false>::run_tests();
+    TestAtomics<vsize_t, false>::run_tests();
+    TestAtomics<vbool_t, false>::run_tests();
+
+    /* Run with all vatomic types with volatile */
+    TestAtomics<vint8_t, true>::run_tests();
+    TestAtomics<vint16_t, true>::run_tests();
+    TestAtomics<vint32_t, true>::run_tests();
+    TestAtomics<vint64_t, true>::run_tests();
+    TestAtomics<vuint8_t, true>::run_tests();
+    TestAtomics<vuint16_t, true>::run_tests();
+    TestAtomics<vuint32_t, true>::run_tests();
+    TestAtomics<vsize_t, true>::run_tests();
+    TestAtomics<vbool_t, true>::run_tests();
 }
