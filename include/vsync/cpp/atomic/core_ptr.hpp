@@ -358,7 +358,7 @@ namespace vsync
                 expected = old;
                 desired  = expected + v;
                 old      = static_cast<PTR *>(vatomicptr_cmpxchg(
-                    const_cast<vatomicptr_t *>(&_v), expected, desired));
+                         const_cast<vatomicptr_t *>(&_v), expected, desired));
             } while (old != expected);
             return return_old ? old : desired;
         }
@@ -387,7 +387,7 @@ namespace vsync
                 expected = old;
                 desired  = expected + v;
                 old      = static_cast<PTR *>(vatomicptr_cmpxchg_acq(
-                    const_cast<vatomicptr_t *>(&_v), expected, desired));
+                         const_cast<vatomicptr_t *>(&_v), expected, desired));
             } while (old != expected);
             return return_old ? old : desired;
         }
@@ -416,7 +416,7 @@ namespace vsync
                 expected = old;
                 desired  = expected + v;
                 old      = static_cast<PTR *>(vatomicptr_cmpxchg_rel(
-                    const_cast<vatomicptr_t *>(&_v), expected, desired));
+                         const_cast<vatomicptr_t *>(&_v), expected, desired));
             } while (old != expected);
             return return_old ? old : desired;
         }
@@ -445,7 +445,7 @@ namespace vsync
                 expected = old;
                 desired  = expected + v;
                 old      = static_cast<PTR *>(vatomicptr_cmpxchg_rlx(
-                    const_cast<vatomicptr_t *>(&_v), expected, desired));
+                         const_cast<vatomicptr_t *>(&_v), expected, desired));
             } while (old != expected);
             return return_old ? old : desired;
         }
