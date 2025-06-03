@@ -8,7 +8,6 @@
 extern "C" {
 #include <vsync/atomic.h>
 }
-
 namespace vsync
 {
     template <> struct atomic<vuint16_t> {
@@ -24,20 +23,129 @@ namespace vsync
         {
             vatomic16_init(&_v, v);
         }
+        vuint16_t
+        load(memory_order order = memory_order_seq_cst) volatile const noexcept
+        {
+            switch (order) {
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return (vatomic16_read_acq(const_cast<vatomic16_t *>(&_v)));
+                case memory_order_relaxed:
+                    return (vatomic16_read_rlx(const_cast<vatomic16_t *>(&_v)));
+                case memory_order_release:
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return (vatomic16_read(const_cast<vatomic16_t *>(&_v)));
+            }
+        }
+        void store(vuint16_t v,
+                   memory_order order = memory_order_seq_cst) volatile noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    vatomic16_write_rel(const_cast<vatomic16_t *>(&_v), v);
+                    break;
+                case memory_order_relaxed:
+                    vatomic16_write_rlx(const_cast<vatomic16_t *>(&_v), v);
+                    break;
+                case memory_order_acquire:
+                case memory_order_acq_rel:
+                case memory_order_consume:
+                case memory_order_seq_cst:
+                default:
+                    return vatomic16_write(const_cast<vatomic16_t *>(&_v), v);
+            }
+        }
+
+        vuint16_t operator=(vuint16_t v) volatile noexcept
+        {
+            store(v);
+            return v;
+        }
+
+        operator vuint16_t() volatile const noexcept
+        {
+            return load();
+        }
+
+        vuint16_t
+        exchange(vuint16_t v,
+                 memory_order order = memory_order_seq_cst) volatile noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return (
+                        vatomic16_xchg_rel(const_cast<vatomic16_t *>(&_v), v));
+                case memory_order_relaxed:
+                    return (
+                        vatomic16_xchg_rlx(const_cast<vatomic16_t *>(&_v), v));
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return (
+                        vatomic16_xchg_acq(const_cast<vatomic16_t *>(&_v), v));
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return (vatomic16_xchg(const_cast<vatomic16_t *>(&_v), v));
+            }
+        }
+
+        bool compare_exchange_strong(
+            vuint16_t &expected, vuint16_t desired,
+            memory_order order   = memory_order_seq_cst,
+            memory_order failure = memory_order_seq_cst) volatile noexcept
+        {
+            vuint16_t old = 0;
+            switch (order) {
+                case memory_order_release:
+                    old = (vatomic16_cmpxchg_rel(const_cast<vatomic16_t *>(&_v),
+                                                 expected, desired));
+                    break;
+                case memory_order_relaxed:
+                    old = (vatomic16_cmpxchg_rlx(const_cast<vatomic16_t *>(&_v),
+                                                 expected, desired));
+                    break;
+                case memory_order_consume:
+                case memory_order_acquire:
+                    old = (vatomic16_cmpxchg_acq(const_cast<vatomic16_t *>(&_v),
+                                                 expected, desired));
+                    break;
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    old = (vatomic16_cmpxchg(const_cast<vatomic16_t *>(&_v),
+                                             expected, desired));
+                    break;
+            }
+            if (old == expected) {
+                return true;
+            } else {
+                expected = old;
+                return false;
+            }
+        }
+        bool compare_exchange_weak(
+            vuint16_t &expected, vuint16_t desired,
+            memory_order order   = memory_order_seq_cst,
+            memory_order failure = memory_order_seq_cst) volatile noexcept
+        {
+            return compare_exchange_strong(expected, desired, order, failure);
+        }
 
         vuint16_t load(memory_order order = memory_order_seq_cst) const noexcept
         {
             switch (order) {
                 case memory_order_consume:
                 case memory_order_acquire:
-                    return (vatomic16_read_acq(&_v));
+                    return (vatomic16_read_acq((&_v)));
                 case memory_order_relaxed:
-                    return (vatomic16_read_rlx(&_v));
+                    return (vatomic16_read_rlx((&_v)));
                 case memory_order_release:
                 case memory_order_acq_rel:
                 case memory_order_seq_cst:
                 default:
-                    return (vatomic16_read(&_v));
+                    return (vatomic16_read((&_v)));
             }
         }
         void store(vuint16_t v,
@@ -45,17 +153,17 @@ namespace vsync
         {
             switch (order) {
                 case memory_order_release:
-                    vatomic16_write_rel(&_v, v);
+                    vatomic16_write_rel((&_v), v);
                     break;
                 case memory_order_relaxed:
-                    vatomic16_write_rlx(&_v, v);
+                    vatomic16_write_rlx((&_v), v);
                     break;
                 case memory_order_acquire:
                 case memory_order_acq_rel:
                 case memory_order_consume:
                 case memory_order_seq_cst:
                 default:
-                    return vatomic16_write(&_v, v);
+                    return vatomic16_write((&_v), v);
             }
         }
 
@@ -75,16 +183,16 @@ namespace vsync
         {
             switch (order) {
                 case memory_order_release:
-                    return (vatomic16_xchg_rel(&_v, v));
+                    return (vatomic16_xchg_rel((&_v), v));
                 case memory_order_relaxed:
-                    return (vatomic16_xchg_rlx(&_v, v));
+                    return (vatomic16_xchg_rlx((&_v), v));
                 case memory_order_consume:
                 case memory_order_acquire:
-                    return (vatomic16_xchg_acq(&_v, v));
+                    return (vatomic16_xchg_acq((&_v), v));
                 case memory_order_acq_rel:
                 case memory_order_seq_cst:
                 default:
-                    return (vatomic16_xchg(&_v, v));
+                    return (vatomic16_xchg((&_v), v));
             }
         }
 
@@ -96,19 +204,19 @@ namespace vsync
             vuint16_t old = 0;
             switch (order) {
                 case memory_order_release:
-                    old = (vatomic16_cmpxchg_rel(&_v, expected, desired));
+                    old = (vatomic16_cmpxchg_rel((&_v), expected, desired));
                     break;
                 case memory_order_relaxed:
-                    old = (vatomic16_cmpxchg_rlx(&_v, expected, desired));
+                    old = (vatomic16_cmpxchg_rlx((&_v), expected, desired));
                     break;
                 case memory_order_consume:
                 case memory_order_acquire:
-                    old = (vatomic16_cmpxchg_acq(&_v, expected, desired));
+                    old = (vatomic16_cmpxchg_acq((&_v), expected, desired));
                     break;
                 case memory_order_acq_rel:
                 case memory_order_seq_cst:
                 default:
-                    old = (vatomic16_cmpxchg(&_v, expected, desired));
+                    old = (vatomic16_cmpxchg((&_v), expected, desired));
                     break;
             }
             if (old == expected) {
@@ -126,21 +234,174 @@ namespace vsync
             return compare_exchange_strong(expected, desired, order, failure);
         }
 
+        vuint16_t
+        fetch_add(vuint16_t v,
+                  memory_order order = memory_order_seq_cst) volatile noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return (vatomic16_get_add_rel(
+                        const_cast<vatomic16_t *>(&_v), v));
+                case memory_order_relaxed:
+                    return (vatomic16_get_add_rlx(
+                        const_cast<vatomic16_t *>(&_v), v));
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return (vatomic16_get_add_acq(
+                        const_cast<vatomic16_t *>(&_v), v));
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return (
+                        vatomic16_get_add(const_cast<vatomic16_t *>(&_v), v));
+            }
+        }
+        vuint16_t operator+=(vuint16_t v) volatile noexcept
+        {
+            return fetch_add(v);
+        }
+        // v++
+        vuint16_t operator++(int) volatile noexcept
+        {
+            return vatomic16_get_inc(const_cast<vatomic16_t *>(&_v));
+        }
+        // ++v
+        vuint16_t operator++() volatile noexcept
+        {
+            return vatomic16_inc_get(const_cast<vatomic16_t *>(&_v));
+        }
+
+        vuint16_t
+        fetch_sub(vuint16_t v,
+                  memory_order order = memory_order_seq_cst) volatile noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return vatomic16_get_sub_rel(const_cast<vatomic16_t *>(&_v),
+                                                 v);
+                case memory_order_relaxed:
+                    return vatomic16_get_sub_rlx(const_cast<vatomic16_t *>(&_v),
+                                                 v);
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return vatomic16_get_sub_acq(const_cast<vatomic16_t *>(&_v),
+                                                 v);
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return vatomic16_get_sub(const_cast<vatomic16_t *>(&_v), v);
+            }
+        }
+        vuint16_t operator-=(vuint16_t v) volatile noexcept
+        {
+            return fetch_sub(v);
+        }
+        // v--
+        vuint16_t operator--(int) volatile noexcept
+        {
+            return vatomic16_get_dec(const_cast<vatomic16_t *>(&_v));
+        }
+        // --v
+        vuint16_t operator--() volatile noexcept
+        {
+            return vatomic16_dec_get(const_cast<vatomic16_t *>(&_v));
+        }
+
+        vuint16_t
+        fetch_and(vuint16_t v,
+                  memory_order order = memory_order_seq_cst) volatile noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return vatomic16_get_and_rel(const_cast<vatomic16_t *>(&_v),
+                                                 v);
+                case memory_order_relaxed:
+                    return vatomic16_get_and_rlx(const_cast<vatomic16_t *>(&_v),
+                                                 v);
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return vatomic16_get_and_acq(const_cast<vatomic16_t *>(&_v),
+                                                 v);
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return vatomic16_get_and(const_cast<vatomic16_t *>(&_v), v);
+            }
+        }
+
+        vuint16_t operator&=(vuint16_t v) volatile noexcept
+        {
+            return fetch_and(v);
+        }
+
+        vuint16_t
+        fetch_or(vuint16_t v,
+                 memory_order order = memory_order_seq_cst) volatile noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return vatomic16_get_or_rel(const_cast<vatomic16_t *>(&_v),
+                                                v);
+                case memory_order_relaxed:
+                    return vatomic16_get_or_rlx(const_cast<vatomic16_t *>(&_v),
+                                                v);
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return vatomic16_get_or_acq(const_cast<vatomic16_t *>(&_v),
+                                                v);
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return vatomic16_get_or(const_cast<vatomic16_t *>(&_v), v);
+            }
+        }
+
+        vuint16_t operator|=(vuint16_t v) volatile noexcept
+        {
+            return fetch_or(v);
+        }
+
+        vuint16_t
+        fetch_xor(vuint16_t v,
+                  memory_order order = memory_order_seq_cst) volatile noexcept
+        {
+            switch (order) {
+                case memory_order_release:
+                    return vatomic16_get_xor_rel(const_cast<vatomic16_t *>(&_v),
+                                                 v);
+                case memory_order_relaxed:
+                    return vatomic16_get_xor_rlx(const_cast<vatomic16_t *>(&_v),
+                                                 v);
+                case memory_order_consume:
+                case memory_order_acquire:
+                    return vatomic16_get_xor_acq(const_cast<vatomic16_t *>(&_v),
+                                                 v);
+                case memory_order_acq_rel:
+                case memory_order_seq_cst:
+                default:
+                    return vatomic16_get_xor(const_cast<vatomic16_t *>(&_v), v);
+            }
+        }
+
+        vuint16_t operator^=(vuint16_t v) volatile noexcept
+        {
+            return fetch_xor(v);
+        }
         vuint16_t fetch_add(vuint16_t v,
                             memory_order order = memory_order_seq_cst) noexcept
         {
             switch (order) {
                 case memory_order_release:
-                    return (vatomic16_get_add_rel(&_v, v));
+                    return (vatomic16_get_add_rel((&_v), v));
                 case memory_order_relaxed:
-                    return (vatomic16_get_add_rlx(&_v, v));
+                    return (vatomic16_get_add_rlx((&_v), v));
                 case memory_order_consume:
                 case memory_order_acquire:
-                    return (vatomic16_get_add_acq(&_v, v));
+                    return (vatomic16_get_add_acq((&_v), v));
                 case memory_order_acq_rel:
                 case memory_order_seq_cst:
                 default:
-                    return (vatomic16_get_add(&_v, v));
+                    return (vatomic16_get_add((&_v), v));
             }
         }
         vuint16_t operator+=(vuint16_t v) noexcept
@@ -150,12 +411,12 @@ namespace vsync
         // v++
         vuint16_t operator++(int) noexcept
         {
-            return vatomic16_get_inc(&_v);
+            return vatomic16_get_inc((&_v));
         }
         // ++v
         vuint16_t operator++() noexcept
         {
-            return vatomic16_inc_get(&_v);
+            return vatomic16_inc_get((&_v));
         }
 
         vuint16_t fetch_sub(vuint16_t v,
@@ -163,16 +424,16 @@ namespace vsync
         {
             switch (order) {
                 case memory_order_release:
-                    return vatomic16_get_sub_rel(&_v, v);
+                    return vatomic16_get_sub_rel((&_v), v);
                 case memory_order_relaxed:
-                    return vatomic16_get_sub_rlx(&_v, v);
+                    return vatomic16_get_sub_rlx((&_v), v);
                 case memory_order_consume:
                 case memory_order_acquire:
-                    return vatomic16_get_sub_acq(&_v, v);
+                    return vatomic16_get_sub_acq((&_v), v);
                 case memory_order_acq_rel:
                 case memory_order_seq_cst:
                 default:
-                    return vatomic16_get_sub(&_v, v);
+                    return vatomic16_get_sub((&_v), v);
             }
         }
         vuint16_t operator-=(vuint16_t v) noexcept
@@ -182,12 +443,12 @@ namespace vsync
         // v--
         vuint16_t operator--(int) noexcept
         {
-            return vatomic16_get_dec(&_v);
+            return vatomic16_get_dec((&_v));
         }
         // --v
         vuint16_t operator--() noexcept
         {
-            return vatomic16_dec_get(&_v);
+            return vatomic16_dec_get((&_v));
         }
 
         vuint16_t fetch_and(vuint16_t v,
@@ -195,16 +456,16 @@ namespace vsync
         {
             switch (order) {
                 case memory_order_release:
-                    return vatomic16_get_and_rel(&_v, v);
+                    return vatomic16_get_and_rel((&_v), v);
                 case memory_order_relaxed:
-                    return vatomic16_get_and_rlx(&_v, v);
+                    return vatomic16_get_and_rlx((&_v), v);
                 case memory_order_consume:
                 case memory_order_acquire:
-                    return vatomic16_get_and_acq(&_v, v);
+                    return vatomic16_get_and_acq((&_v), v);
                 case memory_order_acq_rel:
                 case memory_order_seq_cst:
                 default:
-                    return vatomic16_get_and(&_v, v);
+                    return vatomic16_get_and((&_v), v);
             }
         }
 
@@ -218,16 +479,16 @@ namespace vsync
         {
             switch (order) {
                 case memory_order_release:
-                    return vatomic16_get_or_rel(&_v, v);
+                    return vatomic16_get_or_rel((&_v), v);
                 case memory_order_relaxed:
-                    return vatomic16_get_or_rlx(&_v, v);
+                    return vatomic16_get_or_rlx((&_v), v);
                 case memory_order_consume:
                 case memory_order_acquire:
-                    return vatomic16_get_or_acq(&_v, v);
+                    return vatomic16_get_or_acq((&_v), v);
                 case memory_order_acq_rel:
                 case memory_order_seq_cst:
                 default:
-                    return vatomic16_get_or(&_v, v);
+                    return vatomic16_get_or((&_v), v);
             }
         }
 
@@ -241,22 +502,26 @@ namespace vsync
         {
             switch (order) {
                 case memory_order_release:
-                    return vatomic16_get_xor_rel(&_v, v);
+                    return vatomic16_get_xor_rel((&_v), v);
                 case memory_order_relaxed:
-                    return vatomic16_get_xor_rlx(&_v, v);
+                    return vatomic16_get_xor_rlx((&_v), v);
                 case memory_order_consume:
                 case memory_order_acquire:
-                    return vatomic16_get_xor_acq(&_v, v);
+                    return vatomic16_get_xor_acq((&_v), v);
                 case memory_order_acq_rel:
                 case memory_order_seq_cst:
                 default:
-                    return vatomic16_get_xor(&_v, v);
+                    return vatomic16_get_xor((&_v), v);
             }
         }
 
         vuint16_t operator^=(vuint16_t v) noexcept
         {
             return fetch_xor(v);
+        }
+        bool is_lock_free() volatile const noexcept
+        {
+            return true;
         }
         bool is_lock_free() const noexcept
         {
