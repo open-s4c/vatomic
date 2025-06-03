@@ -12,8 +12,6 @@ _tmpl_map(MAP_MIRROR_s64, vuint64_t);
 _tmpl_dl; //--------------------------------------
 _tmpl_map(MAP_VOL, volatile);
 _tmpl_map(MAP_NON_VOL, );
-_tmpl_map(MAP_CAST_VOL, const_cast<AA*>);
-_tmpl_map(MAP_CAST_NON_VOL, );
 _tmpl_begin(TY = [[s8; s16; s32; s64;]]);
 extern "C" {
 #include <vsync/atomic.h>
