@@ -87,22 +87,35 @@ pub fn cfg(code: &[BoogieInstruction]) -> GraphMap<usize, (), Directed> {
         graphmap::GraphMap::with_capacity(code.len() + 1, 2 * code.len() + 1);
     let label_idx = all_labels(code.iter());
 
-
+    let mut unreachable = false;
     for (i, instr) in code.iter().enumerate() {
         match &instr {
-            BoogieInstruction::Return => {
-            }
-            BoogieInstruction::Branch(targets, cond)
-            => {
-                for label in targets {
-                    graph.add_edge(i, label_idx[label], ());
-                }
-                if cond != "true" {
-                    graph.add_edge(i, i + 1, ());
-                }
+            BoogieInstruction::Label(_) => {
+                unreachable  = false;
             }
             _ => {
-                graph.add_edge(i, i + 1, ());
+
+            }
+        }
+        if unreachable == false {
+            match &instr {
+                BoogieInstruction::Return => {
+                }
+                BoogieInstruction::Branch(targets, cond)
+                => {
+                    for label in targets {
+                        graph.add_edge(i, label_idx[label], ());
+                    }
+                    if cond != "true" {
+                        graph.add_edge(i, i + 1, ());
+                    }
+                    else {
+                        unreachable = true;
+                    }
+                }
+                _ => {
+                    graph.add_edge(i, i + 1, ());
+                }
             }
         }
     }
