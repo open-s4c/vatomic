@@ -1,3 +1,7 @@
 /target
 test
 test.bpl
+/out
+/out_retry
+atomics_list_full.txt
+FAILED_atomics_list_full.txt
