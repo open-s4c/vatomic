@@ -188,6 +188,8 @@ ensure
 
         puts ""
         puts "finished heavy verification"
+      else 
+        exit 5
       end
     end
   elsif (options[:phases].include? 2)
@@ -200,5 +202,17 @@ ensure
     puts "no tests run"
   elsif $results.all? { |_arch, result| result.all? { |(_,pass)| pass }} 
     puts "no failures found"
+  else 
+    failed = $results.flat_map do |arch, results|
+      results.reject { |(_, pass)| pass }.map { |(atomic, _)| "#{arch}/#{atomic}" }
+  end
+
+    if failed.any?
+      puts "\nThe following atomics failed verification:"
+      failed.each { |f| puts "  - #{f}" }
+
+      puts "\nVerification finished with errors"
+      exit 5
+    end
   end
 end
