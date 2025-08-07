@@ -190,7 +190,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Configure
-        run: cmake -S. -Bbuild -DLIBVSYNC_ATOMICS_VERIFICATION=ON
+        run: cmake -S. -Bbuild
       - name: Build
         run: cmake --build build --target build_boogie_${{ matrix.target }}
       - name: Verify
