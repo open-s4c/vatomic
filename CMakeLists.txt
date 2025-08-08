@@ -36,7 +36,8 @@ if(VATOMIC_DEV)
     # Atomic templating
     add_subdirectory(template)
     add_subdirectory(tmplr)
-
+    include(cmake/doc.cmake)
+    add_doc_targets()
     # Basic format sanitization
     add_custom_target(
         sanitize-vatomic
