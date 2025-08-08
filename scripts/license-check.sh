@@ -25,7 +25,7 @@ else
         -name '*.bpl' -o \
         -name '*.cmake.in' -o \
         -name 'CMake*.txt' -o \
-        -name '*.cmake' | grep -v "build")
+        -name '*.cmake' | grep -v "build" | grep -v "examples")
 fi
 
 # we use GNU sed
