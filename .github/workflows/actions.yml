@@ -35,7 +35,7 @@ jobs:
       - name: Prep Env for macos
         if: matrix.os == 'macos-latest'
         run: |
-          sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer    
+          sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
       - name: Configure Testing Ubuntu
         run: |
           cmake -S. -Bbuild
@@ -44,7 +44,7 @@ jobs:
         run: |
           export SDK_ROOT=$(xcrun --sdk macosx --show-sdk-path)
           cmake -S. -Bbuild -DCMAKE_C_FLAGS="-isysroot $SDK_ROOT" -DCMAKE_CXX_FLAGS="-isysroot $SDK_ROOT"
-        if: matrix.os == 'macos-latest'       
+        if: matrix.os == 'macos-latest'
       - name: Build Tests
         run: cmake --build build
       - name: Run Tests
@@ -76,32 +76,23 @@ jobs:
   check-expectations:
     runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
         target:
             - "clang-format-apply"
+            - "cmake-format-apply"
+            - "markdown"
             - "vatomic-generate"
             - "vatomic-test-generate"
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Configure
-        run: cmake -S. -Bbuild
-      - name: Run ${{ matrix.target }}
-        run: cmake --build build --target ${{ matrix.target }}
-      - name: Check things match expectation
-        run: cmake --build build --target diff-check ||
-            (echo "Run 'make ${{ matrix.target }}' and commit" && false)
-
-  check-cmake-format:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target:
-            - "cmake-format-apply"
-    steps:
-      - name: Install cmake-format
+      - name: Download and Install doxygen & mdox for markdown check
+        if: ${{ matrix.target }} == "markdown"
+        run: |
+          sudo apt update && sudo apt install -y doxygen curl
+          sudo curl -L -o /usr/local/bin/mdox https://github.com/db7/mdox/releases/download/v0.1/mdox-v0.1-linux-amd64
+          sudo chmod +x /usr/local/bin/mdox
+      - name: Install cmake-format for cmake-format-check
+        if: ${{ matrix.target }} == "cmake-format-apply"
         run: pip install cmakelang
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -114,6 +105,7 @@ jobs:
       - name: Check things match expectation
         run: cmake --build build --target diff-check ||
             (echo "Run 'make ${{ matrix.target }}' and commit" && false)
+
 
   prepare-docker:
     runs-on: ubuntu-latest
