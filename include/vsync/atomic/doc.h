@@ -1,8 +1,3 @@
-/*
- * Copyright (C) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
- * SPDX-License-Identifier: MIT
- * Author: Huawei Dresden Research Center
- */
 #ifndef VATOMIC_DOC_H
 #define VATOMIC_DOC_H
 /*******************************************************************************
