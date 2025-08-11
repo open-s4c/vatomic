@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2024-2025. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
 #ifndef VSYNC_DOC_H
 #define VSYNC_DOC_H
 /*******************************************************************************
