@@ -198,7 +198,7 @@ jobs:
         run: ctest -R ${{ matrix.target }} --test-dir build/verify
 
   boogie-verification-builtin:
-  needs: [ prepare-docker ]
+    needs: [ prepare-docker ]
     strategy:
       matrix:
         target: [ armv8 ]
