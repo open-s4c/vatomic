@@ -27,30 +27,30 @@ add_custom_command(
     COMMENT "Generate the full list of atomics"
 )
 
-set(ARMV8_FLAGS -DVATOMIC_DISABLE_ARM64_LSE)
-foreach(TARGET ${TARGETS})
-    string(TOLOWER "${TARGET}" SUB_DIR)
-    set(SUFFIX ${SUB_DIR})
-    set(SUB_DIR ${CMAKE_CURRENT_BINARY_DIR}/${SUB_DIR})
-    set(ASM_FILE ${SUB_DIR}/atomics.s)
-
-    set(CFLAGS
+set(ARMV8_FLAGS 
+        -DVATOMIC_DISABLE_ARM64_LSE
         -DVATOMIC_BUILTINS
         -O2
         -x c
         -fkeep-inline-functions
         -S
         -mno-outline-atomics
-    )
+)
+
+foreach(TARGET ${TARGETS})
+    string(TOLOWER "${TARGET}" SUB_DIR)
+    set(SUFFIX ${SUB_DIR})
+    set(SUB_DIR ${CMAKE_CURRENT_BINARY_DIR}/${SUB_DIR})
+    set(ASM_FILE ${SUB_DIR}/atomics.s)
 
     add_custom_command(
         OUTPUT builtin_${TARGET}
-        COMMAND ${CMAKE_C_COMPILER} ${CFLAGS} "${VSYNC_INCLUDE}" ${CMAKE_SOURCE_DIR}/include/vsync/atomic.h -o ${ASM_FILE}
+        COMMAND ${${TARGET}_CMAKE_C_COMPILER} ${${TARGET}_FLAGS} "${VSYNC_INCLUDE}" ${CMAKE_SOURCE_DIR}/include/vsync/atomic.h -o ${ASM_FILE}
         COMMAND_EXPAND_LISTS
         DEPENDS vatomic BUILTIN_SCRIPTS
         COMMENT "Generating ${TARGET} builtin atomics"
     )
     
     add_custom_target(build_boogie_builtin_${SUFFIX} DEPENDS ATOMIC_LIST builtin_${TARGET})
-    add_test(NAME test_builtin_${SUFFIX} COMMAND ruby verify_all.rb -a ${SUFFIX} -s atomics_list_full.txt)
+    add_custom_target(test_builtin_${SUFFIX} COMMAND ruby verify_all.rb -a ${SUFFIX} -s atomics_list_full.txt)
 endforeach()

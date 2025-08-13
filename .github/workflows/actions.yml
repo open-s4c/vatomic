@@ -214,4 +214,4 @@ jobs:
       - name: Build
         run: cmake --build build --target build_boogie_builtin_${{ matrix.target }}
       - name: Verify
-        run: ctest -R test_builtin_${{ matrix.target }} -V --test-dir build/verify
+        run: cmake --build build --target test_builtin_${{ matrix.target }}
