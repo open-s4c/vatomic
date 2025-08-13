@@ -24,6 +24,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dotnet-sdk-8.0 \
     ghc \
     && rm -rf /var/lib/apt/lists/*
+    
+# Set default encoding to UTF-8
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 # Set default encoding to UTF-8
 ENV LANG=C.UTF-8
