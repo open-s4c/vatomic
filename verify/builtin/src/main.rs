@@ -14,7 +14,10 @@ enum OutputMode {
 
 #[derive(Debug, Clone, Copy, PartialEq, ValueEnum)]
 enum ArchSpecifier {
+    #[value(name = "armv8")]
     ArmV8,
+    
+    #[value(name = "riscv")]
     RiscV,
 }
 
