@@ -39,7 +39,7 @@ foreach(HASKELL_TARGET ${HASKELL_TARGETS})
     # target
     add_custom_command(
         OUTPUT ${EXPANDED_FILE}
-        COMMAND ${CMAKE_C_COMPILER} ${CFLAGS} "${VSYNC_INCLUDE}" -E -include
+        COMMAND ${ARMV8_CMAKE_C_COMPILER} ${CFLAGS} "${VSYNC_INCLUDE}" -E -include
                 vsync/atomic.h - < /dev/null > ${EXPANDED_FILE}
         COMMAND_EXPAND_LISTS
         DEPENDS vatomic ${HASKELL_SUB_DIR}
