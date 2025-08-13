@@ -51,6 +51,6 @@ foreach(TARGET ${TARGETS})
         COMMENT "Generating ${TARGET} builtin atomics"
     )
     
-    add_custom_target(build_boogie_${SUFFIX} DEPENDS ATOMIC_LIST builtin_${TARGET})
+    add_custom_target(build_boogie_builtin_${SUFFIX} DEPENDS ATOMIC_LIST builtin_${TARGET})
     add_test(NAME test_builtin_${SUFFIX} COMMAND ruby verify_all.rb -a ${SUFFIX} -s atomics_list_full.txt)
 endforeach()

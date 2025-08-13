@@ -178,7 +178,8 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
 
-  boogie-verification:
+  boogie-verification-haskell:
+    needs: [ prepare-docker ]
     strategy:
       matrix:
         target: [ lse, llsc, lxe, no_polite_await ]
@@ -196,3 +197,21 @@ jobs:
       - name: Verify
         run: ctest -R ${{ matrix.target }} --test-dir build/verify
 
+  boogie-verification-builtin:
+  needs: [ prepare-docker ]
+    strategy:
+      matrix:
+        target: [ armv8 ]
+    runs-on: ubuntu-latest
+    container: ghcr.io/${{ github.repository }}/boogie-ci:sha-${{ github.sha }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure
+        run: cmake -S. -Bbuild
+      - name: Build
+        run: cmake --build build --target build_boogie_builtin_${{ matrix.target }}
+      - name: Verify
+        run: ctest -R test_builtin_${{ matrix.target }} -V --test-dir build/verify
