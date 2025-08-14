@@ -32,6 +32,7 @@ jobs:
       - name: Check specs
         run: |
           lscpu
+        if: matrix.os != 'macos-latest'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
