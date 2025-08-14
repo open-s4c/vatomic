@@ -20,12 +20,12 @@ add_custom_command(
     COMMENT "Copy verification scripts for the builtin atomics"
 )
 
-add_custom_command(
-    OUTPUT ATOMIC_LIST
-    COMMAND ruby gen_atomic_list.rb > atomics_list_full.txt
-    DEPENDS BUILTIN_SCRIPTS
-    COMMENT "Generate the full list of atomics"
-)
+# add_custom_command(
+#     OUTPUT ATOMIC_LIST
+#     COMMAND ruby gen_atomic_list.rb > atomics_list_full.txt
+#     DEPENDS BUILTIN_SCRIPTS
+#     COMMENT "Generate the full list of atomics"
+# )
 
 set(ARMV8_FLAGS 
         -DVATOMIC_DISABLE_ARM64_LSE
@@ -36,6 +36,8 @@ set(ARMV8_FLAGS
         -S
         -mno-outline-atomics
 )
+
+set(ATOMICS_GROUPS vatomic8 vatomic16 vatomic32 vatomic64 vatomicsz_vatomicptr_fence)
 
 foreach(TARGET ${TARGETS})
     string(TOLOWER "${TARGET}" SUB_DIR)
@@ -51,6 +53,8 @@ foreach(TARGET ${TARGETS})
         COMMENT "Generating ${TARGET} builtin atomics"
     )
     
-    add_custom_target(build_boogie_builtin_${SUFFIX} DEPENDS ATOMIC_LIST builtin_${TARGET})
-    add_custom_target(test_builtin_${SUFFIX} COMMAND ruby verify_all.rb -a ${SUFFIX} -s atomics_list_full.txt)
+    add_custom_target(build_boogie_builtin_${SUFFIX} DEPENDS builtin_${TARGET})
+    foreach(ATM_GRP ${ATOMICS_GROUPS})
+        add_custom_target(test_builtin_${SUFFIX}_${ATM_GRP} COMMAND ruby verify_all.rb -a ${SUFFIX} -s ${ATM_GRP}.txt)
+    endforeach()
 endforeach()

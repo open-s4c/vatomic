@@ -106,7 +106,7 @@ def verify_all(archs, out, which, limit, phase)
     end
 
     base_path = File.join(out, arch)
-    $results[arch] = Parallel.map(Dir::children(base_path), in_processes: 10) { |atomic|
+    $results[arch] = Parallel.map(Dir::children(base_path), in_processes: 3) { |atomic|
       if ! limit || limit[:functions].include?(atomic)
         templates = Dir::children(File.join(base_path,atomic))
           .map { |template| drop_extension(template) }

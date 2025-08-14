@@ -206,6 +206,7 @@ jobs:
     strategy:
       matrix:
         target: [ armv8 ]
+        group: [ vatomic8, vatomic16, vatomic32, vatomic64, vatomicsz_vatomicptr_fence ]
     runs-on: ubuntu-latest
     container: ghcr.io/${{ github.repository }}/boogie-ci:sha-${{ github.sha }}
     steps:
@@ -220,4 +221,4 @@ jobs:
       - name: Build
         run: cmake --build build --target build_boogie_builtin_${{ matrix.target }}
       - name: Verify
-        run: cmake --build build --target test_builtin_${{ matrix.target }}
+        run: cmake --build build --target test_builtin_${{ matrix.target }}_${{ matrix.group }}
