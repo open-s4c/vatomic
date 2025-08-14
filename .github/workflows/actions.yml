@@ -29,6 +29,9 @@ jobs:
         os: [ubuntu-22.04, ubuntu-22.04-arm, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Check specs
+        run: |
+          lscpu
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -209,6 +212,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Check specs
+        run: lscpu
       - name: Configure
         run: cmake -S. -Bbuild
       - name: Build
