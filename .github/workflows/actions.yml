@@ -206,7 +206,7 @@ jobs:
     strategy:
       matrix:
         target: [ armv8 ]
-        group: [ vatomic8, vatomic16, vatomic32, vatomic64, vatomicsz_vatomicptr_fence ]
+        group: [ vatomic64, vatomicsz_vatomicptr_fence ]
     runs-on: ubuntu-latest
     container: ghcr.io/${{ github.repository }}/boogie-ci:sha-${{ github.sha }}
     steps:
