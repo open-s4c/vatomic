@@ -39,8 +39,8 @@ foreach(HASKELL_TARGET ${HASKELL_TARGETS})
     # target
     add_custom_command(
         OUTPUT ${EXPANDED_FILE}
-        COMMAND ${ARMV8_CMAKE_C_COMPILER} ${CFLAGS} "${VSYNC_INCLUDE}" -E -include
-                vsync/atomic.h - < /dev/null > ${EXPANDED_FILE}
+        COMMAND ${ARMV8_CMAKE_C_COMPILER} ${CFLAGS} "${VSYNC_INCLUDE}" -E
+                -include vsync/atomic.h - < /dev/null > ${EXPANDED_FILE}
         COMMAND_EXPAND_LISTS
         DEPENDS vatomic ${HASKELL_SUB_DIR}
         COMMENT "Preprocessing vsync/atomic.h")
@@ -53,7 +53,8 @@ foreach(HASKELL_TARGET ${HASKELL_TARGETS})
         COMMENT "Copy parser to ${HASKELL_SUB_DIR}")
 
     # Add test for running the parser on the expanded file
-    add_test(NAME test_${HASKELL_SUFFIX}_parsing COMMAND ./parser ${EXPANDED_FILE})
+    add_test(NAME test_${HASKELL_SUFFIX}_parsing COMMAND ./parser
+                                                         ${EXPANDED_FILE})
 
     # Run the parser on the expanded file
     add_custom_command(
@@ -78,8 +79,10 @@ foreach(HASKELL_TARGET ${HASKELL_TARGETS})
     )
     set(AWAIT_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/await.bpl ${HASKELL_SUB_DIR}/awaits.bpl")
-    set(RMW_FILES "${CMAKE_CURRENT_SOURCE_DIR}/rmw.bpl ${HASKELL_SUB_DIR}/rmws.bpl")
-    set(XCHG_FILES "${CMAKE_CURRENT_SOURCE_DIR}/xchg.bpl  ${HASKELL_SUB_DIR}/xchgs.bpl")
+    set(RMW_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/rmw.bpl ${HASKELL_SUB_DIR}/rmws.bpl")
+    set(XCHG_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/xchg.bpl  ${HASKELL_SUB_DIR}/xchgs.bpl")
     set(LIB_FILE "${CMAKE_CURRENT_SOURCE_DIR}/library.bpl")
 
     # ##########################################################################
@@ -94,7 +97,8 @@ foreach(HASKELL_TARGET ${HASKELL_TARGETS})
             COMMAND bash -c "boogie ${LIB_FILE} ${${grp}_FILES} >${LOG_NAME}"
             DEPENDS parsed_${HASKELL_SUFFIX}
             COMMENT
-                "Run boogie for ${GRP_NAME} on ${HASKELL_SUFFIX} generate ${LOG_NAME}")
+                "Run boogie for ${GRP_NAME} on ${HASKELL_SUFFIX} generate ${LOG_NAME}"
+        )
 
         # add test parsing for errors
         add_test(NAME test_${GRP_NAME}_${HASKELL_SUFFIX}_file_compiles
@@ -125,5 +129,6 @@ foreach(HASKELL_TARGET ${HASKELL_TARGETS})
     list(TRANSFORM ATOMICS APPEND _${HASKELL_SUFFIX})
 
     # Add build target
-    add_custom_target(build_boogie_${HASKELL_SUFFIX} DEPENDS ${ATOMICS} ${HASKELL_SUB_DIR})
+    add_custom_target(build_boogie_${HASKELL_SUFFIX} DEPENDS ${ATOMICS}
+                                                             ${HASKELL_SUB_DIR})
 endforeach()

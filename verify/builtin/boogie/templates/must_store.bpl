@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
 procedure must_store()
     modifies step, last_load, last_store, #state, #registers;
     ensures {:msg "store happens within function bounds"} (

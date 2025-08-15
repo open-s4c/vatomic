@@ -1,4 +1,8 @@
 /*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
+/*
     ret         - computation of return value (either ret_old, for normal read/rmw, or the same as op, for ..._get_... rmw)
     load_order  - ordering of load
 */

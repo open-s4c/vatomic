@@ -1,4 +1,8 @@
 /*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
+/*
     fence_order - ordering of fence
 */
 procedure fence(fence_order: OrderRelation)

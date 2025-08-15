@@ -1,3 +1,6 @@
+# Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+# SPDX-License-Identifier: MIT
+
 set(ARMV8_CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
 set(VSYNC_INCLUDE
     "-I$<JOIN:$<TARGET_PROPERTY:vatomic,INTERFACE_INCLUDE_DIRECTORIES>,;-I>")

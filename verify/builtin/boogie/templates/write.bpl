@@ -1,4 +1,8 @@
 /*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
+/*
     store_order - ordering of store
 */
 procedure write(store_order: OrderRelation)
