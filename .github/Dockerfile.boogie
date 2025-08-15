@@ -30,7 +30,7 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
 #Install z3 via pip
-RUN pip install z3-solver
+RUN pip install z3-solver --break-system-packages
 
 # Install Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
