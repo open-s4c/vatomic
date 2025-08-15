@@ -215,7 +215,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Check specs
-        run: lscpu
+        run: z3 --version
       - name: Configure
         run: cmake -S. -Bbuild
       - name: Build

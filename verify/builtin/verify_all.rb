@@ -51,7 +51,7 @@ end.parse!
 
 def verify(arch, out, atomic, templates)
   (library, asm_file) = Archs[arch]
-  `boogie /proverOpt:SOLVER=z3 /proverOpt:LOG_FILE=#{out}/#{atomic}/prover.in ./boogie/auxiliary.bpl ./#{library}/library.bpl #{templates.map{ |template| "#{out}/#{atomic}/#{template}.bpl" }.join " "}`.strip
+  `boogie /trace /proverOpt:SOLVER=z3 /proverOpt:LOG_FILE=#{out}/#{atomic}/prover.in ./boogie/auxiliary.bpl ./#{library}/library.bpl #{templates.map{ |template| "#{out}/#{atomic}/#{template}.bpl" }.join " "}`.strip
 end
 
 
@@ -101,7 +101,7 @@ def verify_all(archs, out, which, limit, phase)
 
       puts "======================="
       puts "verifying ISA [#{arch}] ( ./#{library}/correctness.bpl )"
-      puts `boogie /proverOpt:SOLVER=z3 ./boogie/auxiliary.bpl ./#{library}/library.bpl ./#{library}/correctness.bpl`.strip
+      puts `boogie /trace /proverOpt:SOLVER=z3 ./boogie/auxiliary.bpl ./#{library}/library.bpl ./#{library}/correctness.bpl`.strip
       puts "======================="
     end
 
