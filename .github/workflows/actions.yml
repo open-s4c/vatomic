@@ -29,10 +29,6 @@ jobs:
         os: [ubuntu-22.04, ubuntu-22.04-arm, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Check specs
-        run: |
-          lscpu
-        if: matrix.os != 'macos-latest'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -181,6 +177,33 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+  test-qemu-arm64:
+    needs: [ prepare-docker ]
+    strategy:
+      matrix:
+        optimization_level: [ "O1", "O2", "O3" ]
+        options:
+          - toolchain: "arm64"
+            flags: ""
+          - toolchain: "arm64_lse"
+            flags: "-DVATOMIC_ENABLE_ARM64_LXE=ON"
+          - toolchain: "arm64_lse"
+            flags: "-DVATOMIC_ENABLE_ARM64_LXE=OFF"
+    runs-on: ubuntu-latest
+    container: ghcr.io/${{ github.repository }}/qemu-ci:sha-${{ github.sha }}
+    steps:
+      - name: Check out to run with the tests
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure
+        run: cmake -S . -Bbuild
+             -DCMAKE_TOOLCHAIN_FILE=".github/toolchains/${{ matrix.options.toolchain }}.cmake"
+             -DCMAKE_C_FLAGS="-${{ matrix.optimization_level }} ${{ matrix.options.flags }}"
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
 
   boogie-verification-haskell:
     needs: [ prepare-docker ]
@@ -206,7 +229,7 @@ jobs:
     strategy:
       matrix:
         target: [ armv8 ]
-        group: [ vatomic64, vatomicsz_vatomicptr_fence ]
+        group: [ vatomic8, vatomic16, vatomic64, vatomicsz_vatomicptr_fence ]
     runs-on: ubuntu-latest
     container: ghcr.io/${{ github.repository }}/boogie-ci:sha-${{ github.sha }}
     steps:

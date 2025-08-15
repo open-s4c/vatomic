@@ -51,7 +51,7 @@ end.parse!
 
 def verify(arch, out, atomic, templates)
   (library, asm_file) = Archs[arch]
-  `boogie /trace /proverOpt:SOLVER=z3 /proverOpt:LOG_FILE=#{out}/#{atomic}/prover.in ./boogie/auxiliary.bpl ./#{library}/library.bpl #{templates.map{ |template| "#{out}/#{atomic}/#{template}.bpl" }.join " "}`.strip
+  `boogie /proverOpt:SOLVER=z3 /proverOpt:LOG_FILE=#{out}/#{atomic}/prover.in ./boogie/auxiliary.bpl ./#{library}/library.bpl #{templates.map{ |template| "#{out}/#{atomic}/#{template}.bpl" }.join " "}`.strip
 end
 
 

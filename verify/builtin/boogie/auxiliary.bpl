@@ -238,7 +238,7 @@ function valid_mask(val, mask : bv64) : bool {
 
 type RMWOp = [bv64, bv64, bv64] bv64;
 
-const cmpset, add_op, sub_op, set_op, min_op, max_op, dec_op, inc_op, ret_old: RMWOp;
+const cmpset, add_op, sub_op, set_op, min_op, max_op, dec_op, inc_op, ret_old, xor_op, and_op, or_op: RMWOp;
 
 axiom cmpset == (lambda x, y1, y2 : bv64 :: if x == y1 then y2 else x);
 axiom add_op == (lambda x, y, _: bv64 :: bin_add(x, y));
@@ -248,6 +248,9 @@ axiom min_op == (lambda x, y, _: bv64 :: min[x, y]);
 axiom max_op == (lambda x, y, _: bv64 :: max[x, y]);
 axiom dec_op == (lambda x, _1, _2: bv64 :: bin_sub(x, 1bv64));
 axiom inc_op == (lambda x, _1, _2: bv64 :: bin_add(x, 1bv64));
+axiom and_op == (lambda x, y, _ : bv64 :: bit_and(x, y));
+axiom or_op == (lambda x, y, _ : bv64 :: bit_or(x, y));
+axiom xor_op == (lambda x, y, _ : bv64 :: bit_xor(x, y));
 
 axiom ret_old == (lambda x, _1, _2 : bv64 :: x);
 

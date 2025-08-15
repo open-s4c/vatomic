@@ -20,12 +20,13 @@ add_custom_command(
     COMMENT "Copy verification scripts for the builtin atomics"
 )
 
-# add_custom_command(
-#     OUTPUT ATOMIC_LIST
-#     COMMAND ruby gen_atomic_list.rb > atomics_list_full.txt
-#     DEPENDS BUILTIN_SCRIPTS
-#     COMMENT "Generate the full list of atomics"
-# )
+add_custom_command(
+    OUTPUT ATOMIC_LIST
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/lists/* ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS BUILTIN_SCRIPTS
+    COMMENT "Copy the batches to the parent folder"
+)
+
 
 set(ARMV8_FLAGS 
         -DVATOMIC_DISABLE_ARM64_LSE
@@ -55,6 +56,8 @@ foreach(TARGET ${TARGETS})
     
     add_custom_target(build_boogie_builtin_${SUFFIX} DEPENDS builtin_${TARGET})
     foreach(ATM_GRP ${ATOMICS_GROUPS})
-        add_custom_target(test_builtin_${SUFFIX}_${ATM_GRP} COMMAND ruby verify_all.rb -a ${SUFFIX} -s ${ATM_GRP}.txt)
+        add_custom_target(test_builtin_${SUFFIX}_${ATM_GRP} 
+        COMMAND ruby verify_all.rb -a ${SUFFIX} -s ${ATM_GRP}.txt 
+        DEPENDS ATOMIC_LIST)
     endforeach()
 endforeach()

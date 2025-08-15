@@ -105,6 +105,9 @@ static RMW_OP: phf::Map<&'static str, &'static str> = phf_map! {
     "inc" => "inc_op",
     "min" => "min_op",
     "max" => "max_op",
+    "and" => "and_op",
+    "xor" => "xor_op",
+    "or" => "or_op"
 };
 
 static ATOMIC_TYPE: phf::Map<&'static str, AtomicType> = phf_map! {
