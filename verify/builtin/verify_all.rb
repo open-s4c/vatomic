@@ -1,14 +1,15 @@
 require 'optparse'
 require 'set'
+require 'tempfile'
 
 Archs = { "armv8" => ["armv8", "armv8/atomics.s"], "riscv" => ["risc", "risc/atomics.s"] }
 options = {}
-options[:generate] = true;
+options[:generate] = true
 options[:which] = "atomics_list_full.txt"
 options[:where] = "out"
 options[:archs] = Archs.keys
 options[:extract] = true
-options[:phases] = Set.new [ 1, 2 ]
+options[:phases] = Set.new [1, 2]
 
 OptionParser.new do |opts|
   opts.banner = "Usage: verify_all.rb [options]"
@@ -18,17 +19,16 @@ OptionParser.new do |opts|
 
     if /\w+(,\w+)*:\w+(,\w+)*/ =~ v
       funcs, ops = v.split(":").map { |foo| foo.split(",") }
-      options[:limit] = { :functions => funcs, :properties => ops } 
-      puts "only verifying #{funcs} : #{ops}" 
+      options[:limit] = { :functions => funcs, :properties => ops }
+      puts "only verifying #{funcs} : #{ops}"
     else
       options[:which] = v
       options[:which_failed] = v
     end
   end
 
-  
   opts.on("-a", "--architectures=ARCH1,...,ARCHn", "only verify specified architectures") do |v|
-    options[:archs] = v.split.map { |s| s.strip }
+    options[:archs] = v.split(",").map { |s| s.strip }
   end
 
   opts.on("-o", "--output=PATH/TO/OUT", "output folder of templates") do |v|
@@ -39,8 +39,16 @@ OptionParser.new do |opts|
     options[:extract] = false
   end
 
+  opts.on("-f", "--function=NAME_OF_FUNCTION", "verify a single function (all its properties)") do |v|
+    options[:generate] = false
+    options[:limit] = { :functions => [v], :properties => [] }
+    options[:which] = nil
+    options[:which_failed] = nil
+    puts "only verifying #{v} (all properties)"
+  end
+
   opts.on("-p", "--phases=PHASE1,...,PHASEN", "Only do these verification phase") do |v|
-    options[:phases] = Set.new (v.split.map { |s| s.to_i })
+    options[:phases] = Set.new(v.split.map { |s| s.to_i })
   end
   opts.on("-h", "--help", "Prints this help") do
     puts opts
@@ -48,50 +56,60 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-
 def verify(arch, out, atomic, templates)
   (library, asm_file) = Archs[arch]
-  `boogie /proverOpt:SOLVER=z3 /proverOpt:LOG_FILE=#{out}/#{atomic}/prover.in ./boogie/auxiliary.bpl ./#{library}/library.bpl #{templates.map{ |template| "#{out}/#{atomic}/#{template}.bpl" }.join " "}`.strip
+  `boogie /proverOpt:SOLVER=z3 /proverOpt:LOG_FILE=#{out}/#{atomic}/prover.in ./boogie/auxiliary.bpl ./#{library}/library.bpl #{templates.map { |template| "#{out}/#{atomic}/#{template}.bpl" }.join(" ")}`.strip
 end
-
-
 
 if options[:generate]
-    `ruby gen_atomic_list.rb > #{options[:which]}`
+  `ruby gen_atomic_list.rb > #{options[:which]}`
 end
 
-
 def compile(asm_file, library, functions_path, out, arch, unroll = false)
-  `echo $(cargo run -- --input #{asm_file} --functions #{functions_path} --templates ./boogie/templates/ --directory #{out}/#{arch} --arch #{arch} #{ unroll ? "--unroll" : nil })`
+  `echo $(cargo run -- --input #{asm_file} --functions #{functions_path} --templates ./boogie/templates/ --directory #{out}/#{arch} --arch #{arch} #{unroll ? "--unroll" : nil})`
 end
 
 retry_out = "#{options[:where]}_retry"
 if options[:extract]
-    options[:archs].each { |arch|
-        (library, asm_file) = Archs[arch]
-        compile(asm_file, library, options[:which], options[:where], arch)
-    }
+  options[:archs].each do |arch|
+    (library, asm_file) = Archs[arch]
+    if options[:limit] && options[:limit][:functions] && !options[:limit][:functions].empty?
+      Tempfile.create("functions") do |tf|
+        tf.write(options[:limit][:functions].join("\n"))
+        tf.flush
+        compile(asm_file, library, tf.path, options[:where], arch)
+      end
+    else
+      compile(asm_file, library, options[:which], options[:where], arch)
+    end
+  end
 end
 
 def drop_extension(path)
   File.basename(path, File.extname(path))
 end
 
-
 def verify_all(archs, out, which, limit, phase)
-
   if which
-    archs.each { |arch|
-        (library, asm_file) = Archs[arch]
-        compile(asm_file, library, which, out, arch, unroll=phase==2)
-    }
+    archs.each do |arch|
+      (library, asm_file) = Archs[arch]
+      compile(asm_file, library, which, out, arch, unroll = phase == 2)
+    end
+  elsif limit && limit[:functions] && !limit[:functions].empty?
+    archs.each do |arch|
+      (library, asm_file) = Archs[arch]
+      Tempfile.create("functions") do |tf|
+        tf.write(limit[:functions].join("\n"))
+        tf.flush
+        compile(asm_file, library, tf.path, out, arch, unroll = phase == 2)
+      end
+    end
   end
 
   $results = {}
-  archs.each { |arch|   
-
+  archs.each do |arch|
     (library, asm_file) = Archs[arch]
-    if ! limit 
+    if !limit
       match = File.read("./#{library}/library.bpl").match(/procedure\s+execute\s*\(.*?(?<modifies>modifies.*?);/m)
       modifies = match[:modifies]
       library_correctness = File.new("./#{library}/correctness.bpl", "w")
@@ -101,47 +119,58 @@ def verify_all(archs, out, which, limit, phase)
 
       puts "======================="
       puts "verifying ISA [#{arch}] ( ./#{library}/correctness.bpl )"
-      puts `boogie /trace /proverOpt:SOLVER=z3 ./boogie/auxiliary.bpl ./#{library}/library.bpl ./#{library}/correctness.bpl`.strip
+      puts `boogie /proverOpt:SOLVER=z3 ./boogie/auxiliary.bpl ./#{library}/library.bpl ./#{library}/correctness.bpl`.strip
       puts "======================="
     end
 
     base_path = File.join(out, arch)
-    $results[arch] = Parallel.map(Dir::children(base_path), in_processes: 3) { |atomic|
-      if ! limit || limit[:functions].include?(atomic)
-        templates = Dir::children(File.join(base_path,atomic))
-          .map { |template| drop_extension(template) }
-          .filter { |template| template != "registers" && template != "prover" && (! limit || limit[:properties].include?(template)) }
-        
-        next if templates.empty?
+    children = Dir.exist?(base_path) ? Dir.children(base_path) : []
 
-        puts "[begin #{arch}/#{atomic} #{templates}]"
-
-        lines = ["=======================", 
-        "verifying #{atomic} on #{arch}",
-        ]
-        local_results = []
-
-    
-        lines << "#{templates}:"
-        out = verify(arch, base_path, atomic, templates + [ "registers" ])
-        
-        lines << out
-        pass = /0 errors/ =~ out
-        local_results << [atomic, pass]
-          
-        if ! pass
-          lines << "to rerun this test:\n\n    ruby #{__FILE__} -a #{arch} -s #{atomic}:#{templates.join ","} -v -p #{phase}\n"
-        end
-
-        lines << "\n"
-
-        puts lines
-        local_results
+    # Exact match filtering
+    atomics_to_check =
+      if limit && limit[:functions] && !limit[:functions].empty?
+        limit[:functions] & children
+      elsif which
+        listed = File.exist?(which) ? File.read(which).lines.map(&:strip).reject(&:empty?) : []
+        listed & children
+      else
+        children
       end
-    }.flatten 1
-  }
-end
 
+    $results[arch] = Parallel.map(atomics_to_check, in_processes: 3) do |atomic|
+      templates = Dir.children(File.join(base_path, atomic))
+                     .map { |template| drop_extension(template) }
+                     .filter do |template|
+        template != "registers" &&
+          template != "prover" &&
+          (!limit || !limit[:properties] || limit[:properties].empty? || limit[:properties].include?(template))
+      end
+
+      next if templates.empty?
+
+      puts "[begin #{arch}/#{atomic} #{templates}]"
+
+      lines = ["=======================", "verifying #{atomic} on #{arch}"]
+      local_results = []
+
+      lines << "#{templates}:"
+      out = verify(arch, base_path, atomic, templates + ["registers"])
+
+      lines << out
+      pass = !!(out =~ /\b0 errors\b/)
+      local_results << [atomic, pass]
+
+      if !pass
+        lines << "to rerun this test:\n\n    ruby #{__FILE__} -a #{arch} -s #{atomic}:#{templates.join(",")} -v -p #{phase}\n"
+      end
+
+      lines << "\n"
+
+      puts lines
+      local_results
+    end.flatten(1)
+  end
+end
 
 require 'pp'
 require 'parallel'
@@ -153,59 +182,56 @@ begin
     puts "finished simple verification"
     puts ""
   end
-      
 ensure
-  failed_file = "FAILED_#{options[:which]}"
-  options[:which_failed] ||= failed_file
+  failed_file = "FAILED_#{options[:which] || 'selected'}.txt"
 
-  if $results && $results.any? { |result| result.any? { |(_,pass)| ! pass }} 
-    if /FAILED_/ =~ options[:which]
+  if $results && $results.any? { |_, result| result.any? { |(_, pass)| !pass } }
+    if options[:which].is_a?(String) && options[:which].include?("FAILED_")
       puts "to rerun:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{options[:which]}"
     else
+      failed_funcs =
+        $results.flat_map { |_arch, result| result.select { |(_, pass)| !pass }.map { |(atomic, _)| atomic } }.uniq
 
-      File.open(failed_file, "w") do |f|
-        f.write($results.map { |_arch, result| result.filter { |(_,pass)| ! pass }.map {|(atomic,_)| atomic} }.flatten.join("\n"))
-      end
-      
-      puts ""
-      
-      puts "to rerun all failed atomics:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{failed_file}"
-
-      if options[:phases].include? 2
-        puts ""
-        puts ""
-        puts ""
-        puts "========================================================="
-        puts "*                                                       *"
-        puts "*    retrying failed atomics with heavy verification    *"
-        puts "*                                                       *"
-        puts "========================================================="
-        puts ""
-        puts ""
-        puts ""
-        
-        verify_all(options[:archs], retry_out, options[:extract] && failed_file, options[:limit], 2)
+      if failed_funcs.any?
+        File.open(failed_file, "w") { |f| f.write(failed_funcs.join("\n")) }
 
         puts ""
-        puts "finished heavy verification"
-      else 
-        exit 5
+        puts "to rerun all failed atomics:\n\n    ruby #{__FILE__} -a #{options[:archs].join(",")} -s #{failed_file}"
+
+        if options[:phases].include? 2
+          puts ""
+          puts ""
+          puts ""
+          puts "========================================================="
+          puts "*                                                       *"
+          puts "*    retrying failed atomics with heavy verification    *"
+          puts "*                                                       *"
+          puts "========================================================="
+          puts ""
+          puts ""
+          puts ""
+
+          verify_all(options[:archs], retry_out, options[:extract] && failed_file, options[:limit], 2)
+
+          puts ""
+          puts "finished heavy verification"
+        else
+          exit 5
+        end
+      else
+        puts "no failures found (skipping heavy verification)"
       end
     end
-  elsif (options[:phases].include? 2)
-    verify_all(options[:archs], retry_out, options[:extract] && options[:which_failed], options[:limit], 2)
-
-
   end
 
-  if ! $results
+  if !$results
     puts "no tests run"
-  elsif $results.all? { |_arch, result| result.all? { |(_,pass)| pass }} 
+  elsif $results.all? { |_arch, result| result.all? { |(_, pass)| pass } }
     puts "no failures found"
-  else 
+  else
     failed = $results.flat_map do |arch, results|
       results.reject { |(_, pass)| pass }.map { |(atomic, _)| "#{arch}/#{atomic}" }
-  end
+    end
 
     if failed.any?
       puts "\nThe following atomics failed verification:"
