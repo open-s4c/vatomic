@@ -55,15 +55,17 @@ foreach(TARGET ${TARGETS})
         DEPENDS vatomic BUILTIN_SCRIPTS
         COMMENT "Generating ${TARGET} builtin atomics")
 
-    add_custom_target(build_boogie_builtin_${SUFFIX} DEPENDS builtin_${TARGET} ATOMIC_LIST)
+    add_custom_target(build_boogie_builtin_${SUFFIX} DEPENDS builtin_${TARGET}
+                                                             ATOMIC_LIST)
     foreach(ATM_GRP ${ATOMICS_GROUPS})
         file(STRINGS "lists/${ATM_GRP}.txt" ATM_LIST)
         foreach(ATM ${ATM_LIST})
-            message(${ATM})
-            add_test(
-                NAME test_builtin_${ATM}
-                COMMAND ruby verify_all.rb -a ${SUFFIX} -f ${ATM})
-            set_tests_properties(test_builtin_${ATM} PROPERTIES LABELS ${ATM_GRP})
+            add_test(NAME test_builtin_${ATM}
+                     COMMAND ruby verify_all.rb -a ${SUFFIX} -f ${ATM} -o
+                             out_${ATM})
+
+            set_tests_properties(test_builtin_${ATM} PROPERTIES LABELS
+                                                                ${ATM_GRP})
         endforeach()
     endforeach()
 endforeach()
