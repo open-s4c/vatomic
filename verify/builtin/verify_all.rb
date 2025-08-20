@@ -62,7 +62,7 @@ def verify(arch, out, atomic, templates)
 end
 
 if options[:generate]
-  `ruby gen_atomic_list.rb > #{options[:which]}`
+  `ruby get_atomic_list.rb > #{options[:which]}`
 end
 
 def compile(asm_file, library, functions_path, out, arch, unroll = false)

@@ -1,5 +1,4 @@
 use asm2boogie::arm::{self, extract_arm_functions, parse_arm_assembly};
-use asm2boogie::riscv::{self, extract_riscv_functions, parse_riscv_assembly};
 use asm2boogie::{Arch, ToBoogie, generate_boogie_file, generate_debug_file};
 use asm2boogie::{BoogieFunction, DUMMY_REG, FenceConvention, Width};
 
@@ -15,10 +14,7 @@ enum OutputMode {
 #[derive(Debug, Clone, Copy, PartialEq, ValueEnum)]
 enum ArchSpecifier {
     #[value(name = "armv8")]
-    ArmV8,
-    
-    #[value(name = "riscv")]
-    RiscV,
+    ArmV8
 }
 
 impl Arch for ArchSpecifier {
@@ -30,12 +26,7 @@ impl Arch for ArchSpecifier {
         match self {
             ArchSpecifier::ArmV8 => iter::once(DUMMY_REG.to_string())
                 .chain((0..=31).flat_map(|i| [format!("x{}", i), format!("w{}", i)]))
-                .collect(),
-            ArchSpecifier::RiscV => iter::once(DUMMY_REG.to_string())
-                .chain((0..=7).map(|i| format!("a{}", i)))
-                .chain((0..=11).map(|i| format!("s{}", i)))
-                .chain((0..=6).map(|i| format!("t{}", i)))
-                .collect(),
+                .collect()
         }
     }
 
@@ -58,15 +49,6 @@ impl Arch for ArchSpecifier {
                         .map(|f| arm::transform_labels(&f));
                 Ok(functions.into_iter().map(ToBoogie::to_boogie).collect())
             }
-            ArchSpecifier::RiscV => {
-                let (_, parsed_asm) =
-                    parse_riscv_assembly(assembly).map_err(|err| err.to_string())?;
-                let functions =
-                    extract_riscv_functions(parsed_asm, None, &["ptr", "32", "64", "sz", "8", ""])
-                        .into_iter()
-                        .map(|f| riscv::transform_labels(&f));
-                Ok(functions.into_iter().map(ToBoogie::to_boogie).collect())
-            }
         }
     }
 
@@ -75,14 +57,12 @@ impl Arch for ArchSpecifier {
             ArchSpecifier::ArmV8 => {
                 "local_monitor, monitor_exclusive, flags, event_register".to_string()
             }
-            ArchSpecifier::RiscV => "local_monitor, monitor_exclusive".to_string(),
         }
     }
 
     fn fence_convention(&self) -> FenceConvention {
         match self {
             ArchSpecifier::ArmV8 => FenceConvention::RCsc,
-            ArchSpecifier::RiscV => FenceConvention::Mixed,
         }
     }
 }
@@ -95,7 +75,7 @@ struct Args {
         long,
         value_enum,
         default_value = "armv8",
-        help = "Target architecture (armv8 or riscv)"
+        help = "Target architecture (armv8)"
     )]
     arch: ArchSpecifier,
 

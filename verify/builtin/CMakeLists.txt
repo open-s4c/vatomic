@@ -64,8 +64,8 @@ foreach(TARGET ${TARGETS})
                      COMMAND ruby verify_all.rb -a ${SUFFIX} -f ${ATM} -o
                              out_${ATM})
 
-            set_tests_properties(test_builtin_${ATM} PROPERTIES LABELS
-                                                                ${ATM_GRP})
+            set_tests_properties(test_builtin_${ATM}
+                                 PROPERTIES LABELS ${SUFFIX}_${ATM_GRP})
         endforeach()
     endforeach()
 endforeach()
