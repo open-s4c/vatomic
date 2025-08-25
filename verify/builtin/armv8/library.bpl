@@ -234,8 +234,8 @@ procedure execute(instr: Instruction) returns (r : bv64);
             • The clearing of the global monitor for the PE.
             • An event from a Generic Timer event stream, see Event streams on page D11-5991.
             • An event sent by some IMPLEMENTATION DEFINED mechanism.
-
-
+            [ Arm Architecture Reference Manual, version K.a ]
+            
             NOTE: since we only care about proving that the event register is set upon reaching wfe, we just allow it to become set non-deterministically.
             But it can be cleared only by wfe.
         */
