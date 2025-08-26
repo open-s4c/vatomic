@@ -95,7 +95,9 @@ fn parse_shift_operation(input: &str) -> IResult<&str, String> {
 }
 
 fn parse_condition_code(input: &str) -> Option<ConditionCode> {
-    match input {
+    // We strip the dot to support branching like b<cond> and b.<cond>
+    let trimmed = input.strip_prefix('.').unwrap_or(input);
+    match trimmed {
         "eq" => Some(ConditionCode::EQ),
         "ne" => Some(ConditionCode::NE),
         "cs" => Some(ConditionCode::CS),
@@ -741,7 +743,7 @@ fn parse_conditional_select(
 }
 
 fn parse_instruction(input: &str) -> IResult<&str, ArmInstruction> {
-    let (input, instr_name) = take_while1(|c: char| c.is_alphabetic())(input)?;
+    let (input, instr_name) = take_while1(|c: char| c.is_alphabetic() || c == '.')(input)?;
     let (input, operands) = parse_operands(input)?;
     let (input, _) = take_till(|c| c == '\n')(input)?;
     let (input, _) = opt(char('\n')).parse(input)?;
