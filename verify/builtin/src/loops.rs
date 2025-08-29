@@ -6,7 +6,6 @@ use petgraph::{algo::tarjan_scc, graphmap::{self, NodeTrait}, prelude::GraphMap,
 use crate::BoogieInstruction;
 
 
-
 fn top_level_loops<G : GraphBase,F : FnMut(HashSet<<G as GraphBase>::NodeId>) -> ()>(cfg: &G, mut callback: F)
 where
     for <'a> <G as GraphBase>::NodeId : From< <&'a G as GraphBase>::NodeId >,
@@ -87,6 +86,14 @@ pub fn cfg(code: &[BoogieInstruction]) -> GraphMap<usize, (), Directed> {
         graphmap::GraphMap::with_capacity(code.len() + 1, 2 * code.len() + 1);
     let label_idx = all_labels(code.iter());
 
+    // let mut output = String::new();
+
+    // for (key, value) in label_idx {
+    //     output.push_str(&format!("{}: {}\n", key, value));
+    // }
+
+    // panic!("{}", output);
+
     let mut unreachable = false;
     for (i, instr) in code.iter().enumerate() {
         match &instr {
@@ -104,6 +111,9 @@ pub fn cfg(code: &[BoogieInstruction]) -> GraphMap<usize, (), Directed> {
                 BoogieInstruction::Branch(targets, cond)
                 => {
                     for label in targets {
+                        if !label_idx.contains_key(label) {
+                            panic!("Missing label in label_idx: {}", label);
+                        }
                         graph.add_edge(i, label_idx[label], ());
                     }
                     if cond != "true" {

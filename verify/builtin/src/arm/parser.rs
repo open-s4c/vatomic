@@ -75,10 +75,7 @@ fn parse_immediate(input: &str) -> IResult<&str, i64> {
 fn parse_label(input: &str) -> IResult<&str, String> {
     map(
         recognize((
-            alt((
-                take_while1(|c: char| c.is_alphabetic() || c == '_' || c == '.'),
-                tag("."),
-            )),
+            take_while1(|c: char| c.is_alphabetic() || c == '_' || c == '.'),
             take_while(|c: char| c.is_alphanumeric() || c == '_' || c == '.' || c == '$'),
         )),
         |s: &str| s.to_string(),
@@ -107,7 +104,9 @@ fn parse_condition_code(input: &str) -> Option<ConditionCode> {
         "vs" => Some(ConditionCode::VS),
         "vc" => Some(ConditionCode::VC),
         "hi" => Some(ConditionCode::HI),
+        "hs" => Some(ConditionCode::HS),
         "ls" => Some(ConditionCode::LS),
+        "lo" => Some(ConditionCode::LO),
         "ge" => Some(ConditionCode::GE),
         "lt" => Some(ConditionCode::LT),
         "gt" => Some(ConditionCode::GT),

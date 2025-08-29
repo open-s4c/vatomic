@@ -59,76 +59,106 @@ pub fn extract_arm_functions(
 }
 
 pub fn transform_labels(function: &ArmFunction) -> ArmFunction {
-    let mut label_defs = Vec::new();
-    let mut label_refs = Vec::new();
+    use std::collections::HashMap;
 
-    for instruction in &function.instructions {
-        match instruction {
-            ArmInstruction::Label(name) => {
-                label_defs.push(name.clone());
-            }
-            ArmInstruction::Branch(_, Operand::Label(name))
-            | ArmInstruction::BranchLink(Operand::Label(name))
-            | ArmInstruction::TestBitBranch(_, _, _, Operand::Label(name)) => {
-                label_refs.push(name.clone());
-            }
-            _ => {}
-        }
-    }
-
-    let used_labels: Vec<String> = label_defs
-        .iter()
-        .filter(|&label| label_refs.contains(label))
-        .cloned()
-        .collect();
-
-    let mut label_map = std::collections::HashMap::new();
-    for (i, label) in used_labels.iter().enumerate() {
-        label_map.insert(label.clone(), format!("L{}", i + 1));
-    }
-
+    let mut label_map: HashMap<String, String> = HashMap::new();
+    let mut forward_map: HashMap<String, String> = HashMap::new();
+    let mut counter = 0usize;
     let mut new_instructions = Vec::new();
 
-    for instruction in &function.instructions {
-        match instruction {
+    for instr in &function.instructions {
+        match instr {
             ArmInstruction::Label(name) => {
-                if let Some(new_name) = label_map.get(name) {
-                    new_instructions.push(ArmInstruction::Label(new_name.clone()));
-                }
+                // If it was a forward ref, bind it and remove from forward_map
+                let new_name = if let Some(forward) = forward_map.remove(name) {
+                    label_map.insert(name.clone(), forward.clone());
+                    forward
+                } else {
+                    let new_label = format!("L{}", counter + 1);
+                    counter += 1;
+                    label_map.insert(name.clone(), new_label.clone());
+                    new_label
+                };
+                new_instructions.push(ArmInstruction::Label(new_name));
             }
             ArmInstruction::Branch(cond, Operand::Label(name)) => {
-                if let Some(new_name) = label_map.get(name) {
-                    new_instructions.push(ArmInstruction::Branch(
-                        cond.clone(),
-                        Operand::Label(new_name.clone()),
-                    ));
+                // Handle backward/forward shorthand in name if desired
+                let new_name = if name.ends_with('b') {
+                    let base = &name[..name.len() - 1];
+                    label_map.get(base).cloned().unwrap_or_else(|| {
+                        // No backward def yet; create one
+                        let new_label = format!("L{}", counter + 1);
+                        counter += 1;
+                        label_map.insert(base.to_string(), new_label.clone());
+                        new_label
+                    })
+                } else if name.ends_with('f') {
+                    let base = &name[..name.len() - 1];
+                    forward_map.get(base).cloned().unwrap_or_else(|| {
+                        // First forward ref for this base
+                        let new_label = format!("L{}", counter + 1);
+                        counter += 1;
+                        forward_map.insert(base.to_string(), new_label.clone());
+                        new_label
+                    })
                 } else {
-                    new_instructions.push(instruction.clone());
-                }
+                    // Normal named label
+                    if let Some(lbl) = label_map.get(name) {
+                        lbl.clone()
+                    } else if let Some(lbl) = forward_map.get(name) {
+                        lbl.clone()
+                    } else {
+                        // Treat it like a first forward ref
+                        let new_label = format!("L{}", counter + 1);
+                        counter += 1;
+                        forward_map.insert(name.to_string(), new_label.clone());
+                        new_label
+                    }
+                };
+                new_instructions.push(ArmInstruction::Branch(
+                    cond.clone(),
+                    Operand::Label(new_name),
+                ));
             }
             ArmInstruction::BranchLink(Operand::Label(name)) => {
-                if let Some(new_name) = label_map.get(name) {
-                    new_instructions
-                        .push(ArmInstruction::BranchLink(Operand::Label(new_name.clone())));
-                } else {
-                    new_instructions.push(instruction.clone());
-                }
+                let new_name = label_map.get(name)
+                    .cloned()
+                    .or_else(|| {
+                        // Treat as forward if unknown
+                        if !forward_map.contains_key(name) {
+                            let new_label = format!("L{}", counter + 1);
+                            counter += 1;
+                            forward_map.insert(name.clone(), new_label.clone());
+                            Some(new_label)
+                        } else {
+                            forward_map.get(name).cloned()
+                        }
+                    })
+                    .unwrap_or_else(|| name.clone());
+                new_instructions.push(ArmInstruction::BranchLink(Operand::Label(new_name)));
             }
             ArmInstruction::TestBitBranch(cond, op1, op2, Operand::Label(name)) => {
-                if let Some(new_name) = label_map.get(name) {
-                    new_instructions.push(ArmInstruction::TestBitBranch(
-                        *cond,
-                        op1.clone(),
-                        op2.clone(),
-                        Operand::Label(new_name.clone()),
-                    ));
-                } else {
-                    new_instructions.push(instruction.clone());
-                }
+                let new_name = label_map.get(name)
+                    .cloned()
+                    .or_else(|| {
+                        if !forward_map.contains_key(name) {
+                            let new_label = format!("L{}", counter + 1);
+                            counter += 1;
+                            forward_map.insert(name.clone(), new_label.clone());
+                            Some(new_label)
+                        } else {
+                            forward_map.get(name).cloned()
+                        }
+                    })
+                    .unwrap_or_else(|| name.clone());
+                new_instructions.push(ArmInstruction::TestBitBranch(
+                    *cond,
+                    op1.clone(),
+                    op2.clone(),
+                    Operand::Label(new_name),
+                ));
             }
-            _ => {
-                new_instructions.push(instruction.clone());
-            }
+            _ => new_instructions.push(instr.clone()),
         }
     }
 
