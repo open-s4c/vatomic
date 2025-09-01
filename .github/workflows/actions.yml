@@ -106,16 +106,13 @@ jobs:
         run: cmake --build build --target diff-check ||
             (echo "Run 'make ${{ matrix.target }}' and commit" && false)
 
-
   prepare-docker:
-    on:
-      push:
-        paths:
-          - ".github/Dockerfile.*"
-      pull_request:
-        paths:
-          - ".github/Dockerfile.*"
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    # only run if docker files have changed
+    paths:
+      - '.github/Dockerfile.boogie'
+      - '.github/Dockerfile.qemu'
     permissions:
       contents: read
       packages: write
