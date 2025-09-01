@@ -106,64 +106,6 @@ jobs:
         run: cmake --build build --target diff-check ||
             (echo "Run 'make ${{ matrix.target }}' and commit" && false)
 
-  prepare-docker:
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    # only run if docker files have changed
-    paths:
-      - '.github/Dockerfile.boogie'
-      - '.github/Dockerfile.qemu'
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
-    strategy:
-      fail-fast: true
-      max-parallel: 1
-      matrix:
-        container:
-          - name: "qemu-ci"
-            path: ".github/Dockerfile.qemu"
-          - name: "boogie-ci"
-            path: ".github/Dockerfile.boogie"
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3.0.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}/${{ matrix.container.name }}
-
-          tags: |
-            type=edge,branch=dev
-            type=raw,latest
-            type=sha,format=long
-
-      - name: Setup docker buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5.1.0
-        with:
-          context: .github/docker-context
-          push: true
-          file: ${{ matrix.container.path }}
-          cache-from: type=gha,scope=${{ matrix.container }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.container }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
   test-qemu-other:
     needs: [ prepare-docker ]
     strategy:
