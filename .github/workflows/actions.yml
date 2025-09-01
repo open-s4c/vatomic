@@ -4,6 +4,10 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  prepare-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder
   test-install:
     strategy:
       matrix:
