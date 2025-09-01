@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Placeholder
-      - run: echo "Placeholder"
+        run: echo "Placeholder"
   test-install:
     strategy:
       matrix:
