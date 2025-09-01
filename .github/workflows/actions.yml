@@ -108,6 +108,13 @@ jobs:
 
 
   prepare-docker:
+    on:
+      push:
+        paths:
+          - ".github/Dockerfile.*"
+      pull_request:
+        paths:
+          - ".github/Dockerfile.*"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -123,7 +130,6 @@ jobs:
             path: ".github/Dockerfile.qemu"
           - name: "boogie-ci"
             path: ".github/Dockerfile.boogie"
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
