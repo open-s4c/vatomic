@@ -69,6 +69,7 @@ jobs:
           usesh: true
           prepare: /usr/sbin/pkg_add curl cmake
           run: |
+              set -eux
               rm -rf /tmp/target
               cmake -S. -Bbuild
               cmake --build build -DCMAKE_INSTALL_PREFIX=/tmp/target
