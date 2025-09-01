@@ -118,7 +118,7 @@ jobs:
         optimization_level: [ "O1", "O2", "O3" ]
         toolchain: [ "x86_64", "riscv" ]
     runs-on: ubuntu-latest
-    container: ghcr.io/${{ github.repository }}/qemu-ci:sha-${{ github.sha }}
+    container: ghcr.io/${{ github.repository }}/qemu-ci:latest
     steps:
       - name: Check out to run with the tests
         uses: actions/checkout@v4
@@ -141,7 +141,7 @@ jobs:
         toolchain: [ "armel", "armel8", "armeb", "armeb8" ]
         flags: [ "-DVSYNC_BUILTINS=ON", "-DVSYNC_BUILTINS=OFF" ]
     runs-on: ubuntu-latest
-    container: ghcr.io/${{ github.repository }}/qemu-ci:sha-${{ github.sha }}
+    container: ghcr.io/${{ github.repository }}/qemu-ci:latest
     steps:
       - name: Check out to run with the tests
         uses: actions/checkout@v4
@@ -169,7 +169,7 @@ jobs:
           - toolchain: "arm64_lse"
             flags: "-DVATOMIC_ENABLE_ARM64_LXE=OFF"
     runs-on: ubuntu-latest
-    container: ghcr.io/${{ github.repository }}/qemu-ci:sha-${{ github.sha }}
+    container: ghcr.io/${{ github.repository }}/qemu-ci:latest
     steps:
       - name: Check out to run with the tests
         uses: actions/checkout@v4
@@ -191,7 +191,7 @@ jobs:
       matrix:
         target: [ lse, llsc, lxe, no_polite_await ]
     runs-on: ubuntu-latest
-    container: ghcr.io/${{ github.repository }}/boogie-ci:sha-${{ github.sha }}
+    container: ghcr.io/${{ github.repository }}/boogie-ci:latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
