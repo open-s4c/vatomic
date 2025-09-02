@@ -151,12 +151,12 @@ template <typename TT, size_t N, size_t IT> class MT_Test
     }
     int64_t test(std::function<void(void)> f)
     {
-#ifdef  USE_BARRIER
+#ifdef USE_BARRIER
         std::barrier barrier{N};
 #endif
         std::vector<std::thread> threads;
         auto start = launch(threads, [&] {
-#ifdef  USE_BARRIER
+#ifdef USE_BARRIER
             barrier.arrive_and_wait();
 #endif
             for (auto i = 0; i < IT; i++) {
