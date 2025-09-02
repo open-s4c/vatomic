@@ -9,7 +9,10 @@
 #include <chrono>
 #include <atomic>
 #include <limits>
-#if !defined(__ARM_ARCH)
+#if !defined(__ARM_ARCH) && !defined(__NetBSD__)
+    #define USE_BARRIER
+#endif
+#if defined(USE_BARRIER)
     #include <barrier>
 #endif
 #include <vector>
@@ -148,12 +151,12 @@ template <typename TT, size_t N, size_t IT> class MT_Test
     }
     int64_t test(std::function<void(void)> f)
     {
-#if !defined(__ARM_ARCH)
+#ifdef  USE_BARRIER
         std::barrier barrier{N};
 #endif
         std::vector<std::thread> threads;
         auto start = launch(threads, [&] {
-#if !defined(__ARM_ARCH)
+#ifdef  USE_BARRIER
             barrier.arrive_and_wait();
 #endif
             for (auto i = 0; i < IT; i++) {
