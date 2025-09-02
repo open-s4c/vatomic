@@ -66,8 +66,8 @@ jobs:
           run: |
               set -eux
               rm -rf /tmp/target
-              cmake -S. -Bbuild
-              cmake --build build -DCMAKE_INSTALL_PREFIX=/tmp/target
+              cmake -S. -Bbuild -DCMAKE_INSTALL_PREFIX=/tmp/target
+              cmake --build build
               ctest --test-dir build --output-on-failure
               cmake --install build
               cmake -Stest/project -Bbuild2 -DCMAKE_PREFIX_PATH=/tmp/target
