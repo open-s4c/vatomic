@@ -202,7 +202,7 @@ jobs:
         target: [ armv8 ]
         group: [ vatomic8, vatomic16, vatomic64, vatomicsz_vatomicptr_fence ]
     runs-on: ubuntu-latest
-    container: ghcr.io/${{ github.repository }}/boogie-ci:sha-${{ github.sha }}
+    container: ghcr.io/${{ github.repository }}/boogie-ci:latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
