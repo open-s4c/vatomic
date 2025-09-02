@@ -1,0 +1,4 @@
+vatomic_fence
+vatomic_fence_acq
+vatomic_fence_rel
+vatomic_fence_rlx
