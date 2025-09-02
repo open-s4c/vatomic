@@ -37,8 +37,14 @@ set(ARMV8_FLAGS
     -S
     -mno-outline-atomics)
 
-set(ATOMICS_GROUPS vatomic8 vatomic16 vatomic32 vatomic64
-                   vatomicsz vatomicptr vatomic_fence)
+set(ATOMICS_GROUPS
+    vatomic8
+    vatomic16
+    vatomic32
+    vatomic64
+    vatomicsz
+    vatomicptr
+    vatomic_fence)
 
 foreach(TARGET ${TARGETS})
     string(TOLOWER "${TARGET}" SUB_DIR)
