@@ -60,11 +60,11 @@ foreach(TARGET ${TARGETS})
     foreach(ATM_GRP ${ATOMICS_GROUPS})
         file(STRINGS "lists/${ATM_GRP}.txt" ATM_LIST)
         foreach(ATM ${ATM_LIST})
-            add_test(NAME test_builtin_${ATM}
+            add_test(NAME check_builtin_${ATM}
                      COMMAND ruby verify_all.rb -a ${SUFFIX} -f ${ATM} -o
                              out_${ATM})
 
-            set_tests_properties(test_builtin_${ATM}
+            set_tests_properties(check_builtin_${ATM}
                                  PROPERTIES LABELS ${SUFFIX}_${ATM_GRP})
         endforeach()
     endforeach()
