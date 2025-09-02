@@ -178,7 +178,6 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
   test-qemu-arm64:
-    needs: [ prepare-docker ]
     strategy:
       matrix:
         optimization_level: [ "O1", "O2", "O3" ]
@@ -206,7 +205,6 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
   boogie-verification-haskell:
-    needs: [ prepare-docker ]
     strategy:
       matrix:
         target: [ lse, llsc, lxe, no_polite_await ]
@@ -225,7 +223,6 @@ jobs:
         run: ctest -R ${{ matrix.target }} --test-dir build/verify
 
   boogie-verification-builtin:
-    needs: [ prepare-docker ]
     strategy:
       matrix:
         target: [ armv8 ]
