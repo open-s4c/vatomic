@@ -36,7 +36,7 @@ RUN pip install z3-solver --break-system-packages
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 # Install boogie via dotnet
-RUN dotnet tool install --tool-path /usr/local/bin boogie --version 3.5.4
+RUN dotnet tool install --tool-path /usr/local/bin boogie --version 3.5.5
 
 # Install parallel gem
 RUN gem install parallel

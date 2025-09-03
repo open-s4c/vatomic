@@ -12,7 +12,7 @@ if(NOT BPL
     return()
 endif()
 
-set(TARGETS ARMV8)
+set(ARCHS ARMV8)
 
 add_custom_command(
     OUTPUT BUILTIN_SCRIPTS
@@ -21,13 +21,19 @@ add_custom_command(
     COMMENT "Copy verification scripts for the builtin atomics")
 
 add_custom_command(
+    OUTPUT PERMISSION_SCRIPTS
+    COMMAND chmod +x ${CMAKE_CURRENT_BINARY_DIR}/cleaner.sh
+    DEPENDS BUILTIN_SCRIPTS
+    COMMENT "Give script permissions")
+
+add_custom_command(
     OUTPUT ATOMIC_LIST
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/lists/*
             ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS BUILTIN_SCRIPTS
     COMMENT "Copy the batches to the parent folder")
 
-set(ARMV8_FLAGS
+set(ARMV8_BUILTIN_FLAGS
     -DVATOMIC_DISABLE_ARM64_LSE
     -DVATOMIC_BUILTINS
     -O2
@@ -37,41 +43,72 @@ set(ARMV8_FLAGS
     -S
     -mno-outline-atomics)
 
-set(ATOMICS_GROUPS
-    vatomic8
-    vatomic16
-    vatomic32
-    vatomic64
-    vatomicsz
-    vatomicptr
-    vatomic_fence)
+set(ARMV8_LLSC_FLAGS
+    -DVATOMIC_DISABLE_ARM64_LSE
+    -O2
+    -x
+    c
+    -fkeep-inline-functions
+    -S
+    -mno-outline-atomics)
 
-foreach(TARGET ${TARGETS})
-    string(TOLOWER "${TARGET}" SUB_DIR)
+set(ARMV8_TARGETS LLSC BUILTIN)
+
+set(ATOMIC_CORE_GROUPS vatomic8 vatomic16 vatomic32 vatomic64 vatomicsz)
+set(ATOMIC_AWAIT_GROUPS vatomic32 vatomic64)
+set(ATOMIC_PTR_GROUPS vatomicptr)
+set(LISTS CORE AWAIT PTR)
+set(ORDERINGS acq rel rlx "")
+
+foreach(ARCH ${ARCHS})
+    string(TOLOWER "${ARCH}" SUB_DIR)
     set(SUFFIX ${SUB_DIR})
     set(SUB_DIR ${CMAKE_CURRENT_BINARY_DIR}/${SUB_DIR})
     set(ASM_FILE ${SUB_DIR}/atomics.s)
 
-    add_custom_command(
-        OUTPUT builtin_${TARGET}
-        COMMAND
-            ${${TARGET}_CMAKE_C_COMPILER} ${${TARGET}_FLAGS} "${VSYNC_INCLUDE}"
-            ${CMAKE_SOURCE_DIR}/include/vsync/atomic.h -o ${ASM_FILE}
-        COMMAND_EXPAND_LISTS
-        DEPENDS vatomic BUILTIN_SCRIPTS
-        COMMENT "Generating ${TARGET} builtin atomics")
+    # Build targets
+    foreach(TARGET ${${ARCH}_TARGETS})
+        string(TOLOWER "${SUFFIX}_${TARGET}" COMPOSED_TARGET)
+        add_custom_command(
+            OUTPUT GEN_${COMPOSED_TARGET}
+            COMMAND
+                ${${ARCH}_CMAKE_C_COMPILER} ${${ARCH}_${TARGET}_FLAGS}
+                "${VSYNC_INCLUDE}" ${CMAKE_SOURCE_DIR}/include/vsync/atomic.h -o
+                ${ASM_FILE} && ${CMAKE_CURRENT_BINARY_DIR}/cleaner.sh
+                ${ASM_FILE}
+            COMMAND_EXPAND_LISTS
+            DEPENDS vatomic BUILTIN_SCRIPTS PERMISSION_SCRIPTS
+            COMMENT "Generating ${COMPOSED_TARGET} builtin atomics")
 
-    add_custom_target(build_boogie_builtin_${SUFFIX} DEPENDS builtin_${TARGET}
-                                                             ATOMIC_LIST)
-    foreach(ATM_GRP ${ATOMICS_GROUPS})
-        file(STRINGS "lists/${ATM_GRP}.txt" ATM_LIST)
-        foreach(ATM ${ATM_LIST})
-            add_test(NAME check_builtin_${ATM}
-                     COMMAND ruby verify_all.rb -a ${SUFFIX} -f ${ATM} -o
-                             out_${ATM})
+        add_custom_target(build_boogie_${COMPOSED_TARGET}
+                          DEPENDS GEN_${COMPOSED_TARGET} ATOMIC_LIST)
+    endforeach()
 
-            set_tests_properties(check_builtin_${ATM}
-                                 PROPERTIES LABELS ${SUFFIX}_${ATM_GRP})
+    # Tests Fences
+    foreach(ORD ${ORDERINGS})
+        set(ATM vatomic_fence_${ORD})
+        add_test(NAME check_${SUFFIX}_${ATM}
+                 COMMAND ruby verify_all.rb -a ${SUFFIX} -f ${ATM} -o
+                         out_${ATM})
+        set_tests_properties(check_${SUFFIX}_${ATM}
+                             PROPERTIES LABELS ${SUFFIX}_vatomic_fence)
+    endforeach()
+
+    # Core, Await, ptr
+    foreach(LIST ${LISTS})
+        foreach(ATM_GRP ${ATOMIC_${LIST}_GROUPS})
+            string(TOLOWER "lists/vatomic_${LIST}.txt" LIST_FILE)
+            file(STRINGS ${LIST_FILE} ATM_LIST)
+            foreach(ATM ${ATM_LIST})
+                set(ATM_PREF ${ATM_GRP}_${ATM})
+                add_test(NAME check_${SUFFIX}_${ATM_PREF}
+                         COMMAND ruby verify_all.rb -a ${SUFFIX} -f ${ATM_PREF}
+                                 -o out_${ATM_PREF})
+
+                set_tests_properties(check_${SUFFIX}_${ATM_PREF}
+                                     PROPERTIES LABELS ${SUFFIX}_${ATM_GRP})
+            endforeach()
         endforeach()
     endforeach()
+
 endforeach()
