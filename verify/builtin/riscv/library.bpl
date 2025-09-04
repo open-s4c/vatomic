@@ -49,7 +49,7 @@ datatype Instruction {
     orr(first, second: bv64),
     and(first, second: bv64),
     or(first, second: bv64),
-    eor(first, second: bv64),
+    xor(first, second: bv64),
 
     negw(src: bv64),
 
@@ -117,7 +117,7 @@ procedure execute_local(instr: Instruction) returns (r : bv64);
             else if instr is not then bit_inv(instr->src)
             else if instr is andd || instr is and || instr is andi then bit_and(instr->first, instr->second)
             else if instr is orr || instr is or then  bit_or(instr->first, instr->second)
-            else if instr is eor then  bit_xor(instr->first, instr->second)
+            else if instr is xor then  bit_xor(instr->first, instr->second)
             else bit_and(r, instruction_mask(instr)));
 
 
