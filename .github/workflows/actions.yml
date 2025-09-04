@@ -214,3 +214,21 @@ jobs:
         run: cmake --build build --target build_boogie_armv8_${{ matrix.target }}
       - name: Verify
         run: ctest -j 4 -L armv8_${{ matrix.group }} --test-dir build/verify
+
+  boogie-verification-rust-riscv:
+    strategy:
+      matrix:
+        group: [ vatomic8, vatomic16, vatomic32, vatomic64, vatomicsz, vatomicptr, vatomic_fence ]
+    runs-on: ubuntu-latest
+    container: ghcr.io/${{ github.repository }}/boogie-ci:latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure
+        run: cmake -S. -Bbuild
+      - name: Build
+        run: cmake --build build --target build_boogie_riscv_builtin
+      - name: Verify
+        run: ctest -j 4 -L riscv_${{ matrix.group }} --test-dir build/verify

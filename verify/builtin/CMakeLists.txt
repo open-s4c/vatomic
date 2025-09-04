@@ -12,7 +12,7 @@ if(NOT BPL
     return()
 endif()
 
-set(ARCHS ARMV8)
+set(ARCHS ARMV8 RISCV)
 
 add_custom_command(
     OUTPUT BUILTIN_SCRIPTS
@@ -20,6 +20,7 @@ add_custom_command(
             ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Copy verification scripts for the builtin atomics")
 
+# Permission only needed if cleaner.sh will be used
 add_custom_command(
     OUTPUT PERMISSION_SCRIPTS
     COMMAND chmod +x ${CMAKE_CURRENT_BINARY_DIR}/cleaner.sh
@@ -33,25 +34,15 @@ add_custom_command(
     DEPENDS BUILTIN_SCRIPTS
     COMMENT "Copy the batches to the parent folder")
 
-set(ARMV8_BUILTIN_FLAGS
-    -DVATOMIC_DISABLE_ARM64_LSE
-    -DVATOMIC_BUILTINS
-    -O2
-    -x
-    c
-    -fkeep-inline-functions
-    -S
-    -mno-outline-atomics)
+set(BUILTIN_FLAGS -DVATOMIC_DISABLE_ARM64_LSE -DVATOMIC_BUILTINS)
 
-set(ARMV8_LLSC_FLAGS
-    -DVATOMIC_DISABLE_ARM64_LSE
-    -O2
-    -x
-    c
-    -fkeep-inline-functions
-    -S
-    -mno-outline-atomics)
+set(ARMV8_FLAGS -O2 -x c -fkeep-inline-functions -S -mno-outline-atomics)
 
+set(LLSC_FLAGS -DVATOMIC_DISABLE_ARM64_LSE)
+
+set(RISCV_FLAGS -O2 -x c -fkeep-inline-functions -S)
+
+set(RISCV_TARGETS BUILTIN)
 set(ARMV8_TARGETS LLSC BUILTIN)
 
 set(ATOMIC_CORE_GROUPS vatomic8 vatomic16 vatomic32 vatomic64 vatomicsz)
@@ -69,16 +60,31 @@ foreach(ARCH ${ARCHS})
     # Build targets
     foreach(TARGET ${${ARCH}_TARGETS})
         string(TOLOWER "${SUFFIX}_${TARGET}" COMPOSED_TARGET)
-        add_custom_command(
-            OUTPUT GEN_${COMPOSED_TARGET}
-            COMMAND
-                ${${ARCH}_CMAKE_C_COMPILER} ${${ARCH}_${TARGET}_FLAGS}
-                "${VSYNC_INCLUDE}" ${CMAKE_SOURCE_DIR}/include/vsync/atomic.h -o
-                ${ASM_FILE} && ${CMAKE_CURRENT_BINARY_DIR}/cleaner.sh
-                ${ASM_FILE}
-            COMMAND_EXPAND_LISTS
-            DEPENDS vatomic BUILTIN_SCRIPTS PERMISSION_SCRIPTS
-            COMMENT "Generating ${COMPOSED_TARGET} builtin atomics")
+
+        if(${ARCH} STREQUAL "ARMV8")
+            add_custom_command(
+                OUTPUT GEN_${COMPOSED_TARGET}
+                COMMAND
+                    ${${ARCH}_CMAKE_C_COMPILER} ${${TARGET}_FLAGS}
+                    ${${ARCH}_FLAGS} "${VSYNC_INCLUDE}"
+                    ${CMAKE_SOURCE_DIR}/include/vsync/atomic.h -o ${ASM_FILE} &&
+                    ${CMAKE_CURRENT_BINARY_DIR}/cleaner.sh ${ASM_FILE}
+                COMMAND_EXPAND_LISTS
+                DEPENDS vatomic BUILTIN_SCRIPTS PERMISSION_SCRIPTS
+                COMMENT
+                    "Generating ${COMPOSED_TARGET} builtin atomics (with cleaner)"
+            )
+        else()
+            add_custom_command(
+                OUTPUT GEN_${COMPOSED_TARGET}
+                COMMAND
+                    ${${ARCH}_CMAKE_C_COMPILER} ${${TARGET}_FLAGS}
+                    ${${ARCH}_FLAGS} "${VSYNC_INCLUDE}"
+                    ${CMAKE_SOURCE_DIR}/include/vsync/atomic.h -o ${ASM_FILE}
+                COMMAND_EXPAND_LISTS
+                DEPENDS vatomic BUILTIN_SCRIPTS
+                COMMENT "Generating ${COMPOSED_TARGET} builtin atomics")
+        endif()
 
         add_custom_target(build_boogie_${COMPOSED_TARGET}
                           DEPENDS GEN_${COMPOSED_TARGET} ATOMIC_LIST)

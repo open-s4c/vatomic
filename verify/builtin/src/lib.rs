@@ -10,6 +10,7 @@ use regex::Regex;
 
 pub mod arm;
 pub mod generate;
+pub mod riscv;
 pub mod loops;
 pub const DUMMY_REG: &str = "dummy";
 

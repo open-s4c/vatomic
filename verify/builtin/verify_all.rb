@@ -2,7 +2,7 @@ require 'optparse'
 require 'set'
 require 'tempfile'
 
-Archs = { "armv8" => ["armv8", "armv8/atomics.s"], "riscv" => ["risc", "risc/atomics.s"] }
+Archs = { "armv8" => ["armv8", "armv8/atomics.s"], "riscv" => ["riscv", "riscv/atomics.s"] }
 options = {}
 options[:generate] = true
 options[:which] = "atomics_list_full.txt"

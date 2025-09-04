@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: MIT
 
 set(ARMV8_CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
+set(RISCV_CMAKE_C_COMPILER riscv64-linux-gnu-gcc)
+
 set(VSYNC_INCLUDE
     "-I$<JOIN:$<TARGET_PROPERTY:vatomic,INTERFACE_INCLUDE_DIRECTORIES>,;-I>")
 
