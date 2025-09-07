@@ -35,15 +35,14 @@ add_custom_command(
     COMMENT "Copy the batches to the parent folder")
 
 set(BUILTIN_FLAGS -DVATOMIC_DISABLE_ARM64_LSE -DVATOMIC_BUILTINS)
-
-set(ARMV8_FLAGS -O2 -x c -fkeep-inline-functions -S -mno-outline-atomics)
-
 set(LLSC_FLAGS -DVATOMIC_DISABLE_ARM64_LSE)
-
-set(RISCV_FLAGS -O2 -x c -fkeep-inline-functions -S)
+set(LSE_FLAGS -march=armv8-a+lse)
 
 set(RISCV_TARGETS BUILTIN)
-set(ARMV8_TARGETS LLSC BUILTIN)
+set(ARMV8_TARGETS LLSC BUILTIN LSE)
+
+set(ARMV8_FLAGS -O2 -x c -fkeep-inline-functions -S -mno-outline-atomics)
+set(RISCV_FLAGS -O2 -x c -fkeep-inline-functions -S)
 
 set(ATOMIC_CORE_GROUPS vatomic8 vatomic16 vatomic32 vatomic64 vatomicsz)
 set(ATOMIC_AWAIT_GROUPS vatomic32 vatomic64)

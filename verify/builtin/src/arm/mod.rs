@@ -115,6 +115,18 @@ pub enum ShiftOp {
 pub enum MemoryOp {
     Load,
     Store,
+    Rmw
+}
+
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub enum LSEop {
+    Max,
+    Clr,
+    Set,
+    Eor,
+    Add,
+    Swp,
+    Cas
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]
@@ -181,6 +193,7 @@ pub enum ArmInstruction {
     Move(MoveOp, Operand, Operand),
 
     Memory(MemoryOp, MemoryAttrs, Operand, Operand),
+    MemoryLSE(MemoryOp, MemoryAttrs, LSEop, Operand, Operand, Operand),
     MemoryPair(MemoryOp, Register, Register, AddressingMode),
     MemoryExclusive(MemoryOp, MemoryAttrs, Operand, Operand, Operand),
     Cmp(Operand, Operand),
@@ -319,6 +332,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
                     }
                 }
                 MemoryOp::Store => ("st", false),
+                MemoryOp::Rmw => unimplemented!()
             };
 
             let dest_or_src_reg = operand_to_boogie(reg1);
@@ -353,6 +367,51 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
                 dest_reg,
                 vec![attrs.release.to_string(), src_reg, format!("{}bv64", attrs.size.mask()), addr_reg],
             )
+        }
+        ArmInstruction::MemoryLSE(op, attrs, lse_op, src, dest, addr) => {
+            let lse_name = match lse_op {
+                LSEop::Max => "umax",
+                LSEop::Clr => "clr",
+                LSEop::Set => "set",
+                LSEop::Eor => "eor",
+                LSEop::Add => "add",
+                LSEop::Swp => "swp",
+                LSEop::Cas => "cas"
+            };
+            let addr_reg = operand_to_boogie(addr);
+            let src_reg = operand_to_boogie(src);
+            let dest_reg = match lse_op {
+                LSEop::Cas => src_reg.clone(),
+                _ => operand_to_boogie(dest)
+            };
+
+            let ret = match op {
+                MemoryOp::Load => 
+                    BoogieInstruction::Instr(
+                        "ld".to_string() + lse_name, SideEffect::Global,
+                        dest_reg,
+                        vec![attrs.acquire.to_string(), attrs.release.to_string(), src_reg, addr_reg, format!("{}bv64", attrs.size.mask()), format!("{}bv64", attrs.size.mask())]
+                    ),
+                MemoryOp::Store =>                     
+                    BoogieInstruction::Instr(
+                        "st".to_string() + lse_name, SideEffect::Global,
+                        DUMMY_REG.to_string(),
+                        vec![attrs.release.to_string(), src_reg, addr_reg, format!("{}bv64", attrs.size.mask()), format!("{}bv64", attrs.size.mask())]
+                    ),
+                MemoryOp::Rmw =>
+                    BoogieInstruction::Instr(
+                        lse_name.to_string(), SideEffect::Global,
+                        dest_reg,
+                        match lse_op {
+                            LSEop::Cas
+                                => vec![attrs.acquire.to_string(), attrs.release.to_string(), src_reg, operand_to_boogie(dest), addr_reg, format!("{}bv64", attrs.size.mask()), format!("{}bv64", attrs.size.mask())],
+                            LSEop::Swp
+                                => vec![attrs.acquire.to_string(), attrs.release.to_string(), src_reg, addr_reg, format!("{}bv64", attrs.size.mask()), format!("{}bv64", attrs.size.mask())],
+                            _ => unimplemented!()
+                        }
+                    ),
+            };            
+            ret
         }
         ArmInstruction::Cmp(op1, op2) => {
             let op1_reg = operand_to_boogie(op1);

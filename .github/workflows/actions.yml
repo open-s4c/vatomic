@@ -181,7 +181,7 @@ jobs:
   boogie-verification-haskell:
     strategy:
       matrix:
-        target: [ lse, llsc, lxe, no_polite_await ]
+        target: [ lxe, no_polite_await ]
     runs-on: ubuntu-latest
     container: ghcr.io/${{ github.repository }}/boogie-ci:latest
     steps:
@@ -199,7 +199,7 @@ jobs:
   boogie-verification-rust-armv8:
     strategy:
       matrix:
-        target: [ llsc, builtin ]
+        target: [ builtin, llsc, lse ]
         group: [ vatomic8, vatomic16, vatomic32, vatomic64, vatomicsz, vatomicptr, vatomic_fence ]
     runs-on: ubuntu-latest
     container: ghcr.io/${{ github.repository }}/boogie-ci:latest

@@ -14,6 +14,7 @@ datatype Ordering {
     AcquirePC(),
     Acquire(),
     Release(),
+    AcquireRelease(),
     Fence(mode : FenceType),
     NoOrd()
 }
@@ -56,20 +57,20 @@ datatype Instruction {
     mvn(src: bv64), // complements the bits in result
     neg(src: bv64), // negates the bits in the result
     
-    swp(acq, rel: bool, src, addr: bv64, mask: bv64), // exchanges 
-    cas(acq, rel: bool, exp, src, addr: bv64, mask: bv64), // compare and swap
+    swp(acq, rel: bool, src, addr: bv64, mask: bv64, write_mask: bv64), // exchanges 
+    cas(acq, rel: bool, exp, src, addr: bv64, mask: bv64, write_mask: bv64), // compare and swap
 
-    ldumax(acq, rel: bool, src, addr: bv64, mask: bv64), // maximum between src register, and loaded value
-    ldclr(acq, rel: bool, src, addr: bv64, mask: bv64), // bitwise and between src and ~loaded value
-    ldset(acq, rel: bool, src, addr: bv64, mask: bv64), // bitwise or between  src and loaded value
-    ldeor(acq, rel: bool, src, addr: bv64, mask: bv64), // bitwise xor between src and loaded value
-    ldadd(acq, rel: bool, src, addr: bv64, mask: bv64), // sum of src and loaded value
+    ldumax(acq, rel: bool, src, addr: bv64, mask: bv64, write_mask: bv64), // maximum between src register, and loaded value
+    ldclr(acq, rel: bool, src, addr: bv64, mask: bv64, write_mask: bv64), // bitwise and between src and ~loaded value
+    ldset(acq, rel: bool, src, addr: bv64, mask: bv64, write_mask: bv64), // bitwise or between  src and loaded value
+    ldeor(acq, rel: bool, src, addr: bv64, mask: bv64, write_mask: bv64), // bitwise xor between src and loaded value
+    ldadd(acq, rel: bool, src, addr: bv64, mask: bv64, write_mask: bv64), // sum of src and loaded value
 
-    stumax(rel: bool, src, addr: bv64), // store maximum between src and addr
-    stclr(rel: bool, src, addr: bv64), // store and between src and ~addr
-    stset(rel: bool, src, addr: bv64), // store or
-    steor(rel: bool, src, addr: bv64), // store xor
-    stadd(rel: bool, src, addr: bv64) // store sum
+    stumax(rel: bool, src, addr: bv64, mask: bv64, write_mask: bv64), // store maximum between src and addr
+    stclr(rel: bool, src, addr: bv64, mask: bv64, write_mask: bv64), // store and between src and ~addr
+    stset(rel: bool, src, addr: bv64, mask: bv64, write_mask: bv64), // store or
+    steor(rel: bool, src, addr: bv64, mask: bv64, write_mask: bv64), // store xor
+    stadd(rel: bool, src, addr: bv64, mask: bv64, write_mask: bv64) // store sum
 }
 
 function returning_load(instr : Instruction) : bool {
@@ -98,7 +99,7 @@ function updated_value(instr: Instruction, read_value : bv64) : bv64 {
     if instr is cas || instr is swp
     then instr->src
     else if instr is ldclr || instr is stclr
-    then and[instr->src, read_value]
+    then and[bit_inv(instr->src), read_value]
     else if instr is ldset || instr is stset
     then or[instr->src, read_value]
     else if instr is ldeor || instr is steor
@@ -205,7 +206,11 @@ procedure execute(instr: Instruction) returns (r : bv64);
                         else no_effect()
             )
         &&
-        (ordering[old(step)] == if instr->acq && reads(instr)
+        (ordering[old(step)] == if instr->acq && reads(instr) && (instr->rel && (writes(instr)
+                            || (instr is stx && stx_success)
+                            || (instr is cas && cas_success)))
+                            then AcquireRelease()
+                    else if instr->acq && reads(instr)
                     then Acquire()
                     else if instr->rel && (writes(instr)
                             || (instr is stx && stx_success)
@@ -282,9 +287,9 @@ function branch(cond: ConditionCode, flags: Flags): bool {(
 function ppo(step1, step2: StateIndex, ordering: [StateIndex] Ordering, effects: [StateIndex] Effect): bool {
     step1 < step2 && (
         // Barrier-ordered-before
-        ordering[step1] is Acquire ||
+        ordering[step1] is Acquire || ordering[step1] is AcquireRelease ||
         ordering[step1] is AcquirePC ||
-        ordering[step2] is Release ||
+        ordering[step2] is Release || ordering[step2] is AcquireRelease ||
         (ordering[step1] is Release && ordering[step2] is Acquire) ||
         (exists f : StateIndex :: step1 < f && f < step2 && ordering[f] == Fence(SY())) ||
         (exists f : StateIndex :: step1 < f && f < step2 && ordering[f] == Fence(LD())
@@ -294,5 +299,5 @@ function ppo(step1, step2: StateIndex, ordering: [StateIndex] Ordering, effects:
 
 
 function is_sc(order: Ordering): bool {
-    order is Acquire || order is Release
+    order is Acquire || order is Release || order is AcquireRelease
 }

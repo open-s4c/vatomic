@@ -456,9 +456,11 @@ fn parse_memory_instruction(
     let base_op = instr_name.to_lowercase();
     let op = if base_op.starts_with("ld") || base_op.starts_with("l") {
         MemoryOp::Load
+    } else if base_op.starts_with("swp") || base_op.starts_with("cas") {
+        MemoryOp::Rmw
     } else if base_op.starts_with("st") || base_op.starts_with("s") {
         MemoryOp::Store
-    } else {
+    }  else {
         return Err(nom::Err::Error(nom::error::Error::new(
             "",
             nom::error::ErrorKind::Tag,
@@ -467,6 +469,7 @@ fn parse_memory_instruction(
 
     let attrs = parse_memory_attrs(op, &base_op, &operands);
 
+    // Exclusive instructions (STXR, STLXR, etc.)
     if (base_op.contains("stlxr") || base_op.contains("stxr")) && operands.len() >= 3 {
         return Ok((
             "",
@@ -480,6 +483,82 @@ fn parse_memory_instruction(
         ));
     }
 
+    // LSE atomic memory operations (LD*/ST*)
+    if base_op.starts_with("ldadd")
+        || base_op.starts_with("ldeor")
+        || base_op.starts_with("ldclr")
+        || base_op.starts_with("ldset")
+        || base_op.starts_with("ldumax")
+        || base_op.starts_with("stadd")
+        || base_op.starts_with("steor")
+        || base_op.starts_with("stclr")
+        || base_op.starts_with("stset")
+        || base_op.starts_with("stmax")
+        || base_op.starts_with("swp")
+        || base_op.starts_with("cas")
+    {
+        let lse_op = if base_op.contains("add") {
+            LSEop::Add
+        } else if base_op.contains("eor") {
+            LSEop::Eor
+        } else if base_op.contains("clr") {
+            LSEop::Clr
+        } else if base_op.contains("set") {
+            LSEop::Set
+        } else if base_op.contains("max") || base_op.contains("umax") {
+            LSEop::Max
+        } else if base_op.contains("swp") {
+            LSEop::Swp
+        } else if base_op.contains("cas") {
+            LSEop::Cas
+        } else {
+            unreachable!()
+        };
+
+        if base_op.starts_with("ld") || base_op.starts_with("swp") || base_op.starts_with("cas") {
+            if operands.len() >= 3 {
+                return Ok((
+                    "",
+                    ArmInstruction::MemoryLSE(
+                        op,
+                        attrs,
+                        lse_op,
+                        operands[0].clone(),
+                        operands[1].clone(),
+                        operands[2].clone(),
+                    ),
+                ));
+            } else {
+                return Err(nom::Err::Error(nom::error::Error::new(
+                    "",
+                    nom::error::ErrorKind::Eof,
+                )));
+            }
+        } else if base_op.starts_with("st") {
+            if operands.len() >= 2 {
+                return Ok((
+                    "",
+                    ArmInstruction::MemoryLSE(
+                        op,
+                        attrs,
+                        lse_op,
+                        operands[0].clone(), // dummy    
+                        operands[0].clone(), 
+                        operands[1].clone(),
+                    ),
+                ));
+            } else {
+                return Err(nom::Err::Error(nom::error::Error::new(
+                    "",
+                    nom::error::ErrorKind::Eof,
+                )));
+            }
+        } else if base_op.starts_with("swp") {
+            
+        }
+    }
+
+    // Default: plain memory op
     Ok((
         "",
         ArmInstruction::Memory(op, attrs, operands[0].clone(), operands[1].clone()),
