@@ -194,7 +194,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     log::info!("Successfully read input file '{}'", args.input);
 
-    let name_re = regex::Regex::new(function_names.join("|").as_str())?;
+    let name_re = regex::Regex::new(
+        format!("^({})$", function_names.join("|")).as_str()
+    )?;
 
     let boogie_functions: Vec<_> = args
         .arch

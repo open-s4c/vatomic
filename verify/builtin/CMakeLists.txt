@@ -23,9 +23,10 @@ add_custom_command(
 # Permission only needed if cleaner.sh will be used
 add_custom_command(
     OUTPUT PERMISSION_SCRIPTS
-    COMMAND chmod +x ${CMAKE_CURRENT_BINARY_DIR}/cleaner.sh
+    COMMAND chmod +x ${CMAKE_CURRENT_BINARY_DIR}/cleaner.sh && chmod +x
+            ${CMAKE_CURRENT_BINARY_DIR}/verify.sh
     DEPENDS BUILTIN_SCRIPTS
-    COMMENT "Give script permissions")
+    COMMENT "Give scripts permissions")
 
 add_custom_command(
     OUTPUT ATOMIC_LIST
@@ -94,8 +95,7 @@ foreach(ARCH ${ARCHS})
     foreach(ORD ${ORDERINGS})
         set(ATM vatomic_fence_${ORD})
         add_test(NAME check_${SUFFIX}_${ATM}
-                 COMMAND ruby verify_all.rb -a ${SUFFIX} -f ${ATM} -o
-                         out_${ATM})
+                 COMMAND ${CMAKE_CURRENT_BINARY_DIR}/verify.sh ${ATM} ${SUFFIX})
         set_tests_properties(check_${SUFFIX}_${ATM}
                              PROPERTIES LABELS ${SUFFIX}_vatomic_fence)
     endforeach()
@@ -108,8 +108,8 @@ foreach(ARCH ${ARCHS})
             foreach(ATM ${ATM_LIST})
                 set(ATM_PREF ${ATM_GRP}_${ATM})
                 add_test(NAME check_${SUFFIX}_${ATM_PREF}
-                         COMMAND ruby verify_all.rb -a ${SUFFIX} -f ${ATM_PREF}
-                                 -o out_${ATM_PREF})
+                         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/verify.sh
+                                 ${ATM_PREF} ${SUFFIX})
 
                 set_tests_properties(check_${SUFFIX}_${ATM_PREF}
                                      PROPERTIES LABELS ${SUFFIX}_${ATM_GRP})
