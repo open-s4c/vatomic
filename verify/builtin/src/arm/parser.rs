@@ -494,7 +494,7 @@ fn parse_memory_instruction(
         || base_op.starts_with("steor")
         || base_op.starts_with("stclr")
         || base_op.starts_with("stset")
-        || base_op.starts_with("stmax")
+        || base_op.starts_with("stumax")
         || base_op.starts_with("swp")
         || base_op.starts_with("cas")
     {

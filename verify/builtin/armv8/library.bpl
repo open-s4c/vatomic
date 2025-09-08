@@ -83,6 +83,7 @@ function returning_load(instr : Instruction) : bool {
     || instr is ldset
     || instr is ldeor
     || instr is ldadd
+    || instr is stumax
 }
 
 
