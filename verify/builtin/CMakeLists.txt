@@ -37,9 +37,10 @@ add_custom_command(
 set(BUILTIN_FLAGS -DVATOMIC_DISABLE_ARM64_LSE -DVATOMIC_BUILTINS)
 set(LLSC_FLAGS -DVATOMIC_DISABLE_ARM64_LSE)
 set(LSE_FLAGS -march=armv8-a+lse)
+set(LXE_FLAGS -march=armv8-a+lse -DVATOMIC_ENABLE_ARM64_LXE)
 
 set(RISCV_TARGETS BUILTIN)
-set(ARMV8_TARGETS LLSC BUILTIN LSE)
+set(ARMV8_TARGETS LLSC BUILTIN LSE LXE)
 
 set(ARMV8_FLAGS -O2 -x c -fkeep-inline-functions -S -mno-outline-atomics)
 set(RISCV_FLAGS -O2 -x c -fkeep-inline-functions -S)
