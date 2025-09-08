@@ -398,6 +398,7 @@ fn parse_move_instruction(
     let op = match instr_name.to_lowercase().as_str() {
         "mov" => MoveOp::Mov,
         "mvn" => MoveOp::Mvn,
+        "neg" => MoveOp::Neg,
         _ => {
             return Err(nom::Err::Error(nom::error::Error::new(
                 "",

@@ -163,6 +163,7 @@ pub struct MemoryAttrs {
 pub enum MoveOp {
     Mov,
     Mvn,
+    Neg
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -316,6 +317,7 @@ pub fn arm_instruction_to_boogie(instr: &ArmInstruction) -> BoogieInstruction {
             let op_name = match op {
                 MoveOp::Mov => "mov",
                 MoveOp::Mvn => "mvn",
+                MoveOp::Neg => "neg"
             };
 
             let dest_reg = operand_to_boogie(dest);
@@ -457,7 +459,13 @@ fn register_to_boogie(reg: &Register) -> String {
 fn operand_to_boogie(operand: &Operand) -> String {
     match operand.clone() {
         Operand::Register(r) => register_to_boogie(&r),
-        Operand::ImmediateValue(val) => format!("{}bv64", val),
+        Operand::ImmediateValue(val) => {
+            if val != -1 {
+                format!("{}bv64", val)
+            } else {
+                "bit_inv(0bv64)".to_string()
+            }
+        },
         Operand::Memory(addr_mode) => match addr_mode {
             AddressingMode::BaseRegister(reg) => register_to_boogie(&reg),
             AddressingMode::BaseRegisterWithOffset(reg, offset) => {
