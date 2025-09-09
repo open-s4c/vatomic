@@ -211,9 +211,9 @@ jobs:
       - name: Configure
         run: cmake -S. -Bbuild
       - name: Build
-        run: cmake --build build --target build_boogie_armv8_${{ matrix.target }}
+        run: cmake --build build --target build_boogie_armv8_${{ matrix.target }}_${{ matrix.group }}
       - name: Verify
-        run: ctest -j 4 -L armv8_${{ matrix.group }} --test-dir build/verify
+        run: ctest -j 4 -L armv8_${{ matrix.target }}_${{ matrix.group }} --test-dir build/verify
 
   boogie-verification-rust-riscv:
     strategy:
@@ -229,6 +229,6 @@ jobs:
       - name: Configure
         run: cmake -S. -Bbuild
       - name: Build
-        run: cmake --build build --target build_boogie_riscv_builtin
+        run: cmake --build build --target build_boogie_riscv_builtin_${{ matrix.group }}
       - name: Verify
-        run: ctest -j 4 -L riscv_${{ matrix.group }} --test-dir build/verify
+        run: ctest -j 4 -L riscv_builtin_${{ matrix.group }} --test-dir build/verify

@@ -137,13 +137,12 @@ fn read_function_names(file_path: &str) -> Result<Vec<String>, std::io::Error> {
 }
 
 fn ensure_directory_exists(path: &str) -> Result<(), std::io::Error> {
-    if Path::new(path).exists() {
-        fs::remove_dir_all(path)?;
+    if !Path::new(path).exists() {
+        fs::create_dir_all(path)?;
     }
-
-    fs::create_dir_all(path)?;
     Ok(())
 }
+
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();

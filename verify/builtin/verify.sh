@@ -9,44 +9,8 @@ fi
 FUNC="$1"
 ARCH="$2"
 
-# Architectures mapping (library dirs & asm files)
-declare -A ARCHS
-ARCHS=(
-  ["armv8"]="./armv8/atomics.s"
-  ["riscv"]="./riscv/atomics.s"
-)
-
-if [[ -z "${ARCHS[$ARCH]+x}" ]]; then
-  echo "Unknown architecture: $ARCH"
-  exit 1
-fi
-
 OUT="out/$ARCH"
 OUT_RETRY="out_retry/$ARCH"
-TMPFUNCS=$(mktemp)
-echo "$FUNC" > "$TMPFUNCS"
-
-compile() {
-  local outdir="$1"
-  local unroll="$2"
-  echo "Compiling $FUNC for $ARCH (unroll=$unroll, outdir=$outdir)"
-  if [[ "$unroll" == "true" ]]; then
-    cargo run --quiet -- \
-      --input "${ARCHS[$ARCH]}" \
-      --functions "$TMPFUNCS" \
-      --templates ./boogie/templates/ \
-      --directory "$outdir" \
-      --arch "$ARCH" \
-      --unroll
-  else
-    cargo run --quiet -- \
-      --input "${ARCHS[$ARCH]}" \
-      --functions "$TMPFUNCS" \
-      --templates ./boogie/templates/ \
-      --directory "$outdir" \
-      --arch "$ARCH"
-  fi
-}
 
 verify() {
   local phase="$1"
@@ -58,27 +22,18 @@ verify() {
     "$outdir/$FUNC"/*.bpl
 }
 
-# ------------------
-# Phase 1
-# ------------------
-compile "$OUT" "false"
+# phase 1
 if verify 1 "$OUT" | tee /dev/stderr | grep -q "0 errors"; then
   echo "$FUNC on $ARCH passed phase 1"
-  rm "$TMPFUNCS"
   exit 0
 fi
 
-# ------------------
-# Phase 2 (only if phase 1 failed)
-# ------------------
+# phase 2
 echo "Phase 1 failed, retrying with heavy verification..."
-compile "$OUT_RETRY" "true"
 if verify 2 "$OUT_RETRY" | tee /dev/stderr | grep -q "0 errors"; then
   echo "$FUNC on $ARCH passed phase 2"
-  rm "$TMPFUNCS"
   exit 0
 else
   echo "$FUNC on $ARCH failed verification"
-  rm "$TMPFUNCS"
   exit 1
 fi
