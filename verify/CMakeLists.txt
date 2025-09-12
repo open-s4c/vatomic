@@ -8,4 +8,3 @@ set(VSYNC_INCLUDE
     "-I$<JOIN:$<TARGET_PROPERTY:vatomic,INTERFACE_INCLUDE_DIRECTORIES>,;-I>")
 
 add_subdirectory(builtin)
-add_subdirectory(haskell)

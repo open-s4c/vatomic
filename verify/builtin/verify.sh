@@ -19,7 +19,7 @@ verify() {
   boogie /proverOpt:SOLVER=z3 \
     "$outdir/$FUNC"/*.bpl \
     ./boogie/auxiliary.bpl \
-    "./$ARCH/library.bpl" \
+    "./$ARCH/library.bpl"
 }
 
 # phase 1

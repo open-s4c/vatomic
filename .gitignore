@@ -1,4 +1,3 @@
 *build*/
 .kakrc
 .vscode
-verify/boogie_armv8/correctness.bpl
