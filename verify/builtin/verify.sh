@@ -17,9 +17,9 @@ verify() {
   local outdir="$2"
   echo "Verifying $FUNC on $ARCH (phase $phase, outdir=$outdir)"
   boogie /proverOpt:SOLVER=z3 \
+    "$outdir/$FUNC"/*.bpl \
     ./boogie/auxiliary.bpl \
     "./$ARCH/library.bpl" \
-    "$outdir/$FUNC"/*.bpl
 }
 
 # phase 1
