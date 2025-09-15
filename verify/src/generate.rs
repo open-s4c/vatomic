@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
 use std::collections::HashSet;
 
 use crate::{loops::loop_headers, BoogieInstruction, SideEffect};

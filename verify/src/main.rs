@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ */
 use asm2boogie::arm::{self, extract_arm_functions, parse_arm_assembly};
 use asm2boogie::riscv::{self, extract_riscv_functions, parse_riscv_assembly};
 use asm2boogie::{Arch, ToBoogie, generate_boogie_file, generate_debug_file};
