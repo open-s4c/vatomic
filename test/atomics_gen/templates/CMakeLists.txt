@@ -17,7 +17,7 @@ foreach(TEMPLATE_FILE IN ITEMS ${TEMPLATES})
         add_custom_target(
             ${TEST_FILE}
             COMMAND
-                $<TARGET_FILE:tmplr.bin> -DTY=${TY}
+                ${TMPLR_PROGRAM} -FTY=${TY}
                 ${PROJECT_SOURCE_DIR}/template/include/vsync/atomic/vatomic.rules
                 ${TEMPLATE_FILE} > ${GEN_TEST_OUTPUT_DIR}/${TEST_FILE})
         add_dependencies(vatomic-test-generate ${TEST_FILE})
@@ -85,7 +85,7 @@ foreach(FUN IN ITEMS ${FUNS})
     add_custom_target(
         ${OUTPUT_FILE}
         COMMAND
-            $<TARGET_FILE:tmplr.bin> -DFUNC=${FUN}
+            ${TMPLR_PROGRAM} -FFUNC=${FUN}
             ${PROJECT_SOURCE_DIR}/template/include/vsync/atomic/vatomic.rules
             ${CMAKE_CURRENT_SOURCE_DIR}/call_FUNC.c.in >
             ${GEN_TEST_OUTPUT_DIR}/call_tests/${OUTPUT_FILE})

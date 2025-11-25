@@ -123,6 +123,7 @@ jobs:
         run: cmake -S . -Bbuild
              -DCMAKE_TOOLCHAIN_FILE=".github/toolchains/${{ matrix.toolchain }}.cmake"
              -DCMAKE_C_FLAGS="-${{ matrix.optimization_level }} ${{ matrix.flags }}"
+             -DVATOMIC_DEV=OFF
       - name: Build
         run: cmake --build build
       - name: Test
@@ -145,6 +146,7 @@ jobs:
         run: cmake -S . -Bbuild
              -DCMAKE_TOOLCHAIN_FILE=".github/toolchains/${{ matrix.toolchain }}.cmake"
              -DCMAKE_C_FLAGS="-${{ matrix.optimization_level }} ${{ matrix.flags }}"
+             -DVATOMIC_DEV=OFF
       - name: Build
         run: cmake --build build
       - name: Test
@@ -172,12 +174,13 @@ jobs:
         run: cmake -S . -Bbuild
              -DCMAKE_TOOLCHAIN_FILE=".github/toolchains/${{ matrix.options.toolchain }}.cmake"
              -DCMAKE_C_FLAGS="-${{ matrix.optimization_level }} ${{ matrix.options.flags }}"
+             -DVATOMIC_DEV=OFF
       - name: Build
         run: cmake --build build
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
-  boogie-verification-rust-armv8:
+  verify-armv8:
     strategy:
       matrix:
         target: [ builtin, llsc, lse, lxe ]
@@ -190,13 +193,13 @@ jobs:
         with:
           fetch-depth: 0
       - name: Configure
-        run: cmake -S. -Bbuild
+        run: cmake -S. -Bbuild -DVATOMIC_DEV=OFF
       - name: Build
         run: cmake --build build --target build_boogie_armv8_${{ matrix.target }}_${{ matrix.group }}
       - name: Verify
         run: ctest -j 4 -L armv8_${{ matrix.target }}_${{ matrix.group }} --test-dir build/verify
 
-  boogie-verification-rust-riscv:
+  verify-riscv:
     strategy:
       matrix:
         group: [ vatomic8, vatomic16, vatomic32, vatomic64, vatomicsz, vatomicptr, vatomic_fence ]
@@ -208,7 +211,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Configure
-        run: cmake -S. -Bbuild
+        run: cmake -S. -Bbuild -DVATOMIC_DEV=OFF
       - name: Build
         run: cmake --build build --target build_boogie_riscv_builtin_${{ matrix.group }}
       - name: Verify

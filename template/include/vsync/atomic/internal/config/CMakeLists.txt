@@ -30,7 +30,7 @@ foreach(TARGET IN ITEMS ${TARGETS})
         add_custom_target(
             ${OUT}
             COMMAND
-                $<TARGET_FILE:tmplr.bin> -DTY=${TY}
+                ${TMPLR_PROGRAM} -FTY=${TY}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../../vatomic.rules
                 ${CMAKE_CURRENT_SOURCE_DIR}/${TMPL}.in >
                 ${PROJECT_SOURCE_DIR}/include/vsync/atomic/internal/config/${OUT}

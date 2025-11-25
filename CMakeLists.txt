@@ -23,21 +23,31 @@ install(DIRECTORY include/vsync DESTINATION include)
 install(FILES vmm.cat DESTINATION share/vsync/)
 install(TARGETS vatomic EXPORT ${PROJECT_TARGETS})
 
-# Enable development targets only if this is the top level project
+# Enable development and test targets only if this is the top level project
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set(VATOMIC_DEV_DEFAULT ON)
+    set(VATOMIC_TESTS_DEFAULT ON)
 else()
     set(VATOMIC_DEV_DEFAULT OFF)
+    set(VATOMIC_TESTS_DEFAULT OFF)
 endif()
 
-option(VATOMIC_DEV "Enable development targets" ${VATOMIC_DEV_DEFAULT})
+option(VATOMIC_DEV
+       "Enable generating vatomic headers from templates with tmplr"
+       ${VATOMIC_DEV_DEFAULT})
+option(VATOMIC_TESTS "Enable test and verification targets"
+       ${VATOMIC_TESTS_DEFAULT})
 
 if(VATOMIC_DEV)
     # Atomic templating
+    include(cmake/tmplr.cmake)
+    set(TMPLR_PROGRAM ${TMPLR_PROGRAM} -P_tmpl -b 1000)
     add_subdirectory(template)
-    add_subdirectory(tmplr)
+
+    # Documentation generation
     include(cmake/doc.cmake)
     add_doc_targets()
+
     # Basic format sanitization
     add_custom_target(
         sanitize-vatomic
@@ -62,7 +72,9 @@ if(VATOMIC_DEV)
 
     # General diff check for pipeline
     add_custom_target(diff-check COMMAND git --no-pager diff --exit-code)
+endif()
 
+if(VATOMIC_TESTS)
     include(CTest)
     include(ProcessorCount)
     include(cmake/v_add_test.cmake)
