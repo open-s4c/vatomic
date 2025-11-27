@@ -34,7 +34,7 @@ Ensure the following two flags are set when configuring the project:
 - `VATOMIC_TESTS=ON` - enables build of unit tests,
 - `VATOMIC_DEV=ON` -  enables template file expansion.
 
-Here is an intial sequence of commands to compile and run all tests:
+Here is an initial sequence of commands to compile and run all tests:
 
 ```sh
 cmake -S . -B build -DVATOMIC_DEV=ON -DVATOMIC_TESTS=ON
@@ -70,13 +70,12 @@ cmake --build --target vatomic-test-generate
 
 ### Verification
 
-Enabling `VATOMIC_DEV` exposes the verification targets under `verify/` and
-turns on the architecture template generation flow (via `tmplr`). When you touch
-code that is formally verified, please run the relevant harness (for example
+Enabling `VATOMIC_TESTS` exposes the verification targets under `verify/`
+if the required tools (Boogie, Z3, etc) are installed. When you touch code
+that is formally verified, please run the relevant harness (for example
 `build_boogie_lse` followed by `ctest --test-dir build/verify -R lse
---output-on-failure`). Refer to [`doc/VERIFICATION.md`](VERIFICATION.md) for the
-full list of targets and dependencies, and to `template/` for details on the
-templated sources.
+--output-on-failure`). Refer to [`doc/VERIFICATION.md`](VERIFICATION.md)
+for the full list of targets and dependencies.
 
 ### API documentation
 
@@ -92,7 +91,6 @@ The user has to manually install these tools to be able update the API
 documentation. The following commands create the up-to-date documentation:
 
 ```sh
-cmake --build build --target doxygen
 cmake --build build --target markdown
 ```
 
@@ -100,8 +98,10 @@ cmake --build build --target markdown
 
 - Follow the existing file layout under `include/vsync/`. Keep architecture
   specific code isolated under the matching directory.
-- Run `clang-format` (configuration in `.clang-format`) on all C/C++ changes and
-  `cmake-format` on CMake files. The CI enforces these styles.
+- Run `clang-format` (configuration in `.clang-format`) on all C/C++ changes
+  and `cmake-format` on CMake files. The build systems has two targets to
+  help applying the format over the whole codebase: `clang-format-apply` and
+  `cmake-format-apply`. The CI enforces these styles with `clang-format` 14.
 - Favor small, documented helpers over macro-heavy solutions when possible.
   When macros are unavoidable, prefer well-scoped names.
 - Maintain a consistent memory-ordering story: document the expected ordering
