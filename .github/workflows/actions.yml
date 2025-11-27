@@ -16,6 +16,9 @@ jobs:
       verify:    ${{ steps.verify.outputs.changed }}
       test:      ${{ steps.test.outputs.changed }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: dorny/paths-filter@v3
         id: include
         with:
@@ -33,7 +36,10 @@ jobs:
         with:
           filters: |
             changed:
-              - 'verify/**'
+              - 'verify/**.bpl'
+              - 'verify/**.rs'
+              - 'verify/**.sh'
+              - 'verify/**.txt'
       - uses: dorny/paths-filter@v3
         id: test
         with:
