@@ -45,17 +45,17 @@ namespace vsync
     }
 } // namespace vsync
 
-#include "cpp/atomic/core_u8.hpp"
-#include "cpp/atomic/core_bool.hpp"
-#include "cpp/atomic/core_u16.hpp"
-#include "cpp/atomic/core_u32.hpp"
+#include "atomic/core_u8.hpp"
+#include "atomic/core_bool.hpp"
+#include "atomic/core_u16.hpp"
+#include "atomic/core_u32.hpp"
 #if defined(__APPLE__)
-    #include "cpp/atomic/core_sz.hpp"
+    #include "atomic/core_sz.hpp"
 #endif
-#include "cpp/atomic/core_u64.hpp"
-#include "cpp/atomic/core_ptr.hpp"
-#include "cpp/atomic/core_s8.hpp"
-#include "cpp/atomic/core_s16.hpp"
-#include "cpp/atomic/core_s32.hpp"
-#include "cpp/atomic/core_s64.hpp"
+#include "atomic/core_u64.hpp"
+#include "atomic/core_ptr.hpp"
+#include "atomic/core_s8.hpp"
+#include "atomic/core_s16.hpp"
+#include "atomic/core_s32.hpp"
+#include "atomic/core_s64.hpp"
 #endif
