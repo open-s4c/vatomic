@@ -13,7 +13,7 @@ foreach(TARGET ${TARGETS})
     add_custom_target(
         ${TARGET}
         COMMAND
-            ${TMPLR_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/vatomic.rules
+            ${TMPLR_PROGRAM} ${VATOMIC_RULES}
             ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}.in >
             ${PROJECT_SOURCE_DIR}/include/vsync/atomic/${TARGET})
     add_dependencies(vatomic-generate ${TARGET})
@@ -29,8 +29,7 @@ foreach(TARGET ${TARGETS})
         add_custom_target(
             ${OUT}
             COMMAND
-                ${TMPLR_PROGRAM} -FTY=${TY}
-                ${CMAKE_CURRENT_SOURCE_DIR}/vatomic.rules
+                ${TMPLR_PROGRAM} -FTY=${TY} ${VATOMIC_RULES}
                 ${CMAKE_CURRENT_SOURCE_DIR}/${TMPL}.in >
                 ${PROJECT_SOURCE_DIR}/include/vsync/atomic/${OUT})
         add_dependencies(vatomic-generate ${OUT})

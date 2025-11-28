@@ -18,8 +18,7 @@ foreach(TARGET ${TARGETS})
         add_custom_target(
             ${OUT}
             COMMAND
-                ${TMPLR_PROGRAM} -FTY=${TY}
-                ${PROJECT_SOURCE_DIR}/template/include/vsync/atomic/vatomic.rules
+                ${TMPLR_PROGRAM} -FTY=${TY} ${VATOMIC_RULES}
                 ${CMAKE_CURRENT_SOURCE_DIR}/${TMPL}.in >
                 ${PROJECT_SOURCE_DIR}/include/vsync/cpp/atomic/${OUT})
         add_dependencies(vatomic-generate ${OUT})

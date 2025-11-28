@@ -3,7 +3,7 @@
 add_custom_target(vatomic-test-generate)
 
 file(GLOB TEMPLATES *TY.c.in)
-set(GEN_TEST_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
+set(GEN_TEST_OUTPUT_DIR ${PROJECT_SOURCE_DIR}/test/atomics_gen)
 
 set(ut_test_TY_TYPES u8 u16 u32 u64 sz ptr)
 set(ut_test_await_TY_TYPES u32 u64 ptr)
@@ -16,10 +16,8 @@ foreach(TEMPLATE_FILE IN ITEMS ${TEMPLATES})
         string(REPLACE TY ${TY} TEST_FILE ${TEMPLATE_NAME}.c)
         add_custom_target(
             ${TEST_FILE}
-            COMMAND
-                ${TMPLR_PROGRAM} -FTY=${TY}
-                ${PROJECT_SOURCE_DIR}/template/include/vsync/atomic/vatomic.rules
-                ${TEMPLATE_FILE} > ${GEN_TEST_OUTPUT_DIR}/${TEST_FILE})
+            COMMAND ${TMPLR_PROGRAM} -FTY=${TY} ${VATOMIC_RULES}
+                    ${TEMPLATE_FILE} > ${GEN_TEST_OUTPUT_DIR}/${TEST_FILE})
         add_dependencies(vatomic-test-generate ${TEST_FILE})
     endforeach()
 endforeach()
@@ -85,8 +83,7 @@ foreach(FUN IN ITEMS ${FUNS})
     add_custom_target(
         ${OUTPUT_FILE}
         COMMAND
-            ${TMPLR_PROGRAM} -FFUNC=${FUN}
-            ${PROJECT_SOURCE_DIR}/template/include/vsync/atomic/vatomic.rules
+            ${TMPLR_PROGRAM} -FFUNC=${FUN} ${VATOMIC_RULES}
             ${CMAKE_CURRENT_SOURCE_DIR}/call_FUNC.c.in >
             ${GEN_TEST_OUTPUT_DIR}/call_tests/${OUTPUT_FILE})
     add_dependencies(vatomic-test-generate ${OUTPUT_FILE})
