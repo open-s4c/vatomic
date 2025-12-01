@@ -303,6 +303,19 @@ template <typename TT, bool IsVolatile> struct TestAtomics {
         ins.ut_fetch_and();
         ins.ut_bitwise();
     }
+    template <typename T = TT>
+    typename std::enable_if<false == std::is_same<T, bool>::value>::type
+    run_arithmetic_if_supported(TestAtomics<TT, IsVolatile> &ins)
+    {
+        ins.run_arithmetic(ins);
+    }
+
+    template <typename T = TT>
+    typename std::enable_if<std::is_same<T, bool>::value>::type
+    run_arithmetic_if_supported(TestAtomics<TT, IsVolatile> &)
+    {
+    }
+
     static void run_tests()
     {
         static TestAtomics<TT, IsVolatile> ins;
@@ -314,9 +327,7 @@ template <typename TT, bool IsVolatile> struct TestAtomics {
         ins.ut_rw();
         ins.ut_xchg();
         ins.ut_cmpxchg();
-        if constexpr (!std::is_same_v<TT, bool>) {
-            ins.run_arithmetic(ins);
-        }
+        ins.run_arithmetic_if_supported(ins);
         assert(ins.mirror == ins.subject);
     }
 

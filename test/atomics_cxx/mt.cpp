@@ -12,10 +12,44 @@
 #if !defined(__ARM_ARCH) && !defined(__NetBSD__)
     #define USE_BARRIER
 #endif
-#if defined(USE_BARRIER)
-    #include <barrier>
-#endif
 #include <vector>
+#if defined(USE_BARRIER)
+    #if defined(__cpp_lib_barrier)
+        #include <barrier>
+using vsync_thread_barrier = std::barrier<>;
+    #else
+        #include <condition_variable>
+        #include <mutex>
+class vsync_thread_barrier
+{
+  public:
+    explicit vsync_thread_barrier(size_t thread_count)
+        : threshold(thread_count), count(thread_count), generation(0)
+    {
+    }
+
+    void arrive_and_wait()
+    {
+        std::unique_lock<std::mutex> lock(mutex);
+        auto gen = generation;
+        if (--count == 0U) {
+            generation++;
+            count = threshold;
+            cv.notify_all();
+        } else {
+            cv.wait(lock, [this, gen] { return generation != gen; });
+        }
+    }
+
+  private:
+    const size_t threshold;
+    size_t count;
+    size_t generation;
+    std::mutex mutex;
+    std::condition_variable cv;
+};
+    #endif
+#endif
 
 template <typename TT, size_t N, size_t IT> class MT_Test
 {
@@ -152,7 +186,7 @@ template <typename TT, size_t N, size_t IT> class MT_Test
     int64_t test(std::function<void(void)> f)
     {
 #ifdef USE_BARRIER
-        std::barrier barrier{N};
+        vsync_thread_barrier barrier(N);
 #endif
         std::vector<std::thread> threads;
         auto start = launch(threads, [&] {

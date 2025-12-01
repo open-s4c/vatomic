@@ -8,6 +8,10 @@ project(
     VERSION 2.3.1
     DESCRIPTION "VSync atomics")
 
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
 include(GNUInstallDirs)
 include(CheckSymbolExists)
 include(cmake/export.cmake)

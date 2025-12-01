@@ -12,6 +12,12 @@ The atomics implementations are being gradually verified to comply with VMM. At
 the moment, we have completed the verification of ARMv8 64-bits with and
 without LSE instructions, and RISC-V using compiler builtins.
 
+The C implementation is C99-compatible: the build system enforces `-std=c99`
+with compiler extensions disabled, so every shipped header and test builds
+cleanly in that dialect out of the box. The C++ bindings and tests are likewise
+compiled as C++11 (no compiler extensions), which we exercise in the same
+comprehensive build.
+
 This project is a spinoff of the VSync project and a key component in
 [libvsync][]. Refer to our ASPLOS'21 [publication][paper] describing part of the
 research effort put into this library.
