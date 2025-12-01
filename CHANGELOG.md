@@ -7,6 +7,7 @@ This project partially comply with [Semantic Versioning][].
 
 ## Unreleased
 
+- Introduced vsync::atomic for C++ (vsync/atomic.hpp)
 - Added new verification pipeline in `verify/`
 - Introduced RISCV verification
 - Improved documentation on verification and contributing to the project
