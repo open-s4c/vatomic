@@ -26,6 +26,7 @@ target_include_directories(
 install(DIRECTORY include/vsync DESTINATION include)
 install(FILES vmm.cat DESTINATION share/vsync/)
 install(TARGETS vatomic EXPORT ${PROJECT_TARGETS})
+add_subdirectory(doc/man)
 
 # Enable development and test targets only if this is the top level project
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
