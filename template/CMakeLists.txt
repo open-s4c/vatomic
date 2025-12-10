@@ -5,6 +5,7 @@ if(NOT VATOMIC_DEV)
 endif()
 
 add_custom_target(vatomic-generate)
+add_dependencies(vatomic-generate tmplr-build)
 
 # after running vatomic-generate, run clang-format-apply, in order to fix format
 # in autogenerted files.
