@@ -21,6 +21,7 @@ foreach(TARGET ${TARGETS})
                 ${TMPLR_PROGRAM} -FTY=${TY} ${VATOMIC_RULES}
                 ${CMAKE_CURRENT_SOURCE_DIR}/${TMPL}.in >
                 ${PROJECT_SOURCE_DIR}/include/vsync/atomic/${OUT})
+        add_dependencies(${OUT} tmplr-build)
         add_dependencies(vatomic-generate ${OUT})
     endforeach()
 endforeach()

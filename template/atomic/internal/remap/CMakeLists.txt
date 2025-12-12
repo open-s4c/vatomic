@@ -32,6 +32,7 @@ foreach(TARGET IN ITEMS ${TARGETS})
                 ${CMAKE_CURRENT_SOURCE_DIR}/${TMPL}.in >
                 ${PROJECT_SOURCE_DIR}/include/vsync/atomic/internal/remap_${OUT}
         )
+        add_dependencies(${OUT} tmplr-build)
         add_dependencies(vatomic-generate ${OUT})
     endforeach()
 endforeach()

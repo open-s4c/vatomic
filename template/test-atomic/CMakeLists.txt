@@ -18,6 +18,7 @@ foreach(TEMPLATE_FILE IN ITEMS ${TEMPLATES})
             ${TEST_FILE}
             COMMAND ${TMPLR_PROGRAM} -FTY=${TY} ${VATOMIC_RULES}
                     ${TEMPLATE_FILE} > ${GEN_TEST_OUTPUT_DIR}/${TEST_FILE})
+        add_dependencies(${TEST_FILE} tmplr-build)
         add_dependencies(vatomic-test-generate ${TEST_FILE})
     endforeach()
 endforeach()
@@ -86,6 +87,7 @@ foreach(FUN IN ITEMS ${FUNS})
             ${TMPLR_PROGRAM} -FFUNC=${FUN} ${VATOMIC_RULES}
             ${CMAKE_CURRENT_SOURCE_DIR}/call_FUNC.c.in >
             ${GEN_TEST_OUTPUT_DIR}/call_tests/${OUTPUT_FILE})
+    add_dependencies(${OUTPUT_FILE} tmplr-build)
     add_dependencies(vatomic-test-generate ${OUTPUT_FILE})
 endforeach(FUN)
 
