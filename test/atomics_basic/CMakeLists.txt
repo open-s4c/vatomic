@@ -122,6 +122,12 @@ foreach(TC_VARIANT ${TC_VARIANTS})
                 configure_file(vatomic_basic.c.in ${TC}.c)
                 add_executable(${TC} ${TC}.c)
                 target_link_libraries(${TC} vatomic pthread)
+                if(${TC_VARIANT} STREQUAL dispatch)
+                    target_compile_options(
+                        ${TC} PRIVATE ${TEST_C_EXTENSIONS_WARN_OPTS})
+                else()
+                    target_compile_options(${TC} PRIVATE ${TEST_C_WARN_OPTS})
+                endif()
 
                 v_add_bin_test(NAME ${TC} COMMAND ${TC})
             endforeach()

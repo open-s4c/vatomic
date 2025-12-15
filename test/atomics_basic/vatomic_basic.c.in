@@ -47,18 +47,18 @@ typedef struct {
  * operation expected behavior
  ******************************************************************************/
 #define OP_cmpxchg(a, b, c) (a == b) ? TC(c, a) : TC(a, a)
-#define OP_or(a, b, _)      ({(void) _; TC(a | b, a);})
-#define OP_xor(a, b, _)     ({(void) _; TC(a ^ b, a);})
-#define OP_and(a, b, _)     ({(void) _; TC(a & b, a);})
-#define OP_add(a, b, _)     ({(void) _; TC(a + b, a);})
-#define OP_sub(a, b, _)     ({(void) _; TC(a - b, a);})
-#define OP_max(a, b, _)     ({(void) _; (a > b) ? TC(a, a) : TC(b, a);})
-#define OP_xchg(a, b, _)    ({(void) _; TC(b, a);})
-#define OP_init(a, b, _)    ({(void) _; (void) b, TC(b, a);})
-#define OP_write(a, b, _)   ({(void) _; (void) b, TC(b, a);})
-#define OP_inc(a, _1, _2)   ({(void)_1; (void)_2; TC(a + 1, a);})
-#define OP_dec(a, _1, _2)   ({(void)_1; (void)_2; TC(a - 1, a);})
-#define OP_read(a, _1, _2)  ({(void)_1; (void)_2; TC(a, a);})
+#define OP_or(a, b, _)      ((void) _, TC(a | b, a))
+#define OP_xor(a, b, _)     ((void) _, TC(a ^ b, a))
+#define OP_and(a, b, _)     ((void) _, TC(a & b, a))
+#define OP_add(a, b, _)     ((void) _, TC(a + b, a))
+#define OP_sub(a, b, _)     ((void) _, TC(a - b, a))
+#define OP_max(a, b, _)     ((void) _, (a > b) ? TC(a, a) : TC(b, a))
+#define OP_xchg(a, b, _)    ((void) _, TC(b, a))
+#define OP_init(a, b, _)    ((void) _, (void) b, TC(b, a))
+#define OP_write(a, b, _)   ((void) _, (void) b, TC(b, a))
+#define OP_inc(a, _1, _2)   ((void)_1, (void)_2, TC(a + 1, a))
+#define OP_dec(a, _1, _2)   ((void)_1, (void)_2, TC(a - 1, a))
+#define OP_read(a, _1, _2)  ((void)_1, (void)_2, TC(a, a))
 
 /*******************************************************************************
  * basic test
@@ -107,7 +107,7 @@ test(T init, T arg1, T arg2)
 T values[N];
 
 void
-values_init()
+values_init(void)
 {
     vuint64_t last = 1;
     vuint64_t next;

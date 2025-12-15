@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ * Copyright (C) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
 
@@ -38,7 +38,7 @@
 
 #define V_NR_VARS_(m, a, b, c, d, e, f, g, h, i, j, k, n, ...) m##n
 #define V_NR_VARS(m, ...)                                                      \
-    V_NR_VARS_(m, ##__VA_ARGS__, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+    V_NR_VARS_(m, __VA_ARGS__, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
 
 /*******************************************************************************
  * unused args
@@ -125,7 +125,7 @@
  */
 #define V_UNUSED(...)                                                          \
     do {                                                                       \
-        V_NR_VARS(V_UNUSED_, ##__VA_ARGS__)(__VA_ARGS__);                      \
+        V_NR_VARS(V_UNUSED_, __VA_ARGS__)(__VA_ARGS__);                        \
     } while (0)
 
 /**

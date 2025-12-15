@@ -20,10 +20,10 @@ static inline void *
 mt_atomic_ptr_await_eq_run(void *args)
 {
     vsize_t tid = (vsize_t)(vuintptr_t)args;
-    (void)vatomicptr_await_eq(&g_shared,
-                              (void *)(vuintptr_t)(VUINTPTR_MAX + (void *)tid));
+    (void)vatomicptr_await_eq(
+        &g_shared, (void *)(vuintptr_t)(VUINTPTR_MAX + (vuintptr_t)tid));
     vatomicptr_write(&g_shared,
-                     (void *)(vuintptr_t)(VUINTPTR_MAX + (void *)tid + 1U));
+                     (void *)(vuintptr_t)(VUINTPTR_MAX + (vuintptr_t)tid + 1U));
     return NULL;
 }
 static inline void
@@ -46,8 +46,8 @@ static inline void *
 mt_atomic_ptr_await_eq_set_run(void *args)
 {
     vsize_t tid     = (vsize_t)(vuintptr_t)args;
-    void *await_val = (void *)(vuintptr_t)(VUINTPTR_MAX + (void *)tid);
-    void *new_val   = (void *)(vuintptr_t)((VUINTPTR_MAX + (void *)tid + 1));
+    void *await_val = (void *)(vuintptr_t)(VUINTPTR_MAX + (vuintptr_t)tid);
+    void *new_val = (void *)(vuintptr_t)((VUINTPTR_MAX + (vuintptr_t)tid + 1));
     (void)vatomicptr_await_eq_set(&g_shared, await_val, new_val);
     return NULL;
 }

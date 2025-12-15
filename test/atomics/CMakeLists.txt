@@ -15,6 +15,7 @@ set(VATOMIC_INC "$<$<BOOL:${include_prop}>:-I$<JOIN:${include_prop},;-I>>")
 
 add_executable(vatomic_pause pause_test.c)
 target_link_libraries(vatomic_pause vatomic)
+target_compile_options(vatomic_pause PRIVATE ${TEST_C_WARN_OPTS})
 v_add_bin_test(NAME vatomic-pause COMMAND vatomic_pause)
 
 # ##############################################################################
@@ -54,6 +55,7 @@ endforeach(CONFIG)
 
 add_executable(vatomic_compile_c vatomic_empty.c)
 target_link_libraries(vatomic_compile_c vatomic)
+target_compile_options(vatomic_compile_c PRIVATE ${TEST_C_WARN_OPTS})
 v_add_bin_test(NAME vatomic-compile-c COMMAND vatomic_compile_c)
 
 # ##############################################################################
@@ -171,14 +173,14 @@ add_custom_target(expand ALL
 # test vatomic dispatcher
 # ##############################################################################
 add_executable(dispatcher_test dispatcher_test.c)
-target_compile_options(dispatcher_test PUBLIC ${TEST_OPTS})
+target_compile_options(dispatcher_test PRIVATE ${TEST_C_EXTENSIONS_WARN_OPTS})
 target_link_libraries(dispatcher_test vatomic)
 v_add_bin_test(NAME dispatcher_test COMMAND dispatcher_test)
 # ##############################################################################
 # test freestanding
 # ##############################################################################
 add_executable(freestanding_test freestanding_test.c)
-target_compile_options(freestanding_test PUBLIC ${TEST_OPTS} -nostdinc)
+target_compile_options(freestanding_test PUBLIC ${TEST_C_WARN_OPTS} -nostdinc)
 configure_file(include/vfreestanding.h.tpl include/vfreestanding.h)
 target_include_directories(freestanding_test
                            PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ * Copyright (C) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
 
@@ -84,7 +84,7 @@
  * @param T target type vatomic32_t, vuint32_t, vuint64_t, void*, ...
  * @param v value to cast
  ******************************************************************************/
-#define V_CAST(T, v) ((V_CAST_UNION(T, __typeof__(v))){.in = v}.out)
+#define V_CAST(T, v) ((V_CAST_UNION(T, __typeof__((v)))){._ = {.in = (v)}}.out)
 
 /*******************************************************************************
  * @def V_CAST_UNION
@@ -107,7 +107,7 @@
         struct {                                                               \
             char pad[V_CAST_PAD_SIZE(out_type, in_type)];                      \
             in_type in;                                                        \
-        };                                                                     \
+        } _;                                                                   \
     }
 
 /* size greater or equal */
@@ -118,10 +118,11 @@
 
 /* padding for big endian */
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    #define V_CAST_PAD_SIZE(out_type, in_type) 0
+    #define V_CAST_PAD_SIZE(out_type, in_type)
 #else
     #define V_CAST_PAD_SIZE(out_type, in_type)                                 \
-        (V_CAST_SZGE(out_type, in_type) ? V_CAST_SZDIFF(out_type, in_type) : 0)
+        (V_CAST_SZGE(out_type, in_type) ? V_CAST_SZDIFF(out_type, in_type) :)
+
 #endif
 
 #endif /* VATOMIC_INTERNAL_MACROS_H */

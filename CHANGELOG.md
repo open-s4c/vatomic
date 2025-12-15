@@ -8,6 +8,7 @@ This project partially comply with [Semantic Versioning][].
 ## Unreleased
 
 - Fixed warnings for code using vatomic C++
+- Fixed warnings for C99. Except for dispatch.h, vatomic is now C99 compliant.
 
 ## [2.4.0]
 
