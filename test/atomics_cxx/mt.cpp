@@ -193,7 +193,7 @@ template <typename TT, size_t N, size_t IT> class MT_Test
 #ifdef USE_BARRIER
             barrier.arrive_and_wait();
 #endif
-            for (auto i = 0; i < IT; i++) {
+            for (size_t i = 0; i < IT; i++) {
                 f();
             }
         });

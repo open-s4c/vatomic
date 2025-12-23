@@ -33,10 +33,22 @@ template <typename TT, bool IsVolatile> struct TestAtomics {
         for (int order = vsync::memory_order_relaxed;
              order <= vsync::memory_order_seq_cst; order++) {
             for (TT v : vals) {
-                mirror.store(v, static_cast<std::memory_order>(order));
-                subject.store(v, static_cast<vsync::memory_order>(order));
-                assert(mirror.load(static_cast<std::memory_order>(order)) ==
-                       subject.load(static_cast<vsync::memory_order>(order)));
+                // We cannot have a load with mo_release or a store with
+                // mo_acquire. The compiler typically ignores that, downgrading
+                // the implicit barrier to mo_relaxed. However, if you set
+                // -pedanti, the compiler will complain. So, we perform this
+                // mapping manually.
+                auto w_order = order == vsync::memory_order_acquire ?
+
+                                   vsync::memory_order_relaxed :
+                                   order;
+                auto r_order = order == vsync::memory_order_release ?
+                                   vsync::memory_order_relaxed :
+                                   order;
+                mirror.store(v, static_cast<std::memory_order>(w_order));
+                subject.store(v, static_cast<vsync::memory_order>(w_order));
+                assert(mirror.load(static_cast<std::memory_order>(r_order)) ==
+                       subject.load(static_cast<vsync::memory_order>(r_order)));
             }
         }
     }

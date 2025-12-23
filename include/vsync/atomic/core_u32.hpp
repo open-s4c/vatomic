@@ -96,6 +96,7 @@ namespace vsync
             memory_order order   = memory_order_seq_cst,
             memory_order failure = memory_order_seq_cst) volatile noexcept
         {
+            (void)failure;
             vuint32_t old = 0;
             switch (order) {
                 case memory_order_release:
@@ -201,6 +202,7 @@ namespace vsync
             memory_order order   = memory_order_seq_cst,
             memory_order failure = memory_order_seq_cst) noexcept
         {
+            (void)failure;
             vuint32_t old = 0;
             switch (order) {
                 case memory_order_release:

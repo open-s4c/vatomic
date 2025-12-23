@@ -141,6 +141,7 @@ _tmpl_begin(TY = [[u8; u16; u32; u64; sz; bool; ptr]], VL =[[VOL; NON_VOL]]);
         memory_order order   = memory_order_seq_cst,
         memory_order failure = memory_order_seq_cst) MAP_VL noexcept
     {
+        (void) failure;
         MAP_TMPL_T_TY old = 0;
         switch (order) {
             case memory_order_release:
