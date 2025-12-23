@@ -84,7 +84,7 @@
  * @param T target type vatomic32_t, vuint32_t, vuint64_t, void*, ...
  * @param v value to cast
  ******************************************************************************/
-#define V_CAST(T, v) ((V_CAST_UNION(T, __typeof__((v)))){._ = {.in = (v)}}.out)
+#define V_CAST(T, v) ((V_CAST_UNION(T, __typeof__((v)))){.in = (v)}.out)
 
 /*******************************************************************************
  * @def V_CAST_UNION
@@ -98,31 +98,11 @@
  ******************************************************************************/
 #define V_CAST_UNION(out_type, in_type)                                        \
     union {                                                                    \
-        vuint64_t clear;                                                       \
-                                                                               \
         V_ASSERT(sizeof(out_type) <= sizeof(vuint64_t), out_larger_than64);    \
         V_ASSERT(sizeof(in_type) <= sizeof(vuint64_t), in_larger_than64);      \
-                                                                               \
+        vuint64_t clear;                                                       \
         out_type out;                                                          \
-        struct {                                                               \
-            char pad[V_CAST_PAD_SIZE(out_type, in_type)];                      \
-            in_type in;                                                        \
-        } _;                                                                   \
+        in_type in;                                                            \
     }
-
-/* size greater or equal */
-#define V_CAST_SZGE(out_type, in_type) (sizeof(out_type) >= sizeof(in_type))
-
-/* size difference */
-#define V_CAST_SZDIFF(out_type, in_type) (sizeof(out_type) - sizeof(in_type))
-
-/* padding for big endian */
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    #define V_CAST_PAD_SIZE(out_type, in_type)
-#else
-    #define V_CAST_PAD_SIZE(out_type, in_type)                                 \
-        (V_CAST_SZGE(out_type, in_type) ? V_CAST_SZDIFF(out_type, in_type) :)
-
-#endif
 
 #endif /* VATOMIC_INTERNAL_MACROS_H */
