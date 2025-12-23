@@ -19,13 +19,22 @@ fi
 if [ "${STYLE}" != "" ]; then
     STYLE=":${STYLE}"
 fi
+if clang-format --version | grep -q "version 14\."; then
+    CLANG_FORMAT=clang-format
+elif which clang-format-14 > /dev/null; then
+    # clang-format-14 is installed, use it instead!
+    CLANG_FORMAT=clang-format-14
+else
+    echo "Warning: clang-format 14 not found!"
+    echo "         The formatted code is likely to fail vatomic CICD pipeline"
+fi
 
 # Apply clang-format to all *.h and *.c files in src folder.
 find "$@" \( -name '*.h' -o -name '*.c' -o -name '*.cpp' -o -name '*.hpp' -o -name '*.cxx' \) \
     -not -path '*/build/*' \
     -not -path '*/deps/*' \
     -type f \
-    -exec clang-format -style=file${STYLE} -i {} +
+    -exec ${CLANG_FORMAT} -style=file${STYLE} -i {} +
 
 if [ "${SILENT}" != "true" ]; then
     # Display changed files and exit with 1 if there were differences.
