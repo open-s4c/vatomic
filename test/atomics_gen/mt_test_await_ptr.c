@@ -37,7 +37,7 @@ mt_atomic_ptr_await_eq(void)
         pthread_join(t[i], 0);
     void *cur = vatomicptr_read(&g_shared);
     assert(cur == (void *)(vuintptr_t)(VUINTPTR_MAX + MAX_THREADS));
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomicptr_await_eq_set
@@ -62,7 +62,7 @@ mt_atomic_ptr_await_eq_set(void)
         pthread_join(t[i], 0);
     void *cur = vatomicptr_read(&g_shared);
     assert(cur == (void *)(vuintptr_t)(VUINTPTR_MAX + MAX_THREADS));
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomicptr_await_neq
@@ -90,7 +90,9 @@ mt_atomic_ptr_await_neq(void)
     void *cur      = vatomicptr_read(&g_shared);
     void *expected = (void *)(vuintptr_t)(VUINTPTR_MAX);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomicptr_await_neq_set
@@ -122,7 +124,9 @@ mt_atomic_ptr_await_neq_set(void)
     void *cur      = vatomicptr_read(&g_shared);
     void *expected = (void *)(vuintptr_t)VUINTPTR_MAX;
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Entry point

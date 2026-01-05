@@ -16,7 +16,7 @@ ut_atomic_u64_read(void)
     vatomic64_t obj = {(vuint64_t)1};
     vuint64_t val   = vatomic64_read(&obj);
     assert(val == (vuint64_t)1);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_read_acq
@@ -27,7 +27,7 @@ ut_atomic_u64_read_acq(void)
     vatomic64_t obj = {(vuint64_t)1};
     vuint64_t val   = vatomic64_read_acq(&obj);
     assert(val == (vuint64_t)1);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_read_rlx
@@ -38,7 +38,7 @@ ut_atomic_u64_read_rlx(void)
     vatomic64_t obj = {(vuint64_t)1};
     vuint64_t val   = vatomic64_read_rlx(&obj);
     assert(val == (vuint64_t)1);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_init
@@ -52,7 +52,7 @@ ut_atomic_u64_init(void)
     vatomic64_init(&obj, VUINT64_MAX);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_write
@@ -66,7 +66,7 @@ ut_atomic_u64_write(void)
     vatomic64_write(&obj, VUINT64_MAX);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_write_rel
@@ -80,7 +80,7 @@ ut_atomic_u64_write_rel(void)
     vatomic64_write_rel(&obj, VUINT64_MAX);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_write_rlx
@@ -94,7 +94,7 @@ ut_atomic_u64_write_rlx(void)
     vatomic64_write_rlx(&obj, VUINT64_MAX);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_xchg
@@ -109,7 +109,8 @@ ut_atomic_u64_xchg(void)
     assert(old == (vuint64_t)1);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_xchg_acq
@@ -124,7 +125,8 @@ ut_atomic_u64_xchg_acq(void)
     assert(old == (vuint64_t)1);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_xchg_rel
@@ -139,7 +141,8 @@ ut_atomic_u64_xchg_rel(void)
     assert(old == (vuint64_t)1);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_xchg_rlx
@@ -154,7 +157,8 @@ ut_atomic_u64_xchg_rlx(void)
     assert(old == (vuint64_t)1);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_cmpxchg
@@ -173,7 +177,8 @@ ut_atomic_u64_cmpxchg(void)
     assert(old == (vuint64_t)1);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_cmpxchg_acq
@@ -192,7 +197,8 @@ ut_atomic_u64_cmpxchg_acq(void)
     assert(old == (vuint64_t)1);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_cmpxchg_rel
@@ -211,7 +217,8 @@ ut_atomic_u64_cmpxchg_rel(void)
     assert(old == (vuint64_t)1);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_cmpxchg_rlx
@@ -230,7 +237,8 @@ ut_atomic_u64_cmpxchg_rlx(void)
     assert(old == (vuint64_t)1);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_add
@@ -249,7 +257,7 @@ ut_atomic_u64_add(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_add_rel
@@ -268,7 +276,7 @@ ut_atomic_u64_add_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_add_rlx
@@ -287,7 +295,7 @@ ut_atomic_u64_add_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_add
@@ -308,7 +316,8 @@ ut_atomic_u64_get_add(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_add_get
@@ -329,7 +338,8 @@ ut_atomic_u64_add_get(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, cur);
+    (void)(val);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_add_acq
@@ -350,7 +360,8 @@ ut_atomic_u64_get_add_acq(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_add_get_acq
@@ -371,7 +382,8 @@ ut_atomic_u64_add_get_acq(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, cur);
+    (void)(val);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_add_rel
@@ -392,7 +404,8 @@ ut_atomic_u64_get_add_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_add_get_rel
@@ -413,7 +426,8 @@ ut_atomic_u64_add_get_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, cur);
+    (void)(val);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_add_rlx
@@ -434,7 +448,8 @@ ut_atomic_u64_get_add_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_add_get_rlx
@@ -455,7 +470,8 @@ ut_atomic_u64_add_get_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, cur);
+    (void)(val);
+    (void)(cur);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_inc
@@ -474,7 +490,7 @@ ut_atomic_u64_inc(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_inc_rel
@@ -493,7 +509,7 @@ ut_atomic_u64_inc_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_inc_rlx
@@ -512,7 +528,7 @@ ut_atomic_u64_inc_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_inc
@@ -533,7 +549,8 @@ ut_atomic_u64_get_inc(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_inc_get
@@ -554,7 +571,8 @@ ut_atomic_u64_inc_get(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_inc_acq
@@ -575,7 +593,8 @@ ut_atomic_u64_get_inc_acq(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_inc_get_acq
@@ -596,7 +615,8 @@ ut_atomic_u64_inc_get_acq(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_inc_rel
@@ -617,7 +637,8 @@ ut_atomic_u64_get_inc_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_inc_get_rel
@@ -638,7 +659,8 @@ ut_atomic_u64_inc_get_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_inc_rlx
@@ -659,7 +681,8 @@ ut_atomic_u64_get_inc_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_inc_get_rlx
@@ -680,7 +703,8 @@ ut_atomic_u64_inc_get_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_sub
@@ -699,7 +723,7 @@ ut_atomic_u64_sub(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_sub_rel
@@ -718,7 +742,7 @@ ut_atomic_u64_sub_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_sub_rlx
@@ -737,7 +761,7 @@ ut_atomic_u64_sub_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_sub
@@ -758,7 +782,8 @@ ut_atomic_u64_get_sub(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_sub_get
@@ -779,7 +804,8 @@ ut_atomic_u64_sub_get(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, cur);
+    (void)(val);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_sub_acq
@@ -800,7 +826,8 @@ ut_atomic_u64_get_sub_acq(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_sub_get_acq
@@ -821,7 +848,8 @@ ut_atomic_u64_sub_get_acq(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, cur);
+    (void)(val);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_sub_rel
@@ -842,7 +870,8 @@ ut_atomic_u64_get_sub_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_sub_get_rel
@@ -863,7 +892,8 @@ ut_atomic_u64_sub_get_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, cur);
+    (void)(val);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_sub_rlx
@@ -884,7 +914,8 @@ ut_atomic_u64_get_sub_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_sub_get_rlx
@@ -905,7 +936,8 @@ ut_atomic_u64_sub_get_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val, cur);
+    (void)(val);
+    (void)(cur);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_dec
@@ -924,7 +956,7 @@ ut_atomic_u64_dec(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_dec_rel
@@ -943,7 +975,7 @@ ut_atomic_u64_dec_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /* ****************************************************************************
  * UnitTest: vatomic64_dec_rlx
@@ -962,7 +994,7 @@ ut_atomic_u64_dec_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_dec
@@ -983,7 +1015,8 @@ ut_atomic_u64_get_dec(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(old, val);
+    (void)(old);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_dec_get
@@ -1004,7 +1037,8 @@ ut_atomic_u64_dec_get(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_dec_acq
@@ -1025,7 +1059,8 @@ ut_atomic_u64_get_dec_acq(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(old, val);
+    (void)(old);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_dec_get_acq
@@ -1046,7 +1081,8 @@ ut_atomic_u64_dec_get_acq(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_dec_rel
@@ -1067,7 +1103,8 @@ ut_atomic_u64_get_dec_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(old, val);
+    (void)(old);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_dec_get_rel
@@ -1088,7 +1125,8 @@ ut_atomic_u64_dec_get_rel(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_dec_rlx
@@ -1109,7 +1147,8 @@ ut_atomic_u64_get_dec_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(old, val);
+    (void)(old);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_dec_get_rlx
@@ -1130,7 +1169,8 @@ ut_atomic_u64_dec_get_rlx(void)
         val = vatomic64_read(&obj);
         assert(val == ref);
     }
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_max
@@ -1149,7 +1189,7 @@ ut_atomic_u64_max(void)
     vatomic64_max(&obj, (vuint64_t)1);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_max_rel
@@ -1168,7 +1208,7 @@ ut_atomic_u64_max_rel(void)
     vatomic64_max_rel(&obj, (vuint64_t)1);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_max_rlx
@@ -1187,7 +1227,7 @@ ut_atomic_u64_max_rlx(void)
     vatomic64_max_rlx(&obj, (vuint64_t)1);
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_max
@@ -1209,7 +1249,8 @@ ut_atomic_u64_get_max(void)
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
 
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_max_get
@@ -1231,7 +1272,8 @@ ut_atomic_u64_max_get(void)
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
 
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_max_acq
@@ -1253,7 +1295,8 @@ ut_atomic_u64_get_max_acq(void)
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
 
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_max_get_acq
@@ -1275,7 +1318,8 @@ ut_atomic_u64_max_get_acq(void)
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
 
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_max_rel
@@ -1297,7 +1341,8 @@ ut_atomic_u64_get_max_rel(void)
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
 
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_max_get_rel
@@ -1319,7 +1364,8 @@ ut_atomic_u64_max_get_rel(void)
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
 
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_max_rlx
@@ -1341,7 +1387,8 @@ ut_atomic_u64_get_max_rlx(void)
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
 
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_max_get_rlx
@@ -1363,7 +1410,8 @@ ut_atomic_u64_max_get_rlx(void)
     val = vatomic64_read(&obj);
     assert(val == VUINT64_MAX);
 
-    V_UNUSED(cur, val);
+    (void)(cur);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_and
@@ -1383,7 +1431,7 @@ ut_atomic_u64_and(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_and_rel
@@ -1403,7 +1451,7 @@ ut_atomic_u64_and_rel(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_and_rlx
@@ -1423,7 +1471,7 @@ ut_atomic_u64_and_rlx(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_and
@@ -1445,7 +1493,8 @@ ut_atomic_u64_get_and(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur, old);
+    (void)(cur);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_and_get
@@ -1466,7 +1515,7 @@ ut_atomic_u64_and_get(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_and_acq
@@ -1488,7 +1537,8 @@ ut_atomic_u64_get_and_acq(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur, old);
+    (void)(cur);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_and_get_acq
@@ -1509,7 +1559,7 @@ ut_atomic_u64_and_get_acq(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_and_rel
@@ -1531,7 +1581,8 @@ ut_atomic_u64_get_and_rel(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur, old);
+    (void)(cur);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_and_get_rel
@@ -1552,7 +1603,7 @@ ut_atomic_u64_and_get_rel(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_and_rlx
@@ -1574,7 +1625,8 @@ ut_atomic_u64_get_and_rlx(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur, old);
+    (void)(cur);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_and_get_rlx
@@ -1595,7 +1647,7 @@ ut_atomic_u64_and_get_rlx(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_or
@@ -1615,7 +1667,7 @@ ut_atomic_u64_or(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_or_rel
@@ -1635,7 +1687,7 @@ ut_atomic_u64_or_rel(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_or_rlx
@@ -1655,7 +1707,7 @@ ut_atomic_u64_or_rlx(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_or
@@ -1677,7 +1729,8 @@ ut_atomic_u64_get_or(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur, old);
+    (void)(cur);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_or_get
@@ -1698,7 +1751,7 @@ ut_atomic_u64_or_get(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_or_acq
@@ -1720,7 +1773,8 @@ ut_atomic_u64_get_or_acq(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur, old);
+    (void)(cur);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_or_get_acq
@@ -1741,7 +1795,7 @@ ut_atomic_u64_or_get_acq(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_or_rel
@@ -1763,7 +1817,8 @@ ut_atomic_u64_get_or_rel(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur, old);
+    (void)(cur);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_or_get_rel
@@ -1784,7 +1839,7 @@ ut_atomic_u64_or_get_rel(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_or_rlx
@@ -1806,7 +1861,8 @@ ut_atomic_u64_get_or_rlx(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur, old);
+    (void)(cur);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_or_get_rlx
@@ -1827,7 +1883,7 @@ ut_atomic_u64_or_get_rlx(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_xor
@@ -1847,7 +1903,7 @@ ut_atomic_u64_xor(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_xor_rel
@@ -1867,7 +1923,7 @@ ut_atomic_u64_xor_rel(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_xor_rlx
@@ -1887,7 +1943,7 @@ ut_atomic_u64_xor_rlx(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_xor
@@ -1909,7 +1965,8 @@ ut_atomic_u64_get_xor(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(old, cur);
+    (void)(old);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_or_get
@@ -1930,7 +1987,7 @@ ut_atomic_u64_xor_get(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_xor_acq
@@ -1952,7 +2009,8 @@ ut_atomic_u64_get_xor_acq(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(old, cur);
+    (void)(old);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_or_get_acq
@@ -1973,7 +2031,7 @@ ut_atomic_u64_xor_get_acq(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_xor_rel
@@ -1995,7 +2053,8 @@ ut_atomic_u64_get_xor_rel(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(old, cur);
+    (void)(old);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_or_get_rel
@@ -2016,7 +2075,7 @@ ut_atomic_u64_xor_get_rel(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_get_xor_rlx
@@ -2038,7 +2097,8 @@ ut_atomic_u64_get_xor_rlx(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(old, cur);
+    (void)(old);
+    (void)(cur);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_or_get_rlx
@@ -2059,7 +2119,7 @@ ut_atomic_u64_xor_get_rlx(void)
         cur = vatomic64_read(&obj);
         assert(cur == ref);
     }
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * Entry point

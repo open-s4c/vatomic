@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ * Copyright (C) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
 
@@ -15,7 +15,6 @@
  ******************************************************************************/
 
 #include <vsync/vtypes.h>
-#include <vsync/common/macros.h>
 
 /*******************************************************************************
  * @def VSYNC_VERIFICATION
@@ -122,7 +121,7 @@ verification_ignore(void)
 static inline void
 verification_assume(vbool_t condition)
 {
-    V_UNUSED(condition);
+    (void)(condition);
 }
 #endif
 
@@ -182,7 +181,7 @@ verification_spin_start(void)
 static inline void
 verification_spin_end(int v)
 {
-    V_UNUSED(v);
+    (void)(v);
 }
 #endif
 

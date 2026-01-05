@@ -83,7 +83,7 @@ _tmpl_begin(MO = [[seq; acq; rlx]]);
  * @return current value
  * @memord ME
  */
-#define vatomic_read_MS(a) V_DISPATCH(ALL_RET, read, mo_MO, a)
+#define vatomic_read_MS(a) V_DISPATCH_CONST(ALL_RET, read, mo_MO, a)
 _tmpl_end;
 
 _tmpl_begin(MO = [[seq; rel; rlx]]);
@@ -243,7 +243,7 @@ _tmpl_begin(COND = [[eq; neq; le; lt; gt; ge]], MO = [[seq; acq; rlx]]);
  * @memord ME
  */
 #define vatomic_await_COND_MS(a, c)                                            \
-    V_DISPATCH32(MAP_DIS_COND, await_COND, mo_MO, a, c)
+    V_DISPATCH32_CONST(MAP_DIS_COND, await_COND, mo_MO, a, c)
 _tmpl_end;
 
 _tmpl_begin(COND = [[eq; neq; le; lt; gt; ge]], OP = [[set; sub; add]],

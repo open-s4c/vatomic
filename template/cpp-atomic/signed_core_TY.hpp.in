@@ -14,7 +14,7 @@ _tmpl_map(MAP_VOL, volatile);
 _tmpl_map(MAP_NON_VOL, );
 _tmpl_begin(TY = [[s8; s16; s32; s64;]]);
 extern "C" {
-#include <vsync/atomic.h>
+#include <vsync/atomic/core.h>
 }
 namespace vsync
 {

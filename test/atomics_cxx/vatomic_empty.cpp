@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 extern "C" {
-#include <vsync/atomic.h>
+#include <vsync/atomic/core.h>
+#include <vsync/atomic/await.h>
 }
 
 int

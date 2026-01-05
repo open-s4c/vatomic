@@ -15,7 +15,7 @@ ut_atomic_ptr_read(void)
     vatomicptr_t obj = {NULL};
     void *val        = vatomicptr_read(&obj);
     assert(val == NULL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_read_acq
@@ -26,7 +26,7 @@ ut_atomic_ptr_read_acq(void)
     vatomicptr_t obj = {NULL};
     void *val        = vatomicptr_read_acq(&obj);
     assert(val == NULL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_read_rlx
@@ -37,7 +37,7 @@ ut_atomic_ptr_read_rlx(void)
     vatomicptr_t obj = {NULL};
     void *val        = vatomicptr_read_rlx(&obj);
     assert(val == NULL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_init
@@ -51,7 +51,7 @@ ut_atomic_ptr_init(void)
     vatomicptr_init(&obj, (void *)VUINTPTR_MAX);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_write
@@ -65,7 +65,7 @@ ut_atomic_ptr_write(void)
     vatomicptr_write(&obj, (void *)VUINTPTR_MAX);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_write_rel
@@ -79,7 +79,7 @@ ut_atomic_ptr_write_rel(void)
     vatomicptr_write_rel(&obj, (void *)VUINTPTR_MAX);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_write_rlx
@@ -93,7 +93,7 @@ ut_atomic_ptr_write_rlx(void)
     vatomicptr_write_rlx(&obj, (void *)VUINTPTR_MAX);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_xchg
@@ -108,7 +108,8 @@ ut_atomic_ptr_xchg(void)
     assert(old == NULL);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_xchg_acq
@@ -123,7 +124,8 @@ ut_atomic_ptr_xchg_acq(void)
     assert(old == NULL);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_xchg_rel
@@ -138,7 +140,8 @@ ut_atomic_ptr_xchg_rel(void)
     assert(old == NULL);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_xchg_rlx
@@ -153,7 +156,8 @@ ut_atomic_ptr_xchg_rlx(void)
     assert(old == NULL);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_cmpxchg
@@ -172,7 +176,8 @@ ut_atomic_ptr_cmpxchg(void)
     assert(old == NULL);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_cmpxchg_acq
@@ -191,7 +196,8 @@ ut_atomic_ptr_cmpxchg_acq(void)
     assert(old == NULL);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_cmpxchg_rel
@@ -210,7 +216,8 @@ ut_atomic_ptr_cmpxchg_rel(void)
     assert(old == NULL);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * UnitTest: vatomicptr_cmpxchg_rlx
@@ -229,7 +236,8 @@ ut_atomic_ptr_cmpxchg_rlx(void)
     assert(old == NULL);
     val = vatomicptr_read(&obj);
     assert(val == (void *)VUINTPTR_MAX);
-    V_UNUSED(val, old);
+    (void)(val);
+    (void)(old);
 }
 /*****************************************************************************
  * Entry point

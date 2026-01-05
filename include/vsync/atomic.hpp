@@ -7,7 +7,8 @@
 
 #include <cassert>
 extern "C" {
-#include <vsync/atomic.h>
+#include <vsync/atomic/await.h>
+#include <vsync/atomic/core.h>
 }
 namespace vsync
 {

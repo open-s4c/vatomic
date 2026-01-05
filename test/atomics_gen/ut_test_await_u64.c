@@ -16,7 +16,7 @@ ut_atomic_u64_await_eq(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_eq(&obj, VUINT64_VAL);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq
@@ -27,7 +27,7 @@ ut_atomic_u64_await_neq(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_neq(&obj, VUINT64_MAX);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_acq
@@ -38,7 +38,7 @@ ut_atomic_u64_await_eq_acq(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_eq_acq(&obj, VUINT64_VAL);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_acq
@@ -49,7 +49,7 @@ ut_atomic_u64_await_neq_acq(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_neq_acq(&obj, VUINT64_MAX);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_rlx
@@ -60,7 +60,7 @@ ut_atomic_u64_await_eq_rlx(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_eq_rlx(&obj, VUINT64_VAL);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_rlx
@@ -71,7 +71,7 @@ ut_atomic_u64_await_neq_rlx(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_neq_rlx(&obj, VUINT64_MAX);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 
 /*****************************************************************************
@@ -86,7 +86,7 @@ ut_atomic_u64_await_eq_set(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_set
@@ -100,7 +100,7 @@ ut_atomic_u64_await_neq_set(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_set_rel
@@ -114,7 +114,7 @@ ut_atomic_u64_await_eq_set_rel(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_set_rel
@@ -128,7 +128,7 @@ ut_atomic_u64_await_neq_set_rel(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_set_acq
@@ -142,7 +142,7 @@ ut_atomic_u64_await_eq_set_acq(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_set_acq
@@ -156,7 +156,7 @@ ut_atomic_u64_await_neq_set_acq(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_set_rlx
@@ -170,7 +170,7 @@ ut_atomic_u64_await_eq_set_rlx(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_set_rlx
@@ -184,7 +184,7 @@ ut_atomic_u64_await_neq_set_rlx(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 
 /*****************************************************************************
@@ -196,7 +196,7 @@ ut_atomic_u64_await_le(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_le(&obj, VUINT64_MAX);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt
@@ -207,7 +207,7 @@ ut_atomic_u64_await_gt(void)
     vatomic64_t obj = {VUINT64_MAX};
     vuint64_t val   = vatomic64_await_gt(&obj, VUINT64_VAL);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge
@@ -218,7 +218,7 @@ ut_atomic_u64_await_ge(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_ge(&obj, VUINT64_VAL);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_acq
@@ -229,7 +229,7 @@ ut_atomic_u64_await_le_acq(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_le_acq(&obj, VUINT64_MAX);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_acq
@@ -240,7 +240,7 @@ ut_atomic_u64_await_gt_acq(void)
     vatomic64_t obj = {VUINT64_MAX};
     vuint64_t val   = vatomic64_await_gt_acq(&obj, VUINT64_VAL);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_acq
@@ -251,7 +251,7 @@ ut_atomic_u64_await_ge_acq(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_ge_acq(&obj, VUINT64_VAL);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_rlx
@@ -262,7 +262,7 @@ ut_atomic_u64_await_le_rlx(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_le_rlx(&obj, VUINT64_MAX);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_rlx
@@ -273,7 +273,7 @@ ut_atomic_u64_await_gt_rlx(void)
     vatomic64_t obj = {VUINT64_MAX};
     vuint64_t val   = vatomic64_await_gt_rlx(&obj, VUINT64_VAL);
     assert(val == VUINT64_MAX);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_rlx
@@ -284,7 +284,7 @@ ut_atomic_u64_await_ge_rlx(void)
     vatomic64_t obj = {VUINT64_VAL};
     vuint64_t val   = vatomic64_await_ge_rlx(&obj, VUINT64_VAL);
     assert(val == VUINT64_VAL);
-    V_UNUSED(val);
+    (void)(val);
 }
 
 /*****************************************************************************
@@ -299,7 +299,7 @@ ut_atomic_u64_await_le_set(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_set
@@ -313,7 +313,7 @@ ut_atomic_u64_await_gt_set(void)
     assert(val == VUINT64_MAX);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_set
@@ -327,7 +327,7 @@ ut_atomic_u64_await_ge_set(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_set_rel
@@ -341,7 +341,7 @@ ut_atomic_u64_await_le_set_rel(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_set_rel
@@ -355,7 +355,7 @@ ut_atomic_u64_await_gt_set_rel(void)
     assert(val == VUINT64_MAX);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_set_rel
@@ -369,7 +369,7 @@ ut_atomic_u64_await_ge_set_rel(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_set_acq
@@ -383,7 +383,7 @@ ut_atomic_u64_await_le_set_acq(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_set_acq
@@ -397,7 +397,7 @@ ut_atomic_u64_await_gt_set_acq(void)
     assert(val == VUINT64_MAX);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_set_acq
@@ -411,7 +411,7 @@ ut_atomic_u64_await_ge_set_acq(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_set_rlx
@@ -425,7 +425,7 @@ ut_atomic_u64_await_le_set_rlx(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_set_rlx
@@ -439,7 +439,7 @@ ut_atomic_u64_await_gt_set_rlx(void)
     assert(val == VUINT64_MAX);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_set_rlx
@@ -453,7 +453,7 @@ ut_atomic_u64_await_ge_set_rlx(void)
     assert(val == VUINT64_VAL);
     val = vatomic64_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 
 /*****************************************************************************
@@ -469,7 +469,8 @@ ut_atomic_u64_await_neq_add(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_sub
@@ -484,7 +485,8 @@ ut_atomic_u64_await_neq_sub(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_add
@@ -499,7 +501,8 @@ ut_atomic_u64_await_eq_add(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_sub
@@ -514,7 +517,8 @@ ut_atomic_u64_await_eq_sub(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_add
@@ -529,7 +533,8 @@ ut_atomic_u64_await_le_add(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_sub
@@ -544,7 +549,8 @@ ut_atomic_u64_await_le_sub(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_add
@@ -559,7 +565,8 @@ ut_atomic_u64_await_gt_add(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_sub
@@ -574,7 +581,8 @@ ut_atomic_u64_await_gt_sub(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_add
@@ -589,7 +597,8 @@ ut_atomic_u64_await_ge_add(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_sub
@@ -604,7 +613,8 @@ ut_atomic_u64_await_ge_sub(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_add_rel
@@ -619,7 +629,8 @@ ut_atomic_u64_await_neq_add_rel(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_sub_rel
@@ -634,7 +645,8 @@ ut_atomic_u64_await_neq_sub_rel(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_add_rel
@@ -649,7 +661,8 @@ ut_atomic_u64_await_eq_add_rel(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_sub_rel
@@ -664,7 +677,8 @@ ut_atomic_u64_await_eq_sub_rel(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_add_rel
@@ -679,7 +693,8 @@ ut_atomic_u64_await_le_add_rel(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_sub_rel
@@ -694,7 +709,8 @@ ut_atomic_u64_await_le_sub_rel(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_add_rel
@@ -709,7 +725,8 @@ ut_atomic_u64_await_gt_add_rel(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_sub_rel
@@ -724,7 +741,8 @@ ut_atomic_u64_await_gt_sub_rel(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_add_rel
@@ -739,7 +757,8 @@ ut_atomic_u64_await_ge_add_rel(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_sub_rel
@@ -754,7 +773,8 @@ ut_atomic_u64_await_ge_sub_rel(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_add_acq
@@ -769,7 +789,8 @@ ut_atomic_u64_await_neq_add_acq(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_sub_acq
@@ -784,7 +805,8 @@ ut_atomic_u64_await_neq_sub_acq(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_add_acq
@@ -799,7 +821,8 @@ ut_atomic_u64_await_eq_add_acq(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_sub_acq
@@ -814,7 +837,8 @@ ut_atomic_u64_await_eq_sub_acq(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_add_acq
@@ -829,7 +853,8 @@ ut_atomic_u64_await_le_add_acq(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_sub_acq
@@ -844,7 +869,8 @@ ut_atomic_u64_await_le_sub_acq(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_add_acq
@@ -859,7 +885,8 @@ ut_atomic_u64_await_gt_add_acq(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_sub_acq
@@ -874,7 +901,8 @@ ut_atomic_u64_await_gt_sub_acq(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_add_acq
@@ -889,7 +917,8 @@ ut_atomic_u64_await_ge_add_acq(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_sub_acq
@@ -904,7 +933,8 @@ ut_atomic_u64_await_ge_sub_acq(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_add_rlx
@@ -919,7 +949,8 @@ ut_atomic_u64_await_neq_add_rlx(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_neq_sub_rlx
@@ -934,7 +965,8 @@ ut_atomic_u64_await_neq_sub_rlx(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_add_rlx
@@ -949,7 +981,8 @@ ut_atomic_u64_await_eq_add_rlx(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_eq_sub_rlx
@@ -964,7 +997,8 @@ ut_atomic_u64_await_eq_sub_rlx(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_add_rlx
@@ -979,7 +1013,8 @@ ut_atomic_u64_await_le_add_rlx(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_le_sub_rlx
@@ -994,7 +1029,8 @@ ut_atomic_u64_await_le_sub_rlx(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_add_rlx
@@ -1009,7 +1045,8 @@ ut_atomic_u64_await_gt_add_rlx(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_gt_sub_rlx
@@ -1024,7 +1061,8 @@ ut_atomic_u64_await_gt_sub_rlx(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_add_rlx
@@ -1039,7 +1077,8 @@ ut_atomic_u64_await_ge_add_rlx(void)
     ref = ref + 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * UnitTest: vatomic64_await_ge_sub_rlx
@@ -1054,7 +1093,8 @@ ut_atomic_u64_await_ge_sub_rlx(void)
     ref = ref - 0x1U;
     val = vatomic64_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 /*****************************************************************************
  * Entry point

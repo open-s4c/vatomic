@@ -74,7 +74,7 @@ ut_atomic_TY_await_OP_MS(void)
     AA obj = {MAP_CUR_VAL_OP};
     TT val = __vatomic_await_OP_MS(&obj, MAP_WAIT_VAL_OP);
     assert(val == MAP_CUR_VAL_OP);
-    V_UNUSED(val);
+    (void)(val);
 }
 _tmpl_end;
 
@@ -92,7 +92,7 @@ ut_atomic_TY_await_OP_set_MS(void)
     assert(val == MAP_CUR_VAL_OP);
     val = __vatomic_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 _tmpl_end;
 
@@ -107,7 +107,7 @@ ut_atomic_TY_await_OP_MS(void)
     AA obj = {MAP_CUR_VAL_OP};
     TT val = __vatomic_await_OP_MS(&obj, MAP_WAIT_VAL_OP);
     assert(val == MAP_CUR_VAL_OP);
-    V_UNUSED(val);
+    (void)(val);
 }
 _tmpl_end;
 
@@ -125,7 +125,7 @@ ut_atomic_TY_await_OP_set_MS(void)
     assert(val == MAP_CUR_VAL_OP);
     val = __vatomic_read(&obj);
     assert(val == n_val);
-    V_UNUSED(val);
+    (void)(val);
 }
 _tmpl_end;
 
@@ -144,7 +144,8 @@ ut_atomic_TY_await_CON_OP_MS(void)
     ref = ref MAP_OP 0x1U;
     val = __vatomic_read(&obj);
     assert(val == ref);
-    V_UNUSED(val, ref);
+    (void)(val);
+    (void)(ref);
 }
 _tmpl_end;
 /*****************************************************************************

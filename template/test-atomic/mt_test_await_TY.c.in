@@ -91,7 +91,7 @@ mt_atomic_TY_await_OP_MS(void)
         pthread_join(t[i], 0);
     TT cur = __vatomic_read(&g_shared);
     assert(cur == MAP_CAST_TY(MAP_MID_TY + MAX_THREADS));
-    V_UNUSED(cur);
+    (void)(cur);
 }
 _tmpl_end;
 _tmpl_dl; // -------------------------------------------------------------------
@@ -125,7 +125,7 @@ mt_atomic_TY_await_eq_OP_MS(void)
         pthread_join(t[i], 0);
     TT cur = __vatomic_read(&g_shared);
     assert(cur == MAP_CAST_TY(MAP_MID_TY + MAX_THREADS));
-    V_UNUSED(cur);
+    (void)(cur);
 }
 _tmpl_end;
 _tmpl_dl; // -------------------------------------------------------------------
@@ -154,7 +154,7 @@ mt_atomic_TY_await_eq_OP_MS(void)
         pthread_join(t[i], 0);
     TT cur = __vatomic_read(&g_shared);
     assert(cur == MAP_MID_TY);
-    V_UNUSED(cur);
+    (void)(cur);
 }
 _tmpl_end;
 _tmpl_dl; // -------------------------------------------------------------------
@@ -212,7 +212,7 @@ mt_atomic_TY_await_COND_MS(void)
     TT cur      = __vatomic_read(&g_shared);
     TT expected = MAP_CAST_TY(MAP_MID_TY MAP_AWAIT_OP_COND(MAX_THREADS * IT));
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);; (void)(expected);
 }
 _tmpl_end;
 _tmpl_dl; // -------------------------------------------------------------------
@@ -245,7 +245,7 @@ mt_atomic_TY_await_COND_MS(void)
     TT cur      = __vatomic_read(&g_shared);
     TT expected = MAP_CAST_TY(MAP_MID_TY);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);; (void)(expected);
 }
 _tmpl_end;
 _tmpl_dl; // -------------------------------------------------------------------
@@ -297,7 +297,7 @@ mt_atomic_TY_await_COND_add_MS(void)
     TT expected =
         (MAP_MID_TY MAP_AWAIT_OP_COND(MAX_THREADS * IT)) + ((MAX_THREADS / 2) * IT);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);; (void)(expected);
 }
 _tmpl_end;
 _tmpl_dl; // -------------------------------------------------------------------
@@ -344,7 +344,7 @@ mt_atomic_TY_await_COND_sub_MS(void)
     TT cur      = __vatomic_read(&g_shared);
     TT expected = (MAP_MID_TY + (MAX_THREADS * IT)) - ((MAX_THREADS / 2) * IT);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);; (void)(expected);
 }
 _tmpl_end;
 _tmpl_dl; // -------------------------------------------------------------------
@@ -391,7 +391,7 @@ mt_atomic_TY_await_COND_sub_MS(void)
     TT cur      = __vatomic_read(&g_shared);
     TT expected = (MAP_MID_TY - (MAX_THREADS * IT)) - ((MAX_THREADS / 2) * IT);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);; (void)(expected);
 }
 _tmpl_end;
 _tmpl_dl; // -------------------------------------------------------------------
@@ -423,7 +423,7 @@ mt_atomic_TY_await_COND_set_MS(void)
     TT cur      = __vatomic_read(&g_shared);
     TT expected = init_val + (TT)MAX_THREADS;
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);; (void)(expected);
 }
 _tmpl_end;
 _tmpl_dl; // -------------------------------------------------------------------
@@ -455,7 +455,7 @@ mt_atomic_TY_await_COND_set_MS(void)
     TT cur      = __vatomic_read(&g_shared);
     TT expected = init_val + (TT)MAX_THREADS;
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);; (void)(expected);
 }
 _tmpl_end;
 _tmpl_dl; // -------------------------------------------------------------------
@@ -486,7 +486,7 @@ mt_atomic_TY_await_COND_set_MS(void)
     TT cur      = __vatomic_read(&g_shared);
     TT expected = (MAP_MID_TY - 1) - (TT)MAX_THREADS;
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);; (void)(expected);
 }
 _tmpl_end;
 _tmpl_dl; // -------------------------------------------------------------------
@@ -521,7 +521,7 @@ mt_atomic_TY_await_COND_set_MS(void)
     TT cur      = __vatomic_read(&g_shared);
     TT expected = MAP_CAST_TY MAP_MID_TY;
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);; (void)(expected);
 }
 _tmpl_end;
 /*****************************************************************************

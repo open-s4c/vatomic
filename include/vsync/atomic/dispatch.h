@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Huawei Technologies Co., Ltd. 2022-2024. All rights reserved.
+ * Copyright (C) Huawei Technologies Co., Ltd. 2022-2025. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
 
@@ -48,7 +48,7 @@
  * @return current value
  * @memord seq_cst
  */
-#define vatomic_read(a) V_DISPATCH(ALL_RET, read, mo_seq, a)
+#define vatomic_read(a) V_DISPATCH_CONST(ALL_RET, read, mo_seq, a)
 /**
  * @def vatomic_read_acq(a)
  * @brief Dispatches read calls with acquire memory order.
@@ -59,7 +59,7 @@
  * @return current value
  * @memord acquire
  */
-#define vatomic_read_acq(a) V_DISPATCH(ALL_RET, read, mo_acq, a)
+#define vatomic_read_acq(a) V_DISPATCH_CONST(ALL_RET, read, mo_acq, a)
 /**
  * @def vatomic_read_rlx(a)
  * @brief Dispatches read calls with relaxed memory order.
@@ -70,7 +70,7 @@
  * @return current value
  * @memord relaxed
  */
-#define vatomic_read_rlx(a) V_DISPATCH(ALL_RET, read, mo_rlx, a)
+#define vatomic_read_rlx(a) V_DISPATCH_CONST(ALL_RET, read, mo_rlx, a)
 
 /**
  * @def vatomic_write(a, v)
@@ -1250,7 +1250,8 @@
  * @return previously read value
  * @memord seq_cst
  */
-#define vatomic_await_eq(a, c) V_DISPATCH32(ALL_RET, await_eq, mo_seq, a, c)
+#define vatomic_await_eq(a, c)                                                 \
+    V_DISPATCH32_CONST(ALL_RET, await_eq, mo_seq, a, c)
 /**
  * @def vatomic_await_eq_acq(a, c)
  * @brief Dispatches await_eq calls with acquire memory order.
@@ -1262,7 +1263,8 @@
  * @return previously read value
  * @memord acquire
  */
-#define vatomic_await_eq_acq(a, c) V_DISPATCH32(ALL_RET, await_eq, mo_acq, a, c)
+#define vatomic_await_eq_acq(a, c)                                             \
+    V_DISPATCH32_CONST(ALL_RET, await_eq, mo_acq, a, c)
 /**
  * @def vatomic_await_eq_rlx(a, c)
  * @brief Dispatches await_eq calls with relaxed memory order.
@@ -1274,7 +1276,8 @@
  * @return previously read value
  * @memord relaxed
  */
-#define vatomic_await_eq_rlx(a, c) V_DISPATCH32(ALL_RET, await_eq, mo_rlx, a, c)
+#define vatomic_await_eq_rlx(a, c)                                             \
+    V_DISPATCH32_CONST(ALL_RET, await_eq, mo_rlx, a, c)
 /**
  * @def vatomic_await_neq(a, c)
  * @brief Dispatches await_neq calls with seq_cst memory order.
@@ -1286,7 +1289,8 @@
  * @return value satisfying condition
  * @memord seq_cst
  */
-#define vatomic_await_neq(a, c) V_DISPATCH32(ALL_RET, await_neq, mo_seq, a, c)
+#define vatomic_await_neq(a, c)                                                \
+    V_DISPATCH32_CONST(ALL_RET, await_neq, mo_seq, a, c)
 /**
  * @def vatomic_await_neq_acq(a, c)
  * @brief Dispatches await_neq calls with acquire memory order.
@@ -1299,7 +1303,7 @@
  * @memord acquire
  */
 #define vatomic_await_neq_acq(a, c)                                            \
-    V_DISPATCH32(ALL_RET, await_neq, mo_acq, a, c)
+    V_DISPATCH32_CONST(ALL_RET, await_neq, mo_acq, a, c)
 /**
  * @def vatomic_await_neq_rlx(a, c)
  * @brief Dispatches await_neq calls with relaxed memory order.
@@ -1312,7 +1316,7 @@
  * @memord relaxed
  */
 #define vatomic_await_neq_rlx(a, c)                                            \
-    V_DISPATCH32(ALL_RET, await_neq, mo_rlx, a, c)
+    V_DISPATCH32_CONST(ALL_RET, await_neq, mo_rlx, a, c)
 /**
  * @def vatomic_await_le(a, c)
  * @brief Dispatches await_le calls with seq_cst memory order.
@@ -1324,7 +1328,8 @@
  * @return value satisfying condition
  * @memord seq_cst
  */
-#define vatomic_await_le(a, c) V_DISPATCH32(INT_RET, await_le, mo_seq, a, c)
+#define vatomic_await_le(a, c)                                                 \
+    V_DISPATCH32_CONST(INT_RET, await_le, mo_seq, a, c)
 /**
  * @def vatomic_await_le_acq(a, c)
  * @brief Dispatches await_le calls with acquire memory order.
@@ -1336,7 +1341,8 @@
  * @return value satisfying condition
  * @memord acquire
  */
-#define vatomic_await_le_acq(a, c) V_DISPATCH32(INT_RET, await_le, mo_acq, a, c)
+#define vatomic_await_le_acq(a, c)                                             \
+    V_DISPATCH32_CONST(INT_RET, await_le, mo_acq, a, c)
 /**
  * @def vatomic_await_le_rlx(a, c)
  * @brief Dispatches await_le calls with relaxed memory order.
@@ -1348,7 +1354,8 @@
  * @return value satisfying condition
  * @memord relaxed
  */
-#define vatomic_await_le_rlx(a, c) V_DISPATCH32(INT_RET, await_le, mo_rlx, a, c)
+#define vatomic_await_le_rlx(a, c)                                             \
+    V_DISPATCH32_CONST(INT_RET, await_le, mo_rlx, a, c)
 /**
  * @def vatomic_await_lt(a, c)
  * @brief Dispatches await_lt calls with seq_cst memory order.
@@ -1360,7 +1367,8 @@
  * @return value satisfying condition
  * @memord seq_cst
  */
-#define vatomic_await_lt(a, c) V_DISPATCH32(INT_RET, await_lt, mo_seq, a, c)
+#define vatomic_await_lt(a, c)                                                 \
+    V_DISPATCH32_CONST(INT_RET, await_lt, mo_seq, a, c)
 /**
  * @def vatomic_await_lt_acq(a, c)
  * @brief Dispatches await_lt calls with acquire memory order.
@@ -1372,7 +1380,8 @@
  * @return value satisfying condition
  * @memord acquire
  */
-#define vatomic_await_lt_acq(a, c) V_DISPATCH32(INT_RET, await_lt, mo_acq, a, c)
+#define vatomic_await_lt_acq(a, c)                                             \
+    V_DISPATCH32_CONST(INT_RET, await_lt, mo_acq, a, c)
 /**
  * @def vatomic_await_lt_rlx(a, c)
  * @brief Dispatches await_lt calls with relaxed memory order.
@@ -1384,7 +1393,8 @@
  * @return value satisfying condition
  * @memord relaxed
  */
-#define vatomic_await_lt_rlx(a, c) V_DISPATCH32(INT_RET, await_lt, mo_rlx, a, c)
+#define vatomic_await_lt_rlx(a, c)                                             \
+    V_DISPATCH32_CONST(INT_RET, await_lt, mo_rlx, a, c)
 /**
  * @def vatomic_await_gt(a, c)
  * @brief Dispatches await_gt calls with seq_cst memory order.
@@ -1396,7 +1406,8 @@
  * @return value satisfying condition
  * @memord seq_cst
  */
-#define vatomic_await_gt(a, c) V_DISPATCH32(INT_RET, await_gt, mo_seq, a, c)
+#define vatomic_await_gt(a, c)                                                 \
+    V_DISPATCH32_CONST(INT_RET, await_gt, mo_seq, a, c)
 /**
  * @def vatomic_await_gt_acq(a, c)
  * @brief Dispatches await_gt calls with acquire memory order.
@@ -1408,7 +1419,8 @@
  * @return value satisfying condition
  * @memord acquire
  */
-#define vatomic_await_gt_acq(a, c) V_DISPATCH32(INT_RET, await_gt, mo_acq, a, c)
+#define vatomic_await_gt_acq(a, c)                                             \
+    V_DISPATCH32_CONST(INT_RET, await_gt, mo_acq, a, c)
 /**
  * @def vatomic_await_gt_rlx(a, c)
  * @brief Dispatches await_gt calls with relaxed memory order.
@@ -1420,7 +1432,8 @@
  * @return value satisfying condition
  * @memord relaxed
  */
-#define vatomic_await_gt_rlx(a, c) V_DISPATCH32(INT_RET, await_gt, mo_rlx, a, c)
+#define vatomic_await_gt_rlx(a, c)                                             \
+    V_DISPATCH32_CONST(INT_RET, await_gt, mo_rlx, a, c)
 /**
  * @def vatomic_await_ge(a, c)
  * @brief Dispatches await_ge calls with seq_cst memory order.
@@ -1432,7 +1445,8 @@
  * @return value satisfying condition
  * @memord seq_cst
  */
-#define vatomic_await_ge(a, c) V_DISPATCH32(INT_RET, await_ge, mo_seq, a, c)
+#define vatomic_await_ge(a, c)                                                 \
+    V_DISPATCH32_CONST(INT_RET, await_ge, mo_seq, a, c)
 /**
  * @def vatomic_await_ge_acq(a, c)
  * @brief Dispatches await_ge calls with acquire memory order.
@@ -1444,7 +1458,8 @@
  * @return value satisfying condition
  * @memord acquire
  */
-#define vatomic_await_ge_acq(a, c) V_DISPATCH32(INT_RET, await_ge, mo_acq, a, c)
+#define vatomic_await_ge_acq(a, c)                                             \
+    V_DISPATCH32_CONST(INT_RET, await_ge, mo_acq, a, c)
 /**
  * @def vatomic_await_ge_rlx(a, c)
  * @brief Dispatches await_ge calls with relaxed memory order.
@@ -1456,7 +1471,8 @@
  * @return value satisfying condition
  * @memord relaxed
  */
-#define vatomic_await_ge_rlx(a, c) V_DISPATCH32(INT_RET, await_ge, mo_rlx, a, c)
+#define vatomic_await_ge_rlx(a, c)                                             \
+    V_DISPATCH32_CONST(INT_RET, await_ge, mo_rlx, a, c)
 
 /**
  * @def vatomic_await_eq_set(a, c, v)

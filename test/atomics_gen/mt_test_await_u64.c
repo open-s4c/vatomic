@@ -38,7 +38,7 @@ mt_atomic_u64_await_eq(void)
         pthread_join(t[i], 0);
     vuint64_t cur = vatomic64_read(&g_shared);
     assert(cur == (VUINT64_VAL + MAX_THREADS));
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_eq_add
@@ -63,7 +63,7 @@ mt_atomic_u64_await_eq_add(void)
         pthread_join(t[i], 0);
     vuint64_t cur = vatomic64_read(&g_shared);
     assert(cur == (VUINT64_VAL + MAX_THREADS));
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_eq_set
@@ -88,7 +88,7 @@ mt_atomic_u64_await_eq_set(void)
         pthread_join(t[i], 0);
     vuint64_t cur = vatomic64_read(&g_shared);
     assert(cur == (VUINT64_VAL + MAX_THREADS));
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_eq_sub
@@ -112,7 +112,7 @@ mt_atomic_u64_await_eq_sub(void)
         pthread_join(t[i], 0);
     vuint64_t cur = vatomic64_read(&g_shared);
     assert(cur == VUINT64_VAL);
-    V_UNUSED(cur);
+    (void)(cur);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_gt
@@ -154,7 +154,9 @@ mt_atomic_u64_await_gt(void)
     vuint64_t cur      = vatomic64_read(&g_shared);
     vuint64_t expected = (VUINT64_VAL + (MAX_THREADS * IT));
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_ge
@@ -196,7 +198,9 @@ mt_atomic_u64_await_ge(void)
     vuint64_t cur      = vatomic64_read(&g_shared);
     vuint64_t expected = (VUINT64_VAL + (MAX_THREADS * IT));
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_neq
@@ -238,7 +242,9 @@ mt_atomic_u64_await_neq(void)
     vuint64_t cur      = vatomic64_read(&g_shared);
     vuint64_t expected = (VUINT64_VAL + (MAX_THREADS * IT));
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_lt
@@ -280,7 +286,9 @@ mt_atomic_u64_await_lt(void)
     vuint64_t cur      = vatomic64_read(&g_shared);
     vuint64_t expected = (VUINT64_VAL - (MAX_THREADS * IT));
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_gt_add
@@ -325,7 +333,9 @@ mt_atomic_u64_await_gt_add(void)
     vuint64_t expected =
         (VUINT64_VAL + (MAX_THREADS * IT)) + ((MAX_THREADS / 2) * IT);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_ge_add
@@ -370,7 +380,9 @@ mt_atomic_u64_await_ge_add(void)
     vuint64_t expected =
         (VUINT64_VAL + (MAX_THREADS * IT)) + ((MAX_THREADS / 2) * IT);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_neq_add
@@ -415,7 +427,9 @@ mt_atomic_u64_await_neq_add(void)
     vuint64_t expected =
         (VUINT64_VAL + (MAX_THREADS * IT)) + ((MAX_THREADS / 2) * IT);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_lt_add
@@ -460,7 +474,9 @@ mt_atomic_u64_await_lt_add(void)
     vuint64_t expected =
         (VUINT64_VAL - (MAX_THREADS * IT)) + ((MAX_THREADS / 2) * IT);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_gt_sub
@@ -503,7 +519,9 @@ mt_atomic_u64_await_gt_sub(void)
     vuint64_t expected =
         (VUINT64_VAL + (MAX_THREADS * IT)) - ((MAX_THREADS / 2) * IT);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_ge_sub
@@ -546,7 +564,9 @@ mt_atomic_u64_await_ge_sub(void)
     vuint64_t expected =
         (VUINT64_VAL + (MAX_THREADS * IT)) - ((MAX_THREADS / 2) * IT);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_neq_sub
@@ -589,7 +609,9 @@ mt_atomic_u64_await_neq_sub(void)
     vuint64_t expected =
         (VUINT64_VAL + (MAX_THREADS * IT)) - ((MAX_THREADS / 2) * IT);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_lt_sub
@@ -632,7 +654,9 @@ mt_atomic_u64_await_lt_sub(void)
     vuint64_t expected =
         (VUINT64_VAL - (MAX_THREADS * IT)) - ((MAX_THREADS / 2) * IT);
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_gt_set
@@ -659,7 +683,9 @@ mt_atomic_u64_await_gt_set(void)
     vuint64_t cur      = vatomic64_read(&g_shared);
     vuint64_t expected = init_val + (vuint64_t)MAX_THREADS;
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_ge_set
@@ -686,7 +712,9 @@ mt_atomic_u64_await_ge_set(void)
     vuint64_t cur      = vatomic64_read(&g_shared);
     vuint64_t expected = init_val + (vuint64_t)MAX_THREADS;
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_lt_set
@@ -712,7 +740,9 @@ mt_atomic_u64_await_lt_set(void)
     vuint64_t cur      = vatomic64_read(&g_shared);
     vuint64_t expected = (VUINT64_VAL - 1) - (vuint64_t)MAX_THREADS;
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Multi-thread Test: vatomic64_await_neq_set
@@ -740,7 +770,9 @@ mt_atomic_u64_await_neq_set(void)
     vuint64_t cur      = vatomic64_read(&g_shared);
     vuint64_t expected = VUINT64_VAL;
     assert(cur == expected);
-    V_UNUSED(cur, expected);
+    (void)(cur);
+    ;
+    (void)(expected);
 }
 /*****************************************************************************
  * Entry point

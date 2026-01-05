@@ -15,7 +15,7 @@ AUTOGEN
 _tmpl_end;
 _tmpl_dl; //--------------------------------------
 extern "C" {
-    #include <vsync/atomic.h>
+#include <vsync/atomic/core.h>
 }
 _tmpl_map(MAP_TMPL_T_ptr, PTR *);
 _tmpl_map(MAP_TMPL_N_ptr, typename PTR);

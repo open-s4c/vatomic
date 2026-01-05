@@ -47,6 +47,39 @@ jobs:
             changed:
               - 'test/**'
 
+  dispatch-selection:
+    name: Dispatch backend selection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compile dispatch with gnu99
+        run: >
+          cc -std=gnu99 -Wall -Wextra -Werror -Iinclude
+          -DVSYNC_EXPECT_DISPATCH_BACKEND=VSYNC_DISPATCH_BACKEND_GNU
+          -c test/dispatch/dispatch_backend_probe.c
+          -o /tmp/dispatch_gnu.o
+      - name: Compile dispatch with c11 (_Generic)
+        run: >
+          cc -std=c11 -Wall -Wextra -Werror -Iinclude
+          -DVSYNC_EXPECT_DISPATCH_BACKEND=VSYNC_DISPATCH_BACKEND_C11
+          -c test/dispatch/dispatch_backend_probe.c
+          -o /tmp/dispatch_c11.o
+      - name: Ensure strict c99 dispatch include fails
+        run: |
+          set +e
+          cc -std=c99 -Werror -Iinclude \
+            -DVSYNC_EXPECT_DISPATCH_BACKEND=VSYNC_DISPATCH_BACKEND_DISABLED \
+            -c test/dispatch/dispatch_backend_probe.c \
+            -o /tmp/dispatch_c99.o 2> /tmp/dispatch_c99.log
+          status=$?
+          if [ $status -eq 0 ]; then
+            echo "Expected dispatch include to fail under strict ISO C99"
+            exit 1
+          fi
+          grep -q "requires -std=gnu99 or -std=c11+" /tmp/dispatch_c99.log
+
   test-install:
     strategy:
       matrix:
