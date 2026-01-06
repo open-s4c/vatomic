@@ -5,7 +5,7 @@ This project partially comply with [Semantic Versioning][].
 
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## Unreleased
+## [2.4.1]
 
 - Fixed warnings for code using vatomic C++
 - Fixed warnings for C99. Except for dispatch.h, vatomic is now C99 compliant.
