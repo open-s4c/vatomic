@@ -24,7 +24,26 @@ research effort put into this library.
 
 ## Getting started
 
-In order to build and install `vatomic` run:
+`vatomic` can be installed from the following package systems:
+
+**Homebrew (macOS) -- [link][tap]:**
+
+    brew tap open-s4c/tap
+    brew install tmplr
+
+**Arch Linux, eg, with `yay` -- [link][AUR]:**
+
+    yay -S vatomic
+
+**pkgsrc (NetBSD, illumos, macOS, Linux) -- [link][pkgsrc]:**
+
+    pkg_add vatomic
+
+[AUR]: https://aur.archlinux.org/packages/vatomic
+[pkgsrc]: https://pkgsrc.se/devel/vatomic
+[tap]: https://github.com/open-s4c/homebrew-tap
+
+In order to build and install `vatomic` from sources, run:
 
 ```sh
 cmake -S . -B build
